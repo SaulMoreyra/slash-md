@@ -1,0 +1,384 @@
+{
+  "name": "slash-md",
+  "displayName": "Slash MD",
+  "description": "Notion-like Markdown drafts with GitHub review later",
+  "version": "0.0.1",
+  "publisher": "saulmoreyra",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SaulMoreyra/slash-md.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "slash-md.home",
+        "title": "Home",
+        "category": "Slash MD",
+        "icon": "$(home)"
+      },
+      {
+        "command": "slash-md.new",
+        "title": "New",
+        "category": "Slash MD",
+        "icon": "$(add)"
+      },
+      {
+        "command": "slash-md.newInFolder",
+        "title": "New in folder",
+        "category": "Slash MD",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "slash-md.newFolder",
+        "title": "New folder",
+        "category": "Slash MD",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "slash-md.openDraft",
+        "title": "Open Draft",
+        "category": "Slash MD",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "slash-md.openFromGithub",
+        "title": "Open from GitHub",
+        "category": "Slash MD",
+        "icon": "$(github)"
+      },
+      {
+        "command": "slash-md.editWorkspaceFile",
+        "title": "Edit with Slash MD",
+        "category": "Slash MD",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "slash-md.openMarkdown",
+        "title": "Open with Slash MD",
+        "category": "Slash MD",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "slash-md.useAsDefaultMarkdown",
+        "title": "Use as default Markdown editor",
+        "category": "Slash MD"
+      },
+      {
+        "command": "slash-md.stopUsingAsDefaultMarkdown",
+        "title": "Stop using as default Markdown editor",
+        "category": "Slash MD"
+      },
+      {
+        "command": "slash-md.init",
+        "title": "Init",
+        "category": "Slash MD",
+        "icon": "$(repo)"
+      },
+      {
+        "command": "slash-md.refreshDrafts",
+        "title": "Refresh",
+        "category": "Slash MD",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "slash-md.refreshDocs",
+        "title": "Refresh docs",
+        "category": "Slash MD",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "slash-md.signInGithub",
+        "title": "Sign in to GitHub",
+        "category": "Slash MD",
+        "icon": "$(account)"
+      },
+      {
+        "command": "slash-md.rename",
+        "title": "Move / Rename",
+        "category": "Slash MD"
+      },
+      {
+        "command": "slash-md.delete",
+        "title": "Delete",
+        "category": "Slash MD"
+      },
+      {
+        "command": "slash-md.openDoc",
+        "title": "Open doc",
+        "category": "Slash MD"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "slash-md.editWorkspaceFile",
+          "when": "resourceExtname == .md && resourceLangId == markdown && slashMd.isDocsWorkspace && !resourcePath =~ /\\.slash\\.md$/",
+          "group": "navigation@9"
+        },
+        {
+          "command": "slash-md.openMarkdown",
+          "when": "resourceExtname == .md && resourceLangId == markdown && !slashMd.isDocsWorkspace && !resourcePath =~ /\\.slash\\.md$/",
+          "group": "navigation@9"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "slash-md.editWorkspaceFile",
+          "when": "resourceExtname == .md && resourceLangId == markdown && slashMd.isDocsWorkspace && !resourcePath =~ /\\.slash\\.md$/",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.openMarkdown",
+          "when": "resourceExtname == .md && resourceLangId == markdown && !slashMd.isDocsWorkspace && !resourcePath =~ /\\.slash\\.md$/",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "slash-md.home",
+          "when": "view == slash-md.drafts",
+          "group": "navigation@1"
+        },
+        {
+          "command": "slash-md.new",
+          "when": "view == slash-md.drafts",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.openFromGithub",
+          "when": "view == slash-md.drafts",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.init",
+          "when": "view == slash-md.drafts",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.refreshDrafts",
+          "when": "view == slash-md.drafts",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.home",
+          "when": "view == slash-md.docs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "slash-md.new",
+          "when": "view == slash-md.docs",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.openFromGithub",
+          "when": "view == slash-md.docs",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.newInFolder",
+          "when": "view == slash-md.docs",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.refreshDocs",
+          "when": "view == slash-md.docs",
+          "group": "navigation"
+        },
+        {
+          "command": "slash-md.signInGithub",
+          "when": "view == slash-md.docs && slashMd.docsNeedsAuth",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "slash-md.newInFolder",
+          "when": "view == slash-md.docs && viewItem == slashMdFolder",
+          "group": "inline"
+        },
+        {
+          "command": "slash-md.newFolder",
+          "when": "view == slash-md.docs && viewItem == slashMdFolder"
+        },
+        {
+          "command": "slash-md.rename",
+          "when": "view == slash-md.drafts && viewItem == slashMdDraft"
+        },
+        {
+          "command": "slash-md.delete",
+          "when": "view == slash-md.drafts && viewItem == slashMdDraft"
+        },
+        {
+          "command": "slash-md.rename",
+          "when": "view == slash-md.docs && viewItem == slashMdDoc"
+        },
+        {
+          "command": "slash-md.delete",
+          "when": "view == slash-md.docs && viewItem == slashMdDoc"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "slash-md.refreshDrafts",
+          "when": "false"
+        },
+        {
+          "command": "slash-md.refreshDocs",
+          "when": "false"
+        },
+        {
+          "command": "slash-md.newInFolder",
+          "when": "false"
+        },
+        {
+          "command": "slash-md.openDoc",
+          "when": "false"
+        },
+        {
+          "command": "slash-md.signInGithub",
+          "when": "slashMd.docsNeedsAuth"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "slash-md",
+          "title": "Slash MD",
+          "icon": "media/slash.svg"
+        }
+      ]
+    },
+    "views": {
+      "slash-md": [
+        {
+          "id": "slash-md.drafts",
+          "name": "Drafts",
+          "type": "tree"
+        },
+        {
+          "id": "slash-md.docs",
+          "name": "Pages",
+          "type": "tree"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "slash-md.drafts",
+        "contents": "No drafts yet.\n[Open Home](command:slash-md.home)\n[Create draft](command:slash-md.new)\n[Open from GitHub](command:slash-md.openFromGithub)"
+      },
+      {
+        "view": "slash-md.docs",
+        "contents": "Sign in to GitHub to see the documentation tree.\n[Open Home](command:slash-md.home)\n[Sign in](command:slash-md.signInGithub)\n[Init](command:slash-md.init)\n[Refresh](command:slash-md.refreshDocs)",
+        "when": "slashMd.docsNeedsAuth"
+      },
+      {
+        "view": "slash-md.docs",
+        "contents": "Documentation repo tree.\n[Open Home](command:slash-md.home)\n[Open from GitHub](command:slash-md.openFromGithub)\n[Init](command:slash-md.init)\n[Refresh](command:slash-md.refreshDocs)",
+        "when": "!slashMd.docsNeedsAuth"
+      }
+    ],
+    "languages": [
+      {
+        "id": "slash-md",
+        "aliases": [
+          "Slash MD"
+        ],
+        "filenamePatterns": [
+          "*.slash.md"
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Slash MD",
+      "properties": {
+        "slash-md.contentRepo": {
+          "type": "string",
+          "default": "SaulMoreyra/docs-sandbox",
+          "description": "Documentation repo, owner/name format (e.g. SaulMoreyra/docs-sandbox)."
+        },
+        "slash-md.contentPath": {
+          "type": "string",
+          "default": "docs",
+          "description": "Documents folder inside the repo."
+        },
+        "slash-md.defaultBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Protected branch that PRs target."
+        },
+        "slash-md.useAsDefaultMarkdown": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, *.md files open with Slash MD (Editor mode, no Review). Does not affect *.slash.md drafts or the docs repo Workspace flow."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[slash-md]": {
+        "files.insertFinalNewline": false,
+        "files.trimFinalNewlines": false
+      }
+    },
+    "customEditors": [
+      {
+        "viewType": "slash-md.editor",
+        "displayName": "Slash MD",
+        "selector": [
+          {
+            "filenamePattern": "*.slash.md"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "slash-md.editor",
+        "displayName": "Slash MD",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "debug": "npm run build && cursor --extensionDevelopmentPath=\"${PWD}\"",
+    "package": "npx @vscode/vsce package --no-dependencies",
+    "test:roundtrip": "node test/build.mjs && node test/boot.mjs",
+    "test": "npm run test:roundtrip"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.0",
+    "happy-dom": "^20.11.6",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
+    "@milkdown/crepe": "^7.22.1"
+  }
+}

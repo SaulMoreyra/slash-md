@@ -1,0 +1,7 @@
+{
+  "repo": "SaulMoreyra/docs-sandbox",
+  "contentPath": "docs",
+  "defaultBranch": "main",
+  "mode": "workspace",
+  "sections": ["producto", "specs", "decisions"]
+}

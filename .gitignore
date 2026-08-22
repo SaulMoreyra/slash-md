@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+*.vsix
+.vscode-test/
+.vscode/settings.json
+.env
+.env.*
+.DS_Store
+*.log
