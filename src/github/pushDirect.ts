@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { getDraftMeta } from "../draftMeta";
-import { displayTitle } from "../messaging";
+import { getDraftMeta } from "../sidecar/draftMeta";
+import { displayTitle } from "../domain/messaging";
 import { ContentConfig } from "./config";
 import { ContentRepo } from "./contentRepo";
 import { GitError, runGit } from "./git";

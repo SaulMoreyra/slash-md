@@ -4,12 +4,14 @@ import {
   getSlashmdFile,
   normalizeRepoMode,
   type RepoMode,
-} from "../slashmdConfig";
+} from "../config/slashmdConfig";
+import { contentPathPrefix, normalizeContentPathInput } from "../domain/paths";
 
 export type ContentConfig = {
   repo: string;
   owner: string;
   name: string;
+  /** Runtime folder prefix; `""` means the repo root (`contentPath: "."` in .slashmd.json). */
   contentPath: string;
   defaultBranch: string;
   /** From .slashmd.json; missing → workspace. */
@@ -33,9 +35,11 @@ export function getContentConfig(): ContentConfig | undefined {
   if (!parsed) {
     return undefined;
   }
-  const contentPath = trimSlashes(
-    file.contentPath?.trim() || cfg.get<string>("contentPath")?.trim() || "docs",
-  );
+  const rawPath =
+    file.contentPath !== undefined
+      ? file.contentPath
+      : cfg.get<string>("contentPath")?.trim() || ".";
+  const contentPath = contentPathPrefix(normalizeContentPathInput(rawPath));
   const defaultBranch =
     file.defaultBranch?.trim() || cfg.get<string>("defaultBranch")?.trim() || "main";
   return {
@@ -58,8 +62,4 @@ export function parseOwnerName(repo: string): { owner: string; name: string } | 
 
 export function githubHttpsUrl(owner: string, name: string): string {
   return `https://github.com/${owner}/${name}.git`;
-}
-
-function trimSlashes(value: string): string {
-  return value.replace(/^\/+|\/+$/g, "");
 }

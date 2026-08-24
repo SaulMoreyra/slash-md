@@ -33,8 +33,8 @@ Que una **Product Owner** escriba documentación en GitHub, que los devs la cons
 | Drafts | Autosave local (no se pierde al cerrar). GitHub no se toca al teclear |
 | Repo destino | Repo de contenido **dedicado** y configurable, no el workspace de código |
 | v1 ship | Editor + Review/Publish + biblioteca + Home + `.slashmd.json` + `.vsix` + [USAGE.md](USAGE.md). **Sin** comments en el canvas |
-| v1 bloques | Prioridad: `/h1` `/h2` `/h3` `/p` `/list` `/ol` `/todo` `/table` `/image` `/code` `/quote` `/divider`. Después: `/callout` `/toggle` |
-| Documento | Frontmatter: **title** + optional **cover** / **coverPosition** editable in the page chrome (hero + Notion-style cover). `owner` / `status` / `updated` los escribe el host (New / Review / Publish). Cover is YAML chrome, not a body image |
+| v1 bloques | Prioridad: `/h1` `/h2` `/h3` `/p` `/list` `/ol` `/todo` `/table` `/image` `/code` `/quote` `/divider`. Después: `/callout` `/tip` `/important` `/warning` `/caution` `/toggle` `/diagram`. Plantilla **Gallery** = un ejemplo de cada bloque + un flowchart Mermaid + un fence por lenguaje |
+| Documento | Frontmatter: **title** + optional **icon** (emoji) + **cover** / **coverPosition** editable in the page chrome (hero + Notion-style icon/cover). **Last edited** under the title is git history of the file (avatars + popover of everyone who touched it), not YAML. `owner` / `status` / `updated` los escribe el host (New / Review / Publish). Icon and cover are YAML chrome, not body content |
 | Fuera de v1 / post-v1 | Comments en canvas (fase D), `~/.slashmdrc`, collab en vivo, LaTeX, AI Crepe, webhooks, suggestions de GitHub, New/rename/delete folder, drag-drop, búsqueda entre docs |
 
 ## Stack
@@ -43,8 +43,10 @@ Que una **Product Owner** escriba documentación en GitHub, que los devs la cons
 |---|---|---|
 | UI del webview | TypeScript vanilla, **sin React** | Menos capas; Crepe ya trae slash y bloques |
 | Editor | **CrepeBuilder**, no `new Crepe()` | Tree-shaking; apagamos Latex / TopBar / AI |
-| Features Crepe | `blockEdit`, `listItem`, `codeMirror` (pocos langs), `table`, `imageBlock`, `toolbar`, `linkTooltip`, `placeholder` | Alcance Notion-like sin KaTeX ni language-data entero |
+| Features Crepe | `blockEdit`, `listItem`, `codeMirror` (`@codemirror/language-data` + preview Mermaid), `table`, `imageBlock`, `toolbar`, `linkTooltip`, `placeholder` | Alcance Notion-like sin KaTeX. Fences `mermaid` se dibujan en el canvas (GitHub ya los renderiza). El bundle del editor se minifica porque entra el catálogo de langs + mermaid |
 | Host | TypeScript + esbuild | Estándar de extensiones |
+| Capas host | `src/domain` (puro), `src/config`, `src/editor`, `src/home`, `src/library`, `src/workspace`, `src/sidecar` (legacy `.slash.md`), `src/github` | Separar UI, wiki local-first y sidecar; `extension.ts` solo compone |
+| Capas webview | `webview/editor` (Crepe + bar + comments), `webview/home` (biblioteca), `webview/shared` (tokens, avatar) | Dos bundles IIFE; protocolo editor en `src/domain/protocol.ts` |
 | Auth GitHub | `vscode.authentication.getSession('github', ['repo'])` | Sin PAT en settings |
 | Escritura git | Clone / worktree en `globalStorage`, no Contents API | Imágenes y commits reales |
 | Callouts | Alertas GFM `> [!NOTE]`, no `:::directive` | GitHub ya las renderiza |
@@ -94,6 +96,20 @@ Lo que se configura en GitHub, sin código (fase 0.5):
 | Branch protection en `main` | Forzar revisión (por eso el plan pagado) |
 
 Los devs consumen los `.md` en el repo o en su IDE. GitHub Pages queda fuera de v1 (en repo privado exige plan pagado y el sitio sería público salvo Enterprise).
+
+## Sidecar soft-deprecation (Pillar 1)
+
+The original draft model stored files in `globalStorage/drafts/*.slash.md` (sidecar). The local-first wiki model replaces this: pages are real `.md` files under `contentPath` in the workspace.
+
+Sidecar code (`DraftStore`, `draftMeta`, `openFromGithub` upsert path) is **not deleted** — old `.slash.md` drafts remain openable. Instead the UI steers away from sidecar when a docs workspace is detected:
+
+- **Drafts viewsWelcome** shows "Pages live in the workspace" and links to Home when `slashMd.isDocsWorkspace` is true.
+- **`openRemotePath`** checks for the local file under `contentPath` first; only falls back to sidecar `upsertDraft` when the file is not on disk.
+- **`editWorkspaceFile` (Edit with Slash MD)** opens the workspace `.md` in place with `openWith` — no copy into `globalStorage`.
+- **Home auto-opens** on activation when the workspace is a docs wiki (once per content repo, stored in `globalState`).
+- **Init** opens Home on success so the user lands in the library immediately.
+
+Full removal of sidecar is deferred to a later pillar to avoid breaking existing users with `.slash.md` drafts.
 
 ## Orden innegociable
 

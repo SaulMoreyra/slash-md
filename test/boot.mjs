@@ -77,5 +77,11 @@ for (const name of names) {
   }
 }
 
+g.acquireVsCodeApi = () => ({
+  postMessage: () => {},
+  getState: () => undefined,
+  setState: () => {},
+});
+
 const { run } = await import("../dist/test-roundtrip.mjs");
 await run();

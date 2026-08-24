@@ -4,5 +4,3 @@ owner: {{owner}}
 status: draft
 updated: {{date}}
 ---
-
-# {{title}}

@@ -1,10 +1,14 @@
 import {
+  CheckRun,
+  CombinedStatus,
   GithubApiError,
   GithubPull,
   GithubReview,
   MergeMethod,
   deleteBranch,
+  getCombinedStatus,
   getPull,
+  listCheckRuns,
   listPullReviews,
   mergePull,
 } from "./api";
@@ -23,6 +27,22 @@ export type PublishResult = {
   label: string;
 };
 
+/** Merge an open PR. Never skips review/check blockers. */
+export async function mergeOpenPull(opts: {
+  token: string;
+  config: ContentConfig;
+  prNumber: number;
+  remotePath?: string;
+}): Promise<PublishResult> {
+  return finishPublish({
+    token: opts.token,
+    config: opts.config,
+    prNumber: opts.prNumber,
+    remotePath: opts.remotePath,
+    skipBlockers: false,
+  });
+}
+
 export async function publishPull(opts: {
   token: string;
   config: ContentConfig;
@@ -32,7 +52,23 @@ export async function publishPull(opts: {
   remotePath?: string;
   force?: boolean;
 }): Promise<PublishResult> {
-  const { token, config, prNumber, remotePath, force } = opts;
+  return finishPublish({
+    token: opts.token,
+    config: opts.config,
+    prNumber: opts.prNumber,
+    remotePath: opts.remotePath,
+    skipBlockers: Boolean(opts.force),
+  });
+}
+
+async function finishPublish(opts: {
+  token: string;
+  config: ContentConfig;
+  prNumber: number;
+  remotePath?: string;
+  skipBlockers: boolean;
+}): Promise<PublishResult> {
+  const { token, config, prNumber, remotePath } = opts;
 
   let pr = await waitForMergeability(token, config, prNumber);
   if (pr.merged || pr.merged_at) {
@@ -42,9 +78,8 @@ export async function publishPull(opts: {
     throw new PublishBlocked(["PR is not open"]);
   }
 
-  if (!force) {
-    const reviews = await listPullReviews(token, config, pr.number);
-    const reasons = publishBlockers(pr, reviews);
+  if (!opts.skipBlockers) {
+    const reasons = await loadMergeBlockers(token, config, pr);
     if (reasons.length > 0) {
       throw new PublishBlocked(reasons);
     }
@@ -61,6 +96,30 @@ export async function publishPull(opts: {
   return published(pr, config, remotePath);
 }
 
+export async function loadMergeBlockers(
+  token: string,
+  config: ContentConfig,
+  pr: GithubPull,
+): Promise<string[]> {
+  const reviews = await listPullReviews(token, config, pr.number);
+  let combined: CombinedStatus | undefined;
+  let checkRuns: CheckRun[] | undefined;
+  try {
+    combined = await getCombinedStatus(token, config, pr.head.sha);
+  } catch {
+    // Status endpoint is optional.
+  }
+  try {
+    checkRuns = await listCheckRuns(token, config, pr.head.sha);
+  } catch {
+    // Checks endpoint is optional.
+  }
+  return collectMergeBlockers(pr, reviews, {
+    combinedState: combined?.state,
+    checkRuns,
+  });
+}
+
 export function publishBlockers(pr: GithubPull, reviews: GithubReview[]): string[] {
   const reasons: string[] = [];
   const state = (pr.mergeable_state ?? "").toLowerCase();
@@ -72,6 +131,54 @@ export function publishBlockers(pr: GithubPull, reviews: GithubReview[]): string
     reasons.push("needs approval");
   }
   return reasons;
+}
+
+export function collectMergeBlockers(
+  pr: GithubPull,
+  reviews: GithubReview[],
+  extra?: {
+    combinedState?: CombinedStatus["state"];
+    checkRuns?: CheckRun[];
+  },
+): string[] {
+  const reasons = publishBlockers(pr, reviews);
+  const state = (pr.mergeable_state ?? "").toLowerCase();
+  const checksFail =
+    extra?.combinedState === "failure" ||
+    extra?.combinedState === "error" ||
+    (extra?.checkRuns ?? []).some(isFailedCheck);
+
+  if (checksFail) {
+    reasons.push("checks failing");
+  } else if (state === "blocked" && !reasons.includes("needs approval") && !reasons.includes("conflict")) {
+    reasons.push("checks failing");
+  }
+
+  return uniqueReasons(reasons);
+}
+
+export function isFailedCheck(run: Pick<CheckRun, "status" | "conclusion">): boolean {
+  if (run.status !== "completed") {
+    return false;
+  }
+  const conclusion = (run.conclusion ?? "").toLowerCase();
+  return (
+    conclusion === "failure" ||
+    conclusion === "timed_out" ||
+    conclusion === "cancelled" ||
+    conclusion === "action_required" ||
+    conclusion === "startup_failure"
+  );
+}
+
+function uniqueReasons(reasons: string[]): string[] {
+  const out: string[] = [];
+  for (const reason of reasons) {
+    if (!out.includes(reason)) {
+      out.push(reason);
+    }
+  }
+  return out;
 }
 
 function isApproved(pr: GithubPull, reviews: GithubReview[]): boolean {

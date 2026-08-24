@@ -91,7 +91,7 @@ Milkdown reformatea. Con GitHub como destino, un serializer ruidoso = diffs basu
 
 ### CodeMirror
 
-Lista corta y lazy (js, ts, json, md, python). Tema según `vscode-theme-kind`. No `@codemirror/language-data` completo.
+Catálogo completo de `@codemirror/language-data` (~143 langs). Tema según `vscode-theme-kind`. Nombres con espacio (`MariaDB SQL`) usan un fence de una sola palabra (`mariadbsql`) para que remark y Milkdown coincidan. Fences `mermaid` usan el `renderPreview` de Crepe (mismo Markdown que GitHub).
 
 ### Callouts y toggles
 

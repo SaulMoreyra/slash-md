@@ -130,12 +130,60 @@ export async function getPull(
   return githubRequest<GithubPull>(token, "GET", `/repos/${repo.owner}/${repo.name}/pulls/${number}`);
 }
 
+/** Ask people to review a PR. 422 (already requested / invalid) is ignored. */
+export async function requestPullReviewers(
+  token: string,
+  repo: { owner: string; name: string },
+  number: number,
+  reviewers: string[],
+): Promise<void> {
+  const logins = [...new Set(reviewers.map((login) => login.trim()).filter(Boolean))];
+  if (logins.length === 0) {
+    return;
+  }
+  try {
+    await githubRequest(token, "POST", `/repos/${repo.owner}/${repo.name}/pulls/${number}/requested_reviewers`, {
+      reviewers: logins,
+    });
+  } catch (err) {
+    if (err instanceof GithubApiError && err.status === 422) {
+      return;
+    }
+    throw err;
+  }
+}
+
 export async function listPullReviews(
   token: string,
   repo: { owner: string; name: string },
   number: number,
 ): Promise<GithubReview[]> {
   return githubRequest<GithubReview[]>(token, "GET", `/repos/${repo.owner}/${repo.name}/pulls/${number}/reviews`);
+}
+
+export type GithubPullFile = {
+  filename: string;
+  status: string;
+};
+
+export async function listPullFiles(
+  token: string,
+  repo: { owner: string; name: string },
+  number: number,
+): Promise<GithubPullFile[]> {
+  const out: GithubPullFile[] = [];
+  for (let page = 1; page <= 10; page += 1) {
+    const batch = await githubRequest<GithubPullFile[]>(
+      token,
+      "GET",
+      `/repos/${repo.owner}/${repo.name}/pulls/${number}/files?per_page=100&page=${page}`,
+    );
+    out.push(...(batch ?? []));
+    if (!batch || batch.length < 100) {
+      break;
+    }
+  }
+  return out;
 }
 
 export type CombinedStatus = {
@@ -168,20 +216,6 @@ export async function listCheckRuns(
     `/repos/${repo.owner}/${repo.name}/commits/${sha}/check-runs?per_page=100`,
   );
   return data.check_runs ?? [];
-}
-
-export type RepoMergeSettings = {
-  allow_merge_commit: boolean;
-  allow_squash_merge: boolean;
-  allow_rebase_merge: boolean;
-  delete_branch_on_merge: boolean;
-};
-
-export async function getRepoMergeSettings(
-  token: string,
-  repo: { owner: string; name: string },
-): Promise<RepoMergeSettings> {
-  return githubRequest<RepoMergeSettings>(token, "GET", `/repos/${repo.owner}/${repo.name}`);
 }
 
 export type MergeMethod = "merge" | "squash" | "rebase";

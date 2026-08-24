@@ -1,9 +1,9 @@
 import { editorViewCtx } from "@milkdown/kit/core";
-import { findSnippetInText, normalizeSnippet } from "../src/commentAnchor";
-import type { ReviewThread } from "../src/protocol";
-import { placeThreads } from "../webview/comments";
-import { createSlashCrepe } from "../webview/crepe";
-import { normalizeMarkdown } from "../src/markdown";
+import { findSnippetInText, normalizeSnippet } from "../src/domain/commentAnchor";
+import type { ReviewThread } from "../src/domain/protocol";
+import { placeThreads } from "../webview/editor/plugins/commentsPlugin";
+import { createSlashCrepe } from "../webview/editor/core/crepe";
+import { normalizeMarkdown } from "../src/domain/markdown";
 
 function fakeThread(partial: Partial<ReviewThread> & { id: string; snippet: string }): ReviewThread {
   return {
@@ -64,6 +64,18 @@ export async function runCommentFixtures(
         assert(
           placed.some((p) => p.kind === "orphan" && p.thread.id === "orphan"),
           "unmatched snippet is orphan",
+        );
+        const withResolved = placeThreads(doc, [
+          ...threads,
+          fakeThread({ id: "resolved", snippet: "Hello world paragraph.", isResolved: true }),
+        ]);
+        assert(
+          !withResolved.some((p) => p.thread.isResolved && p.kind === "anchored"),
+          "resolved threads are not placed as anchored decorations",
+        );
+        assert(
+          !withResolved.some((p) => p.thread.id === "resolved"),
+          "resolved threads are hidden from the margin",
         );
         resolve();
       } catch (err) {

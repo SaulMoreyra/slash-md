@@ -2,8 +2,8 @@ import { ContentConfig } from "./config";
 import { ContentRepo } from "./contentRepo";
 import { GithubApiError, getPull, githubRequest } from "./api";
 import { runGit } from "./git";
-import type { ReviewThread, ReviewThreadComment } from "../protocol";
-import { findSnippetInText } from "../commentAnchor";
+import type { ReviewThread, ReviewThreadComment } from "../domain/protocol";
+import { findSnippetInText } from "../domain/commentAnchor";
 
 export type { ReviewThread, ReviewThreadComment };
 

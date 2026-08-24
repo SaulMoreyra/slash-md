@@ -5,8 +5,6 @@ status: draft
 updated: {{date}}
 ---
 
-# {{title}}
-
 ## Context
 
 ## Decision

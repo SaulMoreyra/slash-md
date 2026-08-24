@@ -29,13 +29,14 @@ const webviewShared = {
 
 const webviewCtx = await esbuild.context({
   ...webviewShared,
-  entryPoints: ["webview/main.ts"],
+  minify: true,
+  entryPoints: ["webview/editor/main.ts"],
   outfile: "dist/webview.js",
 });
 
 const homeCtx = await esbuild.context({
   ...webviewShared,
-  entryPoints: ["webview/home.ts"],
+  entryPoints: ["webview/home/home.ts"],
   outfile: "dist/home.js",
 });
 

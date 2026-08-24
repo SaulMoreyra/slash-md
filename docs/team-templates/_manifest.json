@@ -1,0 +1,10 @@
+{
+  "onboarding": {
+    "label": "Onboarding",
+    "description": "New teammate checklist"
+  },
+  "adr": {
+    "label": "ADR",
+    "description": "Architecture decision record"
+  }
+}

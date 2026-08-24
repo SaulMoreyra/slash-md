@@ -1,51 +1,74 @@
 import * as vscode from "vscode";
-import { editWorkspaceFile } from "./claimWorkspace";
-import { DocsTreeProvider } from "./docsTree";
-import { refreshDocsWorkspaceContext, watchDocsWorkspaceContext } from "./docsWorkspace";
-import { DraftStore } from "./draftStore";
-import { DraftsTreeProvider } from "./draftsTree";
-import { SlashMdEditorProvider } from "./editorProvider";
+import { editWorkspaceFile } from "./sidecar/claimWorkspace";
+import { DocsTreeProvider } from "./library/docsTree";
+import { refreshDocsWorkspaceContext, watchDocsWorkspaceContext } from "./workspace/docsWorkspace";
+import { DraftStore } from "./sidecar/draftStore";
+import { DraftsTreeProvider } from "./library/draftsTree";
+import { SlashMdEditorProvider } from "./editor/editorProvider";
 import { getContentConfig } from "./github/config";
 import { getGithubToken } from "./github/auth";
 import { ContentRepo } from "./github/contentRepo";
-import { HomePanel } from "./homePanel";
-import { runInit } from "./init";
-import { LibraryViews } from "./libraryViews";
-import { createNewDraft } from "./newDraft";
-import { createNewFolder } from "./newFolder";
-import { openFromGithub, openRemotePath } from "./openFromGithub";
-import { deleteByRemotePath, deleteCurrentDoc, renameByRemotePath, renameCurrentDoc } from "./renameDoc";
-import { reloadSlashmdConfig, restoreBoundContentRepo, getBoundContentRepo } from "./slashmdConfig";
-import { registerMarkdownAssociation } from "./markdownAssociation";
+import { HomePanel } from "./home/homePanel";
+import { invalidateInboxCache } from "./github/inbox";
+import { InboxHost } from "./library/inboxHost";
+import { runInit } from "./workspace/init";
+import { LibraryViews } from "./library/libraryViews";
+import { createNewDraft } from "./workspace/newDraft";
+import { createNewFolder } from "./workspace/newFolder";
+import { openFromGithub, openRemotePath } from "./sidecar/openFromGithub";
+import { deleteByRemotePath, deleteCurrentDoc, renameByRemotePath, renameCurrentDoc } from "./workspace/renameDoc";
+import { reloadSlashmdConfig, restoreBoundContentRepo, getBoundContentRepo } from "./config/slashmdConfig";
+import { registerMarkdownAssociation } from "./editor/markdownAssociation";
+import { SlashMdUriHandler } from "./workspace/uriHandler";
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new DraftStore(context);
   const draftsTree = new DraftsTreeProvider(store, context);
   const repos = new ContentRepo(context);
   const docsTree = new DocsTreeProvider(repos, context, store);
-  const home = new HomePanel(context, store, repos, draftsTree, docsTree);
-  const library = new LibraryViews(draftsTree, docsTree, home);
+  const inboxHost = new InboxHost();
+  const draftsView = vscode.window.createTreeView("slash-md.drafts", {
+    treeDataProvider: draftsTree,
+  });
+  const docsView = vscode.window.createTreeView("slash-md.docs", {
+    treeDataProvider: docsTree,
+  });
+  inboxHost.attachTreeView(draftsView);
+  const home = new HomePanel(context, store, repos, draftsTree, docsTree, inboxHost);
+  const library = new LibraryViews(draftsTree, docsTree, home, inboxHost);
   const provider = new SlashMdEditorProvider(context, library);
+
+  const syncTreeVisibility = () => {
+    inboxHost.setTreeVisible(draftsView.visible || docsView.visible);
+  };
+  context.subscriptions.push(
+    draftsView.onDidChangeVisibility(syncTreeVisibility),
+    docsView.onDidChangeVisibility(syncTreeVisibility),
+  );
+  syncTreeVisibility();
+  void inboxHost.refreshBadge();
 
   watchDocsWorkspaceContext(context.subscriptions);
   restoreBoundContentRepo(context);
-  void bootstrapConfig(repos);
+  void bootstrapConfig(repos).then(() => autoOpenHome(context, home));
   registerMarkdownAssociation(context);
+  context.subscriptions.push(vscode.window.registerUriHandler(new SlashMdUriHandler()));
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(SlashMdEditorProvider.viewType, provider, {
       webviewOptions: { retainContextWhenHidden: true },
       supportsMultipleEditorsPerDocument: false,
     }),
-    vscode.window.registerTreeDataProvider("slash-md.drafts", draftsTree),
-    vscode.window.registerTreeDataProvider("slash-md.docs", docsTree),
+    draftsView,
+    docsView,
+    inboxHost,
     vscode.commands.registerCommand("slash-md.home", () => home.show()),
     vscode.commands.registerCommand("slash-md.new", async () => {
-      await createNewDraft({ context, store, repos, draftsTree, docsTree });
+      await createNewDraft({ context, repos, draftsTree, docsTree });
       await home.refresh();
     }),
     vscode.commands.registerCommand("slash-md.newInFolder", async (node?: { path?: string }) => {
-      await createNewDraft({ context, store, repos, draftsTree, docsTree, section: node?.path });
+      await createNewDraft({ context, repos, draftsTree, docsTree, section: node?.path });
       await home.refresh();
     }),
     vscode.commands.registerCommand("slash-md.newFolder", async (node?: { path?: string }) => {
@@ -67,6 +90,12 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("slash-md.openDoc", async (path: string) => {
       await openRemotePath(context, store, repos, draftsTree, path, docsTree);
       await home.refresh();
+    }),
+    vscode.commands.registerCommand("slash-md.sendToReview", async () => {
+      await home.sendToReview();
+    }),
+    vscode.commands.registerCommand("slash-md.publishBatch", async () => {
+      await home.publishBatch();
     }),
     vscode.commands.registerCommand("slash-md.editWorkspaceFile", async (uri?: vscode.Uri) => {
       await editWorkspaceFile(context, store, repos, draftsTree, docsTree, uri);
@@ -98,14 +127,16 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("slash-md.signInGithub", async () => {
       await getGithubToken();
       docsTree.refresh();
+      invalidateInboxCache();
       await home.refresh();
+      await inboxHost.refreshBadge();
     }),
     vscode.commands.registerCommand("slash-md.init", async () => {
       const ok = await runInit(context);
       if (ok) {
         await refreshDocsWorkspaceContext();
         docsTree.refresh();
-        await home.refresh();
+        await home.show();
       }
     }),
   );
@@ -119,6 +150,25 @@ async function bootstrapConfig(repos: ContentRepo): Promise<void> {
   const config = getContentConfig();
   if (config) {
     await reloadSlashmdConfig({ contentRepo: config.repo, cloneDir: repos.cloneDir(config) });
+  }
+}
+
+async function autoOpenHome(
+  context: vscode.ExtensionContext,
+  home: HomePanel,
+): Promise<void> {
+  const isDocs = await refreshDocsWorkspaceContext();
+  if (!isDocs) {
+    return;
+  }
+  const repo = getContentConfig()?.repo ?? "";
+  const key = `slashMd.autoHomeShown.${repo}`;
+  if (context.globalState.get<boolean>(key)) {
+    return;
+  }
+  await context.globalState.update(key, true);
+  if (!vscode.window.activeTextEditor) {
+    await home.show();
   }
 }
 

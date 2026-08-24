@@ -7,3 +7,17 @@ console.log(n);
 def hello():
     return "ok"
 ```
+
+```rust
+fn hello() -> &'static str {
+    "ok"
+}
+```
+
+```go
+func hello() string { return "ok" }
+```
+
+```yaml
+ok: true
+```

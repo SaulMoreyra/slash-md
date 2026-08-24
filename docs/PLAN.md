@@ -2,7 +2,7 @@
 
 Producto: ver [README.md](../README.md). Decisiones: [DECISIONS.md](DECISIONS.md). Contexto: [RESEARCH.md](RESEARCH.md). Revisión crítica: [AUDIT.md](AUDIT.md).
 
-Para ejecutar: [IMPLEMENTATION.md](IMPLEMENTATION.md) tiene el checklist por fase con sus validaciones. Este documento es el orden y el porqué.
+Para ejecutar: [IMPLEMENTATION.md](IMPLEMENTATION.md) es el checklist **activo** (flujo Notion local-first: `.md` en el workspace → lote → un PR). Este archivo conserva el orden histórico (drafts en `globalStorage`); no usarlo para implementar.
 
 ## Objetivo de v1
 
@@ -72,7 +72,7 @@ Publish (5) **no** espera a comments.
 - Sustituir textarea por CrepeBuilder (features de DECISIONS)
 - `markdownUpdated` → autosave; un editor por doc; `destroy()` al dispose
 - Slash: apagar math/h4–h6; aliases `/h1` `/title1` `/code` `/quote` `/list` `/todo` `/table` `/image` `/divider`
-- CodeMirror: 4–6 lenguajes lazy
+- CodeMirror: catálogo `@codemirror/language-data` (todos los langs del picker)
 - Tema: `--crepe-*` desde `--vscode-editor-*`
 - `fixtures/*.md`: open → `getMarkdown()` → snapshot
 
@@ -126,11 +126,12 @@ Paralelo a comments; no mezclar con el primer Review. Orden por lo que desbloque
 1. **Imágenes** — `onUpload` → host → `contentPath/images/` + `asWebviewUri`. Pegar sin miedo es lo que más importa
 2. **Tablas** — Crepe + fixture GFM
 3. **Frontmatter** — `title`, `owner`, `status`, `updated` editables como cabecera del doc, no como YAML crudo
-4. **Plantillas** — `Slash MD: New` ofrece PRD / spec / decisión (las de la fase 0.5)
+4. **Plantillas** — `Slash MD: New` ofrece Blank / PRD / Spec / Decision / Gallery (las de la fase 0.5)
 5. **Navegación del repo** — árbol de `contentPath` en la vista Docs, badge "en edición", crear doc dentro de una sección; tercera puerta: **Editar con Slash MD** desde Explorer si el workspace es el repo de docs (copia a draft, no in-place)
 6. **Mover y renombrar** — carpeta + filename (carpetas implícitas); actualizar links relativos que apuntan al doc
-7. **Callouts** — `> [!NOTE]`; slash `/callout` `/info` `/warning`
+7. **Callouts** — `> [!NOTE]`; slash `/callout` `/info` `/tip` `/important` `/warning` `/caution`
 8. **Toggles** — `<details><summary>`; slash `/toggle`
+9. **Diagramas** — fence `mermaid`; slash `/diagram` `/mermaid` `/flowchart`; preview en el canvas (GitHub ya los pinta)
 
 **Salida:** la PO crea un doc desde plantilla dentro de una sección, con imagen y tabla, y sobrevive Open → editar → Review viéndose bien en GitHub. Carpetas sin CRUD vacío: existen porque hay `.md` dentro.
 

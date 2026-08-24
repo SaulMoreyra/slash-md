@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
-import { getDraftMeta } from "../draftMeta";
-import { ImageStore } from "../imageStore";
-import { referencedImages } from "../images";
-import { rewriteLinksTo } from "../links";
-import { displayTitle } from "../messaging";
-import { posixJoin } from "../paths";
-import { slugify, reviewBranchName } from "../slug";
+import { getDraftMeta } from "../sidecar/draftMeta";
+import { referencedImages } from "../domain/images";
+import { rewriteLinksTo } from "../domain/links";
+import { displayTitle } from "../domain/messaging";
+import { posixJoin } from "../domain/paths";
+import { slugify, reviewBranchName } from "../domain/slug";
+import { docsLibraryRoot } from "../workspace/docsWorkspace";
+import { readImageBytesForReview } from "../editor/imageHost";
 import { ContentConfig } from "./config";
 import { ContentRepo } from "./contentRepo";
 import { runGit } from "./git";
@@ -176,7 +177,9 @@ export function resolveRemotePath(config: ContentConfig, existing: string | unde
   if (existing) {
     return assertSafeRepoPath(config, existing);
   }
-  return assertSafeRepoPath(config, `${config.contentPath}/${slugify(title)}.md`);
+  const fileName = `${slugify(title)}.md`;
+  const next = config.contentPath ? `${config.contentPath}/${fileName}` : fileName;
+  return assertSafeRepoPath(config, next);
 }
 
 async function writeRepoFile(worktree: string, repoPath: string, text: string): Promise<void> {
@@ -212,9 +215,9 @@ export async function materializeDoc(opts: {
   const staged = new Set<string>([opts.remotePath]);
   await writeRepoFile(opts.worktree, opts.remotePath, opts.markdown);
 
-  const images = new ImageStore(opts.context);
+  const library = await docsLibraryRoot(opts.config);
   for (const img of referencedImages(opts.markdown, opts.remotePath)) {
-    const bytes = await images.read(img.repoPath);
+    const bytes = await readImageBytesForReview(opts.context, img.repoPath, library);
     if (!bytes) {
       continue;
     }
