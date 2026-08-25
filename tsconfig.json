@@ -10,8 +10,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "isolatedModules": true,
-    "types": ["node"]
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "paths": {
+      "@slash-md/core/*": ["./packages/core/src/*"],
+      "@slash-md/github/*": ["./packages/github/src/*"],
+      "@slash-md/ui/*": ["./packages/ui/src/*"]
+    },
+    "baseUrl": "."
   },
-  "include": ["src", "webview", "test"]
+  "include": ["apps", "packages", "test"]
 }

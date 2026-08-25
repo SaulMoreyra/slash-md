@@ -1,30 +1,54 @@
 # Architecture — Slash MD
 
-Mapa para auditar flujos host ↔ webview. Actualizado tras segmentar `webview/home`, `webview/editor` y el router de mensajes del host Home.
+Mapa para auditar flujos host ↔ webview. Monorepo `apps/` + `packages/` (motor compartido VS Code + Electron).
+
+## Layout
+
+```
+apps/
+  vscode/     # extensión Marketplace (host + VSIX)
+  desktop/    # Electron skeleton (mismo editor UI)
+packages/
+  core/       # dominio puro + puertos + tipos Home/protocol
+  ui/         # editor + home + tokens (bundles IIFE)
+  github/     # API + modelos puros (inbox/batch publish)
+```
 
 ## Capas
 
 | Capa | Rol | Ubicación |
 |------|-----|-----------|
-| **Domain** | Lógica pura (frontmatter, paths, inbox, publish model) | `src/domain/` |
-| **GitHub** | API, review, publish, inbox | `src/github/` |
-| **Host UI** | VS Code panels, trees, custom editor | `src/home/`, `src/editor/`, `src/library/` |
-| **Webview** | DOM + Milkdown (bundles IIFE) | `webview/home/`, `webview/editor/` |
-| **Shared webview** | Tokens, avatars | `webview/shared/` |
+| **Core** | Lógica pura (frontmatter, paths, protocolos, puertos) | `packages/core/` |
+| **GitHub (puro)** | REST/GraphQL helpers + inbox/batch models | `packages/github/` |
+| **GitHub (host)** | Review/Publish/clone orquestados con VS Code | `apps/vscode/src/github/` |
+| **Host UI** | Panels, trees, custom editor | `apps/vscode/src/{home,editor,library}/` |
+| **UI** | DOM + Milkdown (Crepe) | `packages/ui/src/{editor,home,shared}/` |
+| **Desktop** | Electron main/preload; HostBridge vía preload | `apps/desktop/` |
 
-## Bundles
+## Bundles (VS Code)
 
 | Entry | Output | Responsabilidad |
 |-------|--------|-----------------|
-| `webview/home/home.ts` | `dist/home.js` | Biblioteca, staging, inbox |
-| `webview/editor/main.ts` | `dist/webview.js` | Editor Crepe + chrome |
-| `src/extension.ts` | `dist/extension.js` | Composición |
+| `packages/ui/src/home/home.ts` | `apps/vscode/dist/home.js` | Biblioteca, staging, inbox |
+| `packages/ui/src/editor/main.ts` | `apps/vscode/dist/webview.js` | Editor Crepe + chrome |
+| `apps/vscode/src/extension.ts` | `apps/vscode/dist/extension.js` | Composición |
+
+Build: `npm run build` (workspace `slash-md` → `apps/vscode/esbuild.mjs`).
+
+Desktop: `npm run desktop:dev` → `apps/desktop/dist/webview.js` + `Electron`.
+
+## HostBridge
+
+El webview no llama `acquireVsCodeApi()` al importar. Cada app inyecta un bridge:
+
+- VS Code: `createVsCodeBridge()` / `createVsCodeHomeBridge()`
+- Electron: preload expone `acquireVsCodeApi()` con el mismo shape (`postMessage`)
 
 ## Mensajes — Home
 
-**Router host:** [`src/home/homeMessageRouter.ts`](../src/home/homeMessageRouter.ts)  
-**Router webview:** [`webview/home/homeController.ts`](../webview/home/homeController.ts)  
-**Tipos:** [`src/domain/homeProtocol.ts`](../src/domain/homeProtocol.ts) (simétrico a `protocol.ts`; HTML en [`homeHtml.ts`](../src/home/homeHtml.ts))
+**Router host:** [`apps/vscode/src/home/homeMessageRouter.ts`](../apps/vscode/src/home/homeMessageRouter.ts)  
+**Router webview:** [`packages/ui/src/home/homeController.ts`](../packages/ui/src/home/homeController.ts)  
+**Tipos:** [`packages/core/src/homeProtocol.ts`](../packages/core/src/homeProtocol.ts) (simétrico a `protocol.ts`; HTML en [`homeHtml.ts`](../apps/vscode/src/home/homeHtml.ts))
 
 | Webview → Host (`HomeFromWebview`) | Handler | Efecto principal |
 |-----------------------------------|---------|------------------|
@@ -50,20 +74,17 @@ Mapa para auditar flujos host ↔ webview. Actualizado tras segmentar `webview/h
 
 ## Mensajes — Editor
 
-**Listener webview (único):** [`webview/editor/editorController.ts`](../webview/editor/editorController.ts) → [`messaging/router.ts`](../webview/editor/messaging/router.ts)  
-**Router host:** [`src/editor/editorMessageRouter.ts`](../src/editor/editorMessageRouter.ts)  
-**Deps de sesión:** [`src/editor/editorSessionDeps.ts`](../src/editor/editorSessionDeps.ts)  
-**Shell provider:** [`src/editor/editorProvider.ts`](../src/editor/editorProvider.ts)  
-**Tipos:** [`src/domain/protocol.ts`](../src/domain/protocol.ts)
+**Listener webview (único):** [`packages/ui/src/editor/editorController.ts`](../packages/ui/src/editor/editorController.ts) → [`messaging/router.ts`](../packages/ui/src/editor/messaging/router.ts)  
+**Router host:** [`apps/vscode/src/editor/editorMessageRouter.ts`](../apps/vscode/src/editor/editorMessageRouter.ts)  
+**Tipos:** [`packages/core/src/protocol.ts`](../packages/core/src/protocol.ts)
 
 | Webview → Host (`WebviewToHost`) | Handler deps | Efecto |
 |----------------------------------|--------------|--------|
 | `edit` | `applyEdit` + `persistSoon` | Autosave cuerpo (debounced) |
-| `frontmatter` | `applyFrontmatter` + `persistSoon` | Patch YAML (title, icon, cover) — keys no editables se ignoran |
-| `review` / `publish` | `reviewOrPublish` | Wiki+workspace → Home; sidecar → PR flow; workflow `editor` → no-op |
-| `uploadImage` / `resolveImage` | `uploadImage` / `resolveImage` | Imágenes locales/wiki |
-| `threadCreate` | flush + persist + `threadCreate` | Nuevo hilo en PR |
-| `threadReply` / `threadResolve` / `threadsRefresh` | threads | Review threads |
+| `frontmatter` | `applyFrontmatter` + `persistSoon` | Patch YAML (title, icon, cover) |
+| `review` / `publish` | `reviewOrPublish` | Wiki+workspace → Home; sidecar → PR flow |
+| `uploadImage` / `resolveImage` | images | Imágenes locales/wiki |
+| `threadCreate` / `threadReply` / `threadResolve` / `threadsRefresh` | threads | Review threads |
 | `openUrl` | `openUrl` | Abrir PR en browser |
 
 | Host → Webview (`HostToWebview`) | Router webview → |
@@ -81,33 +102,6 @@ Mapa para auditar flujos host ↔ webview. Actualizado tras segmentar `webview/h
 
 Narrativa de producto + diagramas Mermaid: [FLOWS.md](FLOWS.md).
 
-### F1 — Autosave wiki
-
-1. Usuario escribe en Crepe → `onMarkdown` → `core/save.scheduleSave`
-2. Webview `edit` → host persiste documento + `saved` / `status`
-3. Host `onDidChangeTextDocument` → `setText` + `frontmatter` si cambio externo
-
-### F2 — Staging → Review (Home)
-
-1. Usuario marca borradores locales en Home
-2. `previewReview` → modal → `reviewBatch`
-3. Host `sendBatchToReview` → branch + PR + YAML `in_review` / `pr` / `reviewBranch`
-
-### F3 — Aprobar y Publicar
-
-1. Home `publishBatch` o PR abierto con approvals
-2. Host `publishBatch` (github) → merge PR → `stampPublishedLocal`
-
-### F4 — Wiki: Review/Publish desde editor
-
-1. Editor bar → `review` / `publish` con `pageKind === wiki`
-2. Host intercepta → `wikiHomeActions` → abre Home + staging
-
-### F5 — Inbox → thread en editor
-
-1. Home `openInbox` → abre `.md` + opcional `reviewContext` + `revealThread`
-2. Webview router → highlight snippet o rail de huérfanos
-
 ## Glosario
 
 | Término | Significado |
@@ -120,15 +114,14 @@ Narrativa de producto + diagramas Mermaid: [FLOWS.md](FLOWS.md).
 
 ## Convenciones de código auditable
 
-1. **Un listener por bus** — solo `homeController.ts` / `editorController.ts`; mounts solo DOM + `postMessage` saliente (`test/webview/messageListeners.ts`).
+1. **Un listener por bus** — solo `homeController.ts` / `editorController.ts`; mounts solo DOM + `postMessage` saliente.
 2. **`switch` exhaustivo** — `assertNever` en routers para nuevos tipos.
-3. **Puro en `domain/`** — sin `vscode` ni `document`.
-4. **Tests por dominio** — `test/editor.ts`, `test/homeController.ts`; evitar god-file único a largo plazo.
+3. **Puro en `packages/core`** — sin `vscode` ni `document`.
+4. **`packages/github`** — sin `vscode` (API + models). Orquestación UI queda en `apps/vscode`.
+5. **Tests** — `test/` en la raíz; imports `@slash-md/core`, `@slash-md/ui`, `apps/vscode/...`.
 
-## Pendiente (plan)
+## Pendiente (post monorepo)
 
-- [x] `src/editor/editorMessageRouter.ts` — extraer handler de `editorProvider.ts`
-- [x] `src/domain/homeProtocol.ts` — unificar tipos Home con `protocol.ts`
-- [x] Split `test/roundtrip.ts` en `test/domain/`, `test/github/`, `test/webview/`, `test/integration/`
-- [x] Regla: mounts editor solo DOM + `postMessage` saliente
-- [x] Partir `cover.ts` / `icon.ts` / `threadChrome.ts` → `coverModel`, `coverMenu`, `iconPicker`, `threadPopover`, `threadRail`
+- Puertos `FsPort` / `Auth` / `HostUi` en batch review/publish y mover orquestación a `packages/github`
+- Auth OAuth en `apps/desktop`
+- Empaquetado Electron (electron-builder) — fuera del skeleton

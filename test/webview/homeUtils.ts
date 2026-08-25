@@ -1,12 +1,15 @@
-import type { HomeTreeNode } from "../../src/home/homeTree";
+import type { HomeTreeNode } from "@slash-md/core/homeTypes";
 import {
   collectIndex,
   filterTreeNodes,
   findFile,
   findFolder,
+  flattenLibrary,
   parentSection,
-} from "../../webview/home/utils/tree";
-import { relativeTime, shortDraftPath } from "../../webview/home/utils/format";
+  rankLibraryHits,
+  revealTrail,
+} from "../../packages/ui/src/home/utils/tree";
+import { relativeTime, shortDraftPath } from "../../packages/ui/src/home/utils/format";
 import type { SuiteCtx } from "../harness";
 
 export function runHomeUtilsSuite(ctx: SuiteCtx): void {
@@ -33,6 +36,15 @@ export function runHomeUtilsSuite(ctx: SuiteCtx): void {
     assert(collectIndex(roots).length === 3, "collectIndex flattens files");
     assert(parentSection("docs/guides/intro.md") === "docs/guides", "parentSection returns folder path");
     assert(parentSection("docs/readme.md") === undefined, "parentSection shallow path is undefined");
+
+    const hits = flattenLibrary(roots);
+    assert(hits.some((hit) => hit.kind === "folder" && hit.path === "docs/guides"), "flattenLibrary includes folders");
+    assert(hits.find((hit) => hit.path === "docs/guides/intro.md")?.trail === "Guides", "flattenLibrary trail is parent titles");
+    const ranked = rankLibraryHits(hits, "setup");
+    assert(ranked[0]?.title === "Setup Guide", "rankLibraryHits prefers title match");
+    assert(rankLibraryHits(hits, "").length === 0, "rankLibraryHits empty query is empty");
+    assert(JSON.stringify(revealTrail("docs/wiki/acturo.md", "file")) === JSON.stringify(["docs", "docs/wiki"]), "revealTrail file expands ancestors");
+    assert(JSON.stringify(revealTrail("docs/wiki", "folder")) === JSON.stringify(["docs", "docs/wiki"]), "revealTrail folder includes self");
   }
 
   {

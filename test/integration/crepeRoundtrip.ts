@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { createSlashCrepe } from "../../webview/editor/core/crepe";
-import { normalizeMarkdown } from "../../src/domain/markdown";
+import { createSlashCrepe } from "../../packages/ui/src/editor/core/crepe";
+import { normalizeMarkdown } from "@slash-md/core/markdown";
 import type { SuiteCtx } from "../harness";
 
 export async function runCrepeRoundtripSuite(ctx: SuiteCtx): Promise<void> {

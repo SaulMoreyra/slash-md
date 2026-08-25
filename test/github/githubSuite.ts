@@ -1,19 +1,19 @@
-import { setFrontmatterField } from "../../src/domain/frontmatter";
-import { monthlyReviewBranch, parseReviewerLogins } from "../../src/github/reviewBatch";
+import { setFrontmatterField } from "@slash-md/core/frontmatter";
+import { monthlyReviewBranch, parseReviewerLogins } from "../../apps/vscode/src/github/reviewBatch";
 import {
   loteMarkdownPaths,
   resolvePublishPr,
   stampPublishedLocal,
-} from "../../src/github/batchPublishModel";
-import { collectMergeBlockers } from "../../src/github/publish";
-import { reviewThreadTarget } from "../../src/editor/threadGate";
+} from "@slash-md/github/batchPublishModel";
+import { collectMergeBlockers } from "../../apps/vscode/src/github/publish";
+import { reviewThreadTarget } from "@slash-md/core/threadGate";
 import {
   flattenInboxItems,
   isInboxMarkdownPath,
   keepInboxPull,
   snippetFromLines,
   trimExcerpt,
-} from "../../src/github/inboxModel";
+} from "@slash-md/github/inboxModel";
 import type { SuiteCtx } from "../harness";
 
 export function runGithubSuite(ctx: SuiteCtx): void {

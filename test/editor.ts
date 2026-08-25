@@ -1,12 +1,12 @@
-import { normalizeMarkdown } from "../src/domain/markdown";
-import { createEditorState, readBoot, wantCommentsForBoot } from "../webview/editor/context";
-import { handleImageMessage } from "../webview/editor/core/images";
-import type { EditorContext } from "../webview/editor/context";
-import { isCoverColor, coverColorHex } from "../webview/editor/hero/cover";
-import { filterEmoji } from "../webview/editor/hero/emojiCatalog";
-import { placeThreads } from "../webview/editor/plugins/commentsPlugin";
+import { normalizeMarkdown } from "@slash-md/core/markdown";
+import { createEditorState, readBoot, wantCommentsForBoot } from "../packages/ui/src/editor/context";
+import { handleImageMessage } from "../packages/ui/src/editor/core/images";
+import type { EditorContext } from "../packages/ui/src/editor/context";
+import { isCoverColor, coverColorHex } from "../packages/ui/src/editor/hero/cover";
+import { filterEmoji } from "../packages/ui/src/editor/hero/emojiCatalog";
+import { placeThreads } from "../packages/ui/src/editor/plugins/commentsPlugin";
 
-function mockBoot(): import("../src/domain/protocol").WebviewBoot {
+function mockBoot(): import("@slash-md/core/protocol").WebviewBoot {
   return {
     text: "# Hello\n",
     frontmatter: { title: "Hello" },

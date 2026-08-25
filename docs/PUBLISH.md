@@ -1,5 +1,7 @@
 # Publishing to VS Code Marketplace
 
+The extension lives in **`apps/vscode/`**. Root `npm run package` delegates to that workspace.
+
 ## Prerequisites
 
 1. A **Visual Studio Marketplace publisher** — create one at <https://marketplace.visualstudio.com/manage/createpublisher> (this repo uses `saulmoreyra`).
@@ -8,8 +10,8 @@
 
 ## Pre-publish checklist
 
-- [x] `package.json` has `publisher`, `license`, `icon`, `repository`, `homepage`, `categories`, `keywords`, and a clear `description`
-- [x] `media/slash.png` exists (128×128)
+- [x] `apps/vscode/package.json` has `publisher`, `license`, `icon`, `repository`, `homepage`, `categories`, `keywords`, and a clear `description`
+- [x] `apps/vscode/media/slash.png` exists (128×128)
 - [x] `README.md` has install instructions and feature summary (add a product GIF/screenshot after smoke test if desired)
 - [x] `CHANGELOG.md` exists
 - [x] `LICENSE` (MIT) exists
@@ -21,23 +23,37 @@
 
 ## Build the VSIX
 
+From the **repo root**:
+
 ```bash
 npm install
-npm run package          # → slash-md-0.1.0.vsix
+npm run package          # → apps/vscode/slash-md-0.1.0.vsix
 # or:
 npm run package:vsix
 ```
 
-Both run `npx @vscode/vsce package --no-dependencies` (after `vscode:prepublish` → build).
+Or from the extension package:
+
+```bash
+cd apps/vscode
+npm run package          # runs vsce package --no-dependencies after build
+```
+
+`vscode:prepublish` builds `dist/extension.js`, `dist/webview.js`, and `dist/home.js` (UI sourced from `packages/ui`).
 
 ## Test the VSIX locally
 
-1. In Cursor / VS Code: **Extensions** → `⋯` → **Install from VSIX…** → pick the `.vsix`.
+1. In Cursor / VS Code: **Extensions** → `⋯` → **Install from VSIX…** → pick the `.vsix` under `apps/vscode/`.
 2. Reload. Open a docs repo → Init → Home → New → Review / Publish.
+
+## Debug from source
+
+F5 uses `--extensionDevelopmentPath=${workspaceFolder}/apps/vscode` (see `.vscode/launch.json`).
 
 ## Publish
 
 ```bash
+cd apps/vscode
 npx @vscode/vsce login saulmoreyra   # paste the PAT once
 npx @vscode/vsce publish             # uploads the current version
 ```
@@ -45,6 +61,7 @@ npx @vscode/vsce publish             # uploads the current version
 Or bump + publish in one step (only after the checklist is fully checked):
 
 ```bash
+cd apps/vscode
 npx @vscode/vsce publish patch
 ```
 
@@ -60,6 +77,7 @@ npx @vscode/vsce publish patch
 ## Updating
 
 ```bash
+cd apps/vscode
 npm version patch
 npm run package
 npx @vscode/vsce publish
@@ -72,3 +90,7 @@ npx @vscode/vsce unpublish saulmoreyra.slash-md
 ```
 
 Use with care — users lose the extension.
+
+## Desktop (not Marketplace)
+
+`npm run desktop:dev` opens the Electron skeleton with the shared editor UI. It is not published with the VSIX.

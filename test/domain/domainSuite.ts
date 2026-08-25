@@ -1,30 +1,31 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { setFrontmatterField, splitFrontmatter } from "../../src/domain/frontmatter";
-import { pageIcon, normalizePageIcon } from "../../src/domain/pageIcon";
+import { setFrontmatterField, splitFrontmatter } from "@slash-md/core/frontmatter";
+import { pageIcon, normalizePageIcon } from "@slash-md/core/pageIcon";
 import {
   aggregateEditors,
   buildEditorsPayload,
   formatEditedAgo,
   githubLoginFromEmail,
   parseGitAuthorLog,
-} from "../../src/domain/fileEditors";
-import { rewriteLinksForMove, rewriteLinksTo } from "../../src/domain/links";
+} from "@slash-md/core/fileEditors";
+import { rewriteLinksForMove, rewriteLinksTo } from "@slash-md/core/links";
 import {
   referencedImages,
   sanitizeImageName,
   uniqueImageRepoPath,
-} from "../../src/domain/images";
+} from "@slash-md/core/images";
 import {
   reviewContextBannerText,
   shouldShowReviewContextBanner,
-} from "../../src/domain/reviewContext";
+} from "@slash-md/core/reviewContext";
+import { groupHomeLevel } from "@slash-md/core/homeTree";
 import {
   contentPathPrefix,
   imageMarkdownSrc,
   isUnderContentPath,
   normalizeContentPathInput,
-} from "../../src/domain/paths";
+} from "@slash-md/core/paths";
 import {
   humanizeTemplateId,
   isTemplateRepoPath,
@@ -33,10 +34,10 @@ import {
   resolveTemplatesPath,
   templateIdFromFilename,
   workspaceTemplatePicks,
-} from "../../src/domain/templates";
-import { parsePrNumber, reviewThreadTarget } from "../../src/editor/threadGate";
-import { codeFenceTags, codeLanguages } from "../../webview/editor/plugins/languages";
-import { slashItemsMatching } from "../../webview/editor/plugins/slash";
+} from "@slash-md/core/templates";
+import { parsePrNumber, reviewThreadTarget } from "@slash-md/core/threadGate";
+import { codeFenceTags, codeLanguages } from "../../packages/ui/src/editor/plugins/languages";
+import { slashItemsMatching } from "../../packages/ui/src/editor/plugins/slash";
 import type { SuiteCtx } from "../harness";
 
 export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
@@ -65,7 +66,7 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
       tags.every((tag) => tag.length > 0 && !/[\s`]/.test(tag)),
       "fence tags are single tokens",
     );
-    const gallery = await readFile(path.join(root, "templates/gallery.md"), "utf8");
+    const gallery = await readFile(path.join(root, "apps/vscode/templates/gallery.md"), "utf8");
     const missing = tags.filter((tag) => !gallery.includes("```" + tag + "\n"));
     assert(
       missing.length === 0,
@@ -308,6 +309,38 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   assert(normalizeContentPathInput("docs/") === "docs", "normalize docs/");
   assert(contentPathPrefix(".") === "", "prefix . is empty");
   assert(contentPathPrefix("docs") === "docs", "prefix docs");
+  {
+    const acturo = [
+      "README.md",
+      "docs/AGENTS.md",
+      "docs/architecture.md",
+      "docs/wiki/acturo.md",
+      "docs/wiki/index.md",
+      "docs/prds-fase-1-mvp/01-register.md",
+      "docs/prds-fase-1-mvp/index.md",
+      "docs/prds-fase-2/index.md",
+      "docs/prds-fase-3/index.md",
+      "docs/prds-luego/index.md",
+    ];
+    const root = groupHomeLevel("", acturo);
+    assert(!root.folders.includes("/docs"), "repo-root wiki does not prefix folders with /");
+    assert(root.folders.includes("docs"), "repo-root wiki lists docs");
+    assert(root.files.includes("README.md"), "repo-root wiki lists README");
+    const fromDot = groupHomeLevel(".", acturo);
+    assert(fromDot.folders.includes("docs") && !fromDot.folders.includes("/docs"), "dot dir groups like empty");
+    const docs = groupHomeLevel("docs", acturo);
+    assert(docs.files.includes("docs/AGENTS.md"), "docs root lists markdown");
+    assert(docs.folders.includes("docs/wiki"), "docs lists wiki");
+    assert(docs.folders.includes("docs/prds-fase-1-mvp"), "docs lists prds-fase-1-mvp");
+    assert(docs.folders.includes("docs/prds-fase-2"), "docs lists prds-fase-2");
+    assert(docs.folders.includes("docs/prds-fase-3"), "docs lists prds-fase-3");
+    assert(docs.folders.includes("docs/prds-luego"), "docs lists prds-luego");
+    const wiki = groupHomeLevel("docs/wiki", acturo);
+    assert(wiki.files.includes("docs/wiki/acturo.md"), "wiki folder lists pages");
+    assert(wiki.folders.length === 0, "wiki has no nested folders");
+    const nested = groupHomeLevel("docs", acturo.filter((path) => path.startsWith("docs/")));
+    assert(nested.folders.length === 5, "contentPath docs still lists every child folder");
+  }
   assert(isUnderContentPath("guide.md", "."), "root allows top-level md");
   assert(isUnderContentPath("producto/a.md", "."), "root allows nested md");
   assert(isUnderContentPath("docs/a.md", "docs"), "docs prefix match");

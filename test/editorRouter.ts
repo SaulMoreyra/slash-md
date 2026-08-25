@@ -1,6 +1,6 @@
-import type { FrontmatterKey } from "../src/domain/protocol";
-import { routeEditorMessage } from "../src/editor/editorMessageRouter";
-import type { EditorSessionDeps, EditorSessionState } from "../src/editor/editorSessionDeps";
+import type { FrontmatterKey } from "@slash-md/core/protocol";
+import { routeEditorMessage } from "../apps/vscode/src/editor/editorMessageRouter";
+import type { EditorSessionDeps, EditorSessionState } from "../apps/vscode/src/editor/editorSessionDeps";
 
 function mockDeps(overrides: Partial<EditorSessionDeps> = {}): {
   deps: EditorSessionDeps;

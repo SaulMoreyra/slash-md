@@ -3,8 +3,8 @@ import path from "node:path";
 import type { SuiteCtx } from "../harness";
 
 const ALLOWED = new Set([
-  "webview/home/homeController.ts",
-  "webview/editor/editorController.ts",
+  "packages/ui/src/home/homeController.ts",
+  "packages/ui/src/editor/editorController.ts",
 ]);
 
 function walk(dir: string, acc: string[] = []): string[] {
@@ -22,7 +22,7 @@ function walk(dir: string, acc: string[] = []): string[] {
 
 /** Ensures only controllers register host message listeners in active webview bundles. */
 export function runMessageListenerSuite(ctx: SuiteCtx): void {
-  const webviewRoot = path.join(ctx.root, "webview");
+  const webviewRoot = path.join(ctx.root, "packages/ui/src");
   const files = walk(webviewRoot).filter(
     (file) =>
       file.includes(`${path.sep}home${path.sep}`) || file.includes(`${path.sep}editor${path.sep}`),

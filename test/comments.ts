@@ -1,9 +1,9 @@
 import { editorViewCtx } from "@milkdown/kit/core";
-import { findSnippetInText, normalizeSnippet } from "../src/domain/commentAnchor";
-import type { ReviewThread } from "../src/domain/protocol";
-import { placeThreads } from "../webview/editor/plugins/commentsPlugin";
-import { createSlashCrepe } from "../webview/editor/core/crepe";
-import { normalizeMarkdown } from "../src/domain/markdown";
+import { findSnippetInText, normalizeSnippet } from "@slash-md/core/commentAnchor";
+import type { ReviewThread } from "@slash-md/core/protocol";
+import { placeThreads } from "../packages/ui/src/editor/plugins/commentsPlugin";
+import { createSlashCrepe } from "../packages/ui/src/editor/core/crepe";
+import { normalizeMarkdown } from "@slash-md/core/markdown";
 
 function fakeThread(partial: Partial<ReviewThread> & { id: string; snippet: string }): ReviewThread {
   return {

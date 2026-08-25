@@ -1,7 +1,7 @@
-import type { HomeContext, HomeDom } from "../webview/home/context";
-import { createHomeState, setRefreshBusy } from "../webview/home/context";
-import { handleHomeMessage } from "../webview/home/homeController";
-import type { HomeTreePayload } from "../src/home/homeTree";
+import type { HomeContext, HomeDom } from "../packages/ui/src/home/context";
+import { createHomeState, setRefreshBusy } from "../packages/ui/src/home/context";
+import { handleHomeMessage } from "../packages/ui/src/home/homeController";
+import type { HomeTreePayload } from "@slash-md/core/homeTypes";
 
 function mockDom(): HomeDom {
   const el = (tag: string) => {

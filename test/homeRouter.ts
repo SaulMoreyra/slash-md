@@ -1,5 +1,5 @@
-import type { HomePanelDeps } from "../src/home/homePanelDeps";
-import { routeHomeMessage } from "../src/home/homeMessageRouter";
+import type { HomePanelDeps } from "../apps/vscode/src/home/homePanelDeps";
+import { routeHomeMessage } from "../apps/vscode/src/home/homeMessageRouter";
 
 export async function runHomeRouterTests(assert: (ok: boolean, message: string) => void): Promise<void> {
   const calls: string[] = [];

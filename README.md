@@ -58,12 +58,17 @@ Developers open the `.md` files on GitHub or in their IDE. Optional GitHub Pages
 
 ## Development
 
+Monorepo (`apps/` + `packages/`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```bash
 npm install
-npm run build
+npm run build          # VS Code extension bundles → apps/vscode/dist
 npm test
-npm run package    # → slash-md-<version>.vsix
+npm run package        # → apps/vscode/slash-md-<version>.vsix
+npm run desktop:dev    # Electron skeleton (shared editor UI)
 ```
+
+F5 / debug uses `--extensionDevelopmentPath=apps/vscode`.
 
 Marketplace packaging checklist: [docs/PUBLISH.md](docs/PUBLISH.md).
 
