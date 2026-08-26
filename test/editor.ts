@@ -1,3 +1,4 @@
+import { emptyFrontmatter } from "@slash-md/core/frontmatter";
 import { normalizeMarkdown } from "@slash-md/core/markdown";
 import { createEditorState, readBoot, wantCommentsForBoot } from "../packages/ui/src/editor/context";
 import { handleImageMessage } from "../packages/ui/src/editor/core/images";
@@ -5,14 +6,16 @@ import type { EditorContext } from "../packages/ui/src/editor/context";
 import { isCoverColor, coverColorHex } from "../packages/ui/src/editor/hero/cover";
 import { filterEmoji } from "../packages/ui/src/editor/hero/emojiCatalog";
 import { placeThreads } from "../packages/ui/src/editor/plugins/commentsPlugin";
+import { promoteLiteralTaskItems } from "../packages/ui/src/editor/plugins/taskList";
 
 function mockBoot(): import("@slash-md/core/protocol").WebviewBoot {
   return {
     text: "# Hello\n",
-    frontmatter: { title: "Hello" },
+    frontmatter: { ...emptyFrontmatter(), title: "Hello" },
     imageMap: { "docs/a.png": "vscode-webview://x/existing.png" },
     init: {
       type: "init",
+      title: "Hello",
       path: "docs/test.md",
       kind: "draft",
       label: "draft",
@@ -33,7 +36,12 @@ function mockEditorContext(): EditorContext {
     wantComments: true,
     state: createEditorState(mockBoot()),
     handles: {
-      bar: { applyStatus: () => {}, onSaved: () => {}, persist: () => {} },
+      bar: {
+        applyStatus: () => {},
+        onSaved: () => {},
+        persist: () => {},
+        onHostMessage: () => {},
+      },
       chrome: {
         showThread: () => {},
         setOrphans: () => {},
@@ -43,6 +51,13 @@ function mockEditorContext(): EditorContext {
         destroy: () => {},
       },
       reviewContext: { show: () => {}, hide: () => {} },
+      pageChrome: {
+        bar: { onHostMessage: () => {} },
+        frontmatter: { apply: () => {} },
+        icon: { apply: () => {} },
+        cover: { apply: () => {}, onHostMessage: () => {} },
+        edited: { apply: () => {}, onHostMessage: () => {} },
+      },
     },
     timers: {},
     post: () => {},
@@ -82,6 +97,11 @@ export function runEditorTests(assert: (ok: boolean, message: string) => void): 
       [
         {
           id: "t1",
+          path: "docs/test.md",
+          line: 1,
+          startLine: 1,
+          diffSide: "RIGHT",
+          url: "https://github.com/example/pr/1",
           snippet: "hello",
           isResolved: false,
           comments: [],
@@ -89,5 +109,23 @@ export function runEditorTests(assert: (ok: boolean, message: string) => void): 
       ],
     );
     assert(placements.length === 1, "placeThreads returns placement for snippet");
+  }
+
+  {
+    const empty = {
+      type: "listItem",
+      checked: null as boolean | null,
+      children: [{ type: "paragraph", children: [{ type: "text", value: "[ ]" }] }],
+    };
+    const withText = {
+      type: "listItem",
+      checked: null as boolean | null,
+      children: [{ type: "paragraph", children: [{ type: "text", value: "[x] done" }] }],
+    };
+    promoteLiteralTaskItems(empty);
+    promoteLiteralTaskItems(withText);
+    assert(empty.checked === false, "bare [ ] list item becomes unchecked task");
+    assert(withText.checked === true, "[x] prefix becomes checked task");
+    assert(withText.children[0]!.children[0]!.value === "done", "[x] prefix is stripped from task text");
   }
 }

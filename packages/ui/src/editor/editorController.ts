@@ -6,7 +6,7 @@ import { mountFrontmatter } from "./chrome/frontmatter";
 import { mountReviewContext } from "./chrome/reviewContext";
 import type { EditorContext } from "./context";
 import { createEditorState, readBoot, wantCommentsForBoot } from "./context";
-import { createSlashCrepe, setCrepeMarkdown } from "./core/crepe";
+import { createSlashCrepe } from "./core/crepe";
 import { proxyImage, uploadImage } from "./core/images";
 import { flushPendingSave, flushMarkdown, scheduleSave } from "./core/save";
 import { mountCover } from "./hero/cover";

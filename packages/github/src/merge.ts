@@ -1,3 +1,4 @@
+import { wikiSyncStatusFromPull } from "@slash-md/core/conflictModel";
 import {
   GithubApiError,
   type CheckRun,
@@ -12,6 +13,8 @@ import {
   listPullReviews,
   mergePull,
 } from "./api";
+
+export { wikiSyncStatusFromPull };
 
 export class PublishBlocked extends Error {
   constructor(readonly reasons: string[]) {

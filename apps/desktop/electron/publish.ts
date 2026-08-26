@@ -1,15 +1,14 @@
 import { stampDocMeta } from "@slash-md/core/docMeta";
-import { dropReviewFields, loteMarkdownPaths, parseReviewPage, resolvePublishPr } from "@slash-md/github/batchPublishModel";
+import { dropReviewFields, loteMarkdownPaths } from "@slash-md/github/batchPublishModel";
 import { getPull, listPullFiles } from "@slash-md/github/api";
 import { loadMergeBlockers, mergeOpenPull, PublishBlocked } from "@slash-md/github/merge";
 import { labeledTitle } from "@slash-md/core/messaging";
 import { posixBasename, posixNormalize } from "@slash-md/core/paths";
-import { resolveTemplatesPath } from "@slash-md/core/templates";
 import { currentAuth, resolveToken } from "./auth";
-import { getContentConfig, readSlashmd, readText, repoFile, writeText, fileExists } from "./config";
+import { getContentConfig, readText, repoFile, writeText } from "./config";
 import { currentBranch, isGitWorkspace, refExists, runGit, switchToBranch } from "./git";
 import { getWorkspaceRoot, readStaging, writeStaging } from "./session";
-import { listInReviewPages, listLocalMarkdown } from "./workspace";
+import { getPublicationState } from "./publication";
 
 function requireRoot(): string {
   const root = getWorkspaceRoot();
@@ -41,36 +40,15 @@ export async function publishBatch(preferredPr?: number): Promise<{
     throw new Error("Sign in to GitHub to publish.");
   }
 
-  const slashmd = await readSlashmd(root);
-  const files = await listLocalMarkdown(root, config.contentPath, resolveTemplatesPath(config.contentPath, slashmd.templatesPath));
-  const inReview = await listInReviewPages(root, config.contentPath, files);
-  const selected = readStaging(root).map(posixNormalize).filter(Boolean);
-  const selectedPages = [];
-  for (const filePath of selected) {
-    try {
-      const text = await readText(repoFile(root, filePath));
-      selectedPages.push(parseReviewPage(filePath, text, labeledTitle(text, posixBasename(filePath))));
-    } catch {
-      // skip
-    }
+  const { publication } = await getPublicationState();
+  if (!publication) {
+    throw new Error("No mounted publication. Switch to a pub/ branch first.");
   }
-  const resolved = preferredPr
-    ? { kind: "one" as const, pr: preferredPr }
-    : resolvePublishPr({
-        selectedWithPr: selectedPages.map((page) => page.pr!).filter(Boolean),
-        scannedPrs: inReview.map((page) => page.pr),
-      });
-  if (resolved.kind === "none") {
+
+  const prNumber = preferredPr ?? publication.prNumber;
+  if (!prNumber) {
     throw new Error("No in-review pull request to publish.");
   }
-  if (resolved.kind === "many") {
-    throw new Error(`Multiple in-review PRs (${resolved.prs.join(", ")}). Open one lote at a time.`);
-  }
-  const prNumber = resolved.pr;
-  const pages = uniquePages([
-    ...inReview.filter((page) => page.pr === prNumber),
-    ...selectedPages.filter((page) => page.pr === prNumber),
-  ]);
 
   let pr = await getPull(token, config, prNumber);
   const alreadyMerged = Boolean(pr.merged || pr.merged_at);
@@ -86,9 +64,13 @@ export async function publishBatch(preferredPr?: number): Promise<{
     pr = result.pr;
   }
 
-  await syncDefaultBranch(root, token, config.defaultBranch, pages.find((page) => page.reviewBranch)?.reviewBranch || pr.head.ref);
+  const pubBranch = publication.branch;
 
-  let prFiles: string[] = [];
+  await syncDefaultBranch(root, token, config.defaultBranch, pubBranch);
+
+  await deleteLocalPubBranch(root, pubBranch);
+
+  let prFiles: string[];
   try {
     prFiles = (await listPullFiles(token, config, prNumber))
       .filter((file) => file.status !== "removed")
@@ -96,36 +78,31 @@ export async function publishBatch(preferredPr?: number): Promise<{
   } catch {
     prFiles = [];
   }
-  const lote = loteMarkdownPaths(
-    config.contentPath,
-    pages.map((page) => page.path),
-    prFiles,
-  );
-  const stamped = await stampLote(root, lote);
-  const stampedSet = new Set(stamped);
+  const paths = loteMarkdownPaths(config.contentPath, [], prFiles);
+
+  const selected = readStaging(root).map(posixNormalize).filter(Boolean);
+  const pathSet = new Set(paths);
   writeStaging(
     root,
-    readStaging(root).filter((item) => !stampedSet.has(posixNormalize(item))),
+    selected.filter((item) => !pathSet.has(item)),
   );
 
-  return { prNumber, prUrl: pr.html_url, paths: stamped, alreadyMerged };
+  return { prNumber, prUrl: pr.html_url, paths, alreadyMerged };
 }
 
-async function stampLote(root: string, paths: string[]): Promise<string[]> {
-  const stamped: string[] = [];
-  for (const filePath of paths) {
-    const abs = repoFile(root, filePath);
-    if (!(await fileExists(abs))) {
-      continue;
-    }
-    const text = await readText(abs);
-    const next = dropReviewFields(stampDocMeta(text, { status: "published" }));
-    if (next !== text) {
-      await writeText(abs, next);
-    }
-    stamped.push(filePath);
+async function deleteLocalPubBranch(cwd: string, branch: string): Promise<void> {
+  if (!(await refExists(cwd, `refs/heads/${branch}`))) {
+    return;
   }
-  return stamped;
+  try {
+    await runGit(["branch", "-d", branch], { cwd });
+  } catch {
+    try {
+      await runGit(["branch", "-D", branch], { cwd });
+    } catch {
+      // branch may already be gone
+    }
+  }
 }
 
 async function syncDefaultBranch(
@@ -158,20 +135,6 @@ async function syncDefaultBranch(
     }
   }
   await runGit(["pull", "--ff-only", "origin", defaultBranch], { cwd, token });
-}
-
-function uniquePages<T extends { path: string }>(pages: T[]): T[] {
-  const seen = new Set<string>();
-  const out: T[] = [];
-  for (const page of pages) {
-    const filePath = posixNormalize(page.path);
-    if (seen.has(filePath)) {
-      continue;
-    }
-    seen.add(filePath);
-    out.push({ ...page, path: filePath });
-  }
-  return out;
 }
 
 export async function publishPersonal(repoPath: string): Promise<{ url: string }> {

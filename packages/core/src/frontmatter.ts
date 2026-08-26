@@ -8,6 +8,8 @@ export const FRONTMATTER_KEYS = [
   "coverPosition",
   "pr",
   "reviewBranch",
+  "tags",
+  "people",
 ] as const;
 export type FrontmatterKey = (typeof FRONTMATTER_KEYS)[number];
 
@@ -16,10 +18,23 @@ export type FrontmatterFields = Record<FrontmatterKey, string>;
 const FENCE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
 /** Keys that should be removed from YAML when set to empty. */
-const DROP_WHEN_EMPTY = new Set<FrontmatterKey>(["icon", "cover", "coverPosition", "pr", "reviewBranch"]);
+const DROP_WHEN_EMPTY = new Set<FrontmatterKey>([
+  "icon",
+  "cover",
+  "coverPosition",
+  "pr",
+  "reviewBranch",
+  "tags",
+  "people",
+]);
 
 /** YAML numbers (e.g. `pr: 42`), not quoted strings. */
 const BARE_NUMBER_KEYS = new Set<FrontmatterKey>(["pr"]);
+
+/** Keys stored as flow lists in YAML; in-memory form is comma-separated. */
+const LIST_KEYS = new Set<FrontmatterKey>(["tags", "people"]);
+
+const LOGIN_RE = /^[A-Za-z0-9-]+$/;
 
 export function emptyFrontmatter(): FrontmatterFields {
   return {
@@ -32,7 +47,74 @@ export function emptyFrontmatter(): FrontmatterFields {
     coverPosition: "",
     pr: "",
     reviewBranch: "",
+    tags: "",
+    people: "",
   };
+}
+
+/** Split a frontmatter list field into items (comma-separated or flow list). */
+export function parseList(value: string): string[] {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const flow = trimmed.match(/^\[([\s\S]*)\]$/);
+  const raw = flow ? flow[1] : trimmed;
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const part of raw.split(",")) {
+    const item = unquote(part.trim());
+    if (!item) {
+      continue;
+    }
+    const key = item.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+/** Canonical comma-separated form for list fields. */
+export function formatList(items: string[]): string {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of items) {
+    const item = raw.trim();
+    if (!item) {
+      continue;
+    }
+    const key = item.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(item);
+  }
+  return out.join(", ");
+}
+
+/**
+ * Normalize GitHub logins: strip @, dedupe case-insensitively, keep valid logins only.
+ */
+export function parsePeople(value: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of parseList(value)) {
+    const login = raw.replace(/^@/, "").trim();
+    if (!login || !LOGIN_RE.test(login)) {
+      continue;
+    }
+    const key = login.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(login);
+  }
+  return out;
 }
 
 export function splitFrontmatter(markdown: string): {
@@ -101,7 +183,11 @@ function parseFields(inner: string): FrontmatterFields {
         continue;
       }
       const value = line.slice(line.indexOf(":") + 1).trim();
-      fields[key] = unquote(value);
+      if (LIST_KEYS.has(key)) {
+        fields[key] = formatList(parseList(value));
+      } else {
+        fields[key] = unquote(value);
+      }
     }
   }
   return fields;
@@ -115,9 +201,23 @@ function formatYamlValue(key: FrontmatterKey, value: string): string {
   if (value === "") {
     return "";
   }
+  if (LIST_KEYS.has(key)) {
+    const items = key === "people" ? parsePeople(value) : parseList(value);
+    if (items.length === 0) {
+      return "[]";
+    }
+    return `[${items.map((item) => formatFlowItem(item)).join(", ")}]`;
+  }
   if (BARE_NUMBER_KEYS.has(key) && /^\d+$/.test(value)) {
     return value;
   }
+  if (/[:#{}[\],&*?]|^\s|\s$/.test(value) || /^(true|false|null|\d+)$/i.test(value)) {
+    return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  }
+  return value;
+}
+
+function formatFlowItem(value: string): string {
   if (/[:#{}[\],&*?]|^\s|\s$/.test(value) || /^(true|false|null|\d+)$/i.test(value)) {
     return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
   }

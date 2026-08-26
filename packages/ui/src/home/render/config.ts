@@ -1,4 +1,4 @@
-import type { SlashmdFile } from "../../src/config/slashmdConfig";
+import type { SlashmdFile } from "@slash-md/core/configTypes";
 import type { HomeContext } from "../context";
 import { chip } from "../dom/chip";
 

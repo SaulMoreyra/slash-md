@@ -1,0 +1,69 @@
+---
+description: Folder-per-component conventions and JSX antipatterns for apps/desktop shared React components
+globs: apps/desktop/src/components/**/*
+alwaysApply: false
+---
+
+# Desktop shared React components
+
+## Folder-per-component
+
+Every shared component under `apps/desktop/src/components/` uses this layout:
+
+```
+ComponentName/
+  ComponentName.tsx          # thin presentational (or main export)
+  index.ts                   # public exports only
+  __specs__/ComponentName.spec.tsx   # preferred; co-located *.spec.tsx also OK
+  hooks/                     # ONLY when local orchestration / state logic is needed
+    useComponentNameController.ts
+  components/                # local presentational subparts (lists, menus, rows)
+```
+
+- Import as `…/components/ComponentName` (folder resolves via `index.ts`) — no `.tsx` suffix.
+- Icon barrel lives in `icons/` with `Icons.tsx` + `index.ts` re-exports; importers keep `…/components/icons`.
+- `ShortcutKbd` exports both `ShortcutKbd` and `shortcutLabel` from its `index.ts`.
+
+## When to add `hooks/useXController`
+
+Add a controller when the component owns:
+
+- Local UI state (menus open, active index, draft reply text)
+- Effects (keyboard nav, outside click, data fetch on mount)
+- Derived flags the view should branch on (`empty`, `loading`, `canSend`)
+
+The view calls **only** the controller and stays presentational. Expose `on*` handlers — not raw `setState`.
+
+## Antipatterns (fix these)
+
+Canonical detail + examples: **`desktop-react-antipatterns.mdc`** (applies to all `apps/desktop/src`).
+
+### 1. Heavy conditionals inside JSX
+
+**Bad:** nested ternaries / long `condition ? … : condition ? …` trees in the return.
+
+**Good:** early returns in a child (`ReviewPreviewBody`), boolean flags from the controller (`hasCover`, `empty`), or small helper components (`CoverBanner`, `ThreadReplyFooter`).
+
+### 2. Inline `.map()` in large JSX trees
+
+**Bad:** mapping hits/comments/swatches inline inside a 100+ line parent return.
+
+**Good:** dedicated list/item components under `components/` (`SearchHitItem`, `ThreadCommentList`, `CoverSwatchList`, `IconGrid`, `TreeNode`).
+
+Thin list shells that only map → item component (e.g. `Tree` → `TreeNode`) are fine.
+
+### 3. Oversized single-file components
+
+**Bad:** cover chrome + color menu + emoji picker + file upload all in one 250-line file.
+
+**Good:** segment into presentational subparts in the same folder (`CoverMenu`, `IconPicker`) and lift state into `useHeroChromeController`.
+
+## CrepeCanvas exception
+
+**Do not refactor** Milkdown `CrepeCanvas` internals or `packages/ui` vanilla DOM. When touching it: **move-only** into `CrepeCanvas/` (file + `index.ts`). No controller extraction, no Milkdown test harness unless the task explicitly requires it.
+
+## UI conventions (reminder)
+
+- Prefer HeroUI compounds + Tailwind; `onPress` not `onClick` for HeroUI `Button`.
+- User-facing copy via `t("…")` / `src/i18n/locales/`.
+- Follow `slash-md-desktop` and `react-list-screen-pattern` skills for screens; this rule covers **shared** `src/components/` only. Feature screens use `desktop-react-screens.mdc`.

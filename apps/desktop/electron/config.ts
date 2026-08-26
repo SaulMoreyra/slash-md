@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { type ContentConfig, type SlashmdFile, normalizeRepoMode, parseOwnerName } from "@slash-md/core/configTypes";
+import { RepoMode, type ContentConfig, type SlashmdFile, normalizeRepoMode, parseOwnerName } from "@slash-md/core/configTypes";
 import { contentPathPrefix, normalizeContentPathInput } from "@slash-md/core/paths";
 import { getWorkspaceRoot } from "./session";
 
@@ -53,7 +53,7 @@ export function parseSlashmd(raw: unknown): SlashmdFile {
   if (typeof rec.defaultBranch === "string" && rec.defaultBranch.trim()) {
     out.defaultBranch = rec.defaultBranch.trim();
   }
-  if (rec.mode === "personal" || rec.mode === "workspace") {
+  if (rec.mode === RepoMode.Personal || rec.mode === RepoMode.Workspace || rec.mode === RepoMode.Local) {
     out.mode = rec.mode;
   }
   if (Array.isArray(rec.sections)) {
@@ -96,6 +96,9 @@ export async function writeSlashmd(root: string, patch: SlashmdFile): Promise<Sl
   if (Array.isArray(patch.sections)) {
     next.sections = patch.sections;
   }
+  if (next.mode === RepoMode.Local) {
+    delete next.repo;
+  }
   await writeText(path.join(root, SLASHMD_FILENAME), `${JSON.stringify(next, null, 2)}\n`);
   return next;
 }
@@ -106,6 +109,22 @@ export async function getContentConfig(root?: string | null): Promise<ContentCon
     return undefined;
   }
   const file = await readSlashmd(workspace);
+  const mode = normalizeRepoMode(file.mode);
+  const contentPath = contentPathPrefix(normalizeContentPathInput(file.contentPath ?? "."));
+  const defaultBranch = file.defaultBranch?.trim() || "main";
+
+  if (mode === RepoMode.Local) {
+    // Local-only: .slashmd.json with mode local (no GitHub repo required).
+    return {
+      repo: "",
+      owner: "local",
+      name: "docs",
+      contentPath,
+      defaultBranch,
+      mode: RepoMode.Local,
+    };
+  }
+
   const repo = file.repo?.trim();
   if (!repo) {
     return undefined;
@@ -114,14 +133,13 @@ export async function getContentConfig(root?: string | null): Promise<ContentCon
   if (!parsed) {
     return undefined;
   }
-  const contentPath = contentPathPrefix(normalizeContentPathInput(file.contentPath ?? "docs"));
   return {
     repo,
     owner: parsed.owner,
     name: parsed.name,
     contentPath,
-    defaultBranch: file.defaultBranch?.trim() || "main",
-    mode: normalizeRepoMode(file.mode),
+    defaultBranch,
+    mode,
   };
 }
 

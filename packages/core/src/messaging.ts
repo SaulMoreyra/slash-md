@@ -1,6 +1,5 @@
 import { splitFrontmatter } from "./frontmatter";
 import { pageIcon } from "./pageIcon";
-import { BarKind, HostToWebview, WebviewToHost } from "./protocol";
 
 export type { BarKind, HostToWebview, WebviewToHost } from "./protocol";
 export { pageIcon };

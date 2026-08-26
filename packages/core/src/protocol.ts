@@ -19,7 +19,9 @@ export type FrontmatterKey =
   | "cover"
   | "coverPosition"
   | "pr"
-  | "reviewBranch";
+  | "reviewBranch"
+  | "tags"
+  | "people";
 
 export type FrontmatterFields = {
   title: string;
@@ -31,6 +33,8 @@ export type FrontmatterFields = {
   coverPosition: string;
   pr: string;
   reviewBranch: string;
+  tags: string;
+  people: string;
 };
 
 export type FileEditor = {

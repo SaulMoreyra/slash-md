@@ -7,7 +7,6 @@ import { runEditorRouterTests } from "./editorRouter";
 import { runGithubSuite } from "./github/githubSuite";
 import type { SuiteCtx } from "./harness";
 import { runHomeControllerTests } from "./homeController";
-import { runHomeRouterTests } from "./homeRouter";
 import { runCrepeRoundtripSuite } from "./integration/crepeRoundtrip";
 import { runHomeUtilsSuite } from "./webview/homeUtils";
 import { runMessageListenerSuite } from "./webview/messageListeners";
@@ -44,7 +43,6 @@ export async function run(): Promise<void> {
 
   runEditorTests(assert);
   await runEditorRouterTests(assert);
-  await runHomeRouterTests(assert);
   runHomeControllerTests(assert);
   await runCommentFixtures(assert);
   runHomeUtilsSuite(ctx);

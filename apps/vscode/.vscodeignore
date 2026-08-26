@@ -15,7 +15,6 @@ dist/test-*
 .DS_Store
 *.vsix
 !media/**
-!templates/**
 !LICENSE
 !CHANGELOG.md
 !README.md

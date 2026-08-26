@@ -92,8 +92,8 @@ export function flattenInboxItems(opts: {
       if (thread.diffSide === "LEFT") {
         continue;
       }
-      const path = thread.path ?? "";
-      if (!isInboxMarkdownPath(path, opts.contentPath)) {
+      const path = thread.path;
+      if (!path || !isInboxMarkdownPath(path, opts.contentPath)) {
         continue;
       }
       items.push({

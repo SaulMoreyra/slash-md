@@ -2,6 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import electron from "vite-plugin-electron";
 import renderer from "vite-plugin-electron-renderer";
 
@@ -17,6 +18,7 @@ const aliases = {
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     electron([
       {
         entry: path.join(root, "electron/main.ts"),

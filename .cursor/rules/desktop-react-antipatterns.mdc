@@ -1,0 +1,135 @@
+---
+description: Desktop React antipatterns — no heavy JSX conditionals, no inline maps, no oversized components; folder-per-component + controllers
+globs: apps/desktop/src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Desktop React antipatterns
+
+When editing `apps/desktop` React (`src/components`, `src/screens`), avoid these patterns. Prefer the folder layout and controllers documented in `desktop-react-components.mdc` and `desktop-react-screens.mdc`.
+
+## 1. Heavy conditionals inside JSX
+
+**Do not** nest long ternaries or multi-branch `condition ? … : condition ? …` trees inside a large `return`.
+
+**Do:**
+
+- Early returns in the view or a child
+- Boolean flags from `useXController` (`empty`, `loading`, `hasCover`, `needsInit`)
+- Small helper components for each branch (`DraftEmpty`, `ReviewPreviewBody`, `EditorMoreActions`)
+
+```tsx
+// Bad
+return (
+  <div>
+    {loading ? <Spinner /> : items.length === 0 ? <Empty /> : items.map(/* … */)}
+  </div>
+);
+
+// Good — flags / early return / child owns branches
+if (loading) return <Spinner />;
+if (empty) return <Empty />;
+return <ItemList items={items} />;
+```
+
+## 2. Inline `.map()` in large JSX trees
+
+**Do not** map lists (hits, drafts, comments, swatches, tree nodes, breadcrumbs) inline inside a 100+ line parent.
+
+**Do:** extract list and/or item components under the same feature folder’s `components/`.
+
+```tsx
+// Bad — map buried in parent return
+{drafts.map((d) => (
+  <Card key={d.id}>{/* lots of row UI */}</Card>
+))}
+
+// Good
+<DraftList drafts={drafts} onOpen={onOpen} />
+```
+
+Thin shells that only map → item component (`Tree` → `TreeNode`) are fine.
+
+## 3. Oversized single-file components
+
+**Do not** keep cover chrome + menus + pickers, or form state + effects + mode cards, in one large file.
+
+**Do:**
+
+- Folder-per-component: `Name/Name.tsx`, `index.ts`, `__specs__/`, optional `hooks/`, `components/`
+- Lift local orchestration into `hooks/useNameController.ts`
+- Keep screens thin: call only `useFeatureController`
+
+```
+Name/
+  Name.tsx
+  index.ts
+  __specs__/Name.spec.tsx
+  hooks/useNameController.ts   # when it owns state/effects/flags
+  components/                  # list/item/empty subparts
+```
+
+## 4. God controller / flat bag of fields
+
+**Do not** put page edit + threads + chrome/UI + keyboard + save in one 200+ line hook that returns 30+ flat fields.
+
+**Do:** split into **domain subhooks**; the screen controller only composes and returns **namespaced groups**:
+
+```ts
+export function useEditorController(props) {
+  const editor = useFormatter(...);
+  const threads = useThreads(...);
+  const comments = useComments({ ..., onThreadsRefresh: threads.onThreadsRefresh });
+  const chrome = useEditorChrome(...);
+  useKeyboardShortcuts({ onClose, editor, threads, comments, chrome });
+  return { editor: { ...editor, commentsOn: comments.commentsOn }, threads, comments, chrome };
+}
+```
+
+View: `const { editor, threads, comments, chrome } = useEditorController(props)`.
+
+## 5. Exporting raw `setState`
+
+**Do not** expose `setTitle`, `setOpenThread`, `setImageMap`, etc. to the screen.
+
+**Do:** read-only state values + descriptive `on*` handlers (`onTitleChange`, `onThreadOpen`, `onCoverUpload`, …). Domain hooks own IPC side-effects (upload, reply, resolve, review send) — not inline in the screen.
+
+```tsx
+// Bad
+onOpenThread={c.setOpenThread}
+onUpload={async (file) => { /* IPC + setImageMap in JSX */ }}
+
+// Good
+onOpenThread={threads.onThreadOpen}
+onUpload={editor.onImageUpload}
+```
+
+## 6. Cross-cutting keyboard / shortcuts
+
+**Do not** keep large Escape-cascade or Cmd/Ctrl+S `keydown` effects inline in the feature orchestrator.
+
+**Do:** extract `useKeyboardShortcuts` (or `useXShortcuts`) that receives the domain APIs it needs (`editor`, `threads`, `comments`, `chrome`, `onClose`). The orchestrator only calls the hook — it must not own the keydown body.
+
+## 7. Domain split inside a domain
+
+**Do not** grow a single “page” hook forever (title + save + comments gate + comment draft + …).
+
+**Do:** further segment when concerns diverge — e.g. `useFormatter` (document body/title/save/frontmatter/images) vs `useComments` (`commentsOn` + new-comment draft modal). **Threads ≠ new-comment draft**: existing thread list/open/reply/resolve stays in `useThreads`; starting a selection comment belongs in `useComments`.
+
+## 8. Magic / plain strings for status & modes
+
+**Do not** scatter string literals for save status, lifecycle, body CSS classes, or mode checks (`"in_review"`, `"workflow-workspace"`, `"personal"`).
+
+**Do:** use shared enums / `as const` maps in the feature (`screens/editor/enums.ts`, `screens/home/enums.ts`): `SaveStatus`, `LifecycleKind`, `ModalKind`, `NavKind`, `AccountMenuAction`, … Compare with enum members (`LifecycleKind.InReview`, `ModalKind.Init`); i18n keys can still interpolate the enum’s string value (`editor.lifecycle.${kind}`). Prefer importing shared types from `@slash-md/core` when they exist, with local enums matching those string values for comparisons. Dropdown / menu item `id`s that drive `onAction` switches belong in the same feature enums — not duplicated string literals in JSX and controllers.
+
+## 9. One `onOpen` that hides two intents
+
+**Do not** make a single `onOpen` both “open preserving query” and “open with cleared query” (or clear only from some call sites inline).
+
+**Do:** name the intents — e.g. search palette `onOpen` (preserve) vs `onOpenCleared` (rail entry). Keyboard `/` and Cmd+K toggle should not surprise-clear; explicit search entry may clear.
+
+## Related rules
+
+- Shared chrome: `desktop-react-components.mdc`
+- Feature screens: `desktop-react-screens.mdc`
+- Skills: `slash-md-desktop`, `react-list-screen-pattern`

@@ -348,7 +348,7 @@ export async function loadInboxRest(opts: {
   const seeds: InboxPullSeed[] = [];
 
   for (const pull of pulls) {
-    let comments: RestReviewComment[] = [];
+    let comments: RestReviewComment[];
     try {
       comments = await listPullReviewComments(opts.token, opts.repo, pull.number);
     } catch {

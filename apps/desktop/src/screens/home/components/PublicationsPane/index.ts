@@ -1,0 +1,1 @@
+export { PublicationsPane } from "./PublicationsPane";

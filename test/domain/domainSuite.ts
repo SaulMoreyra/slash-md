@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { setFrontmatterField, splitFrontmatter } from "@slash-md/core/frontmatter";
+import { setFrontmatterField, splitFrontmatter, parseList, formatList, parsePeople } from "@slash-md/core/frontmatter";
 import { pageIcon, normalizePageIcon } from "@slash-md/core/pageIcon";
 import {
   aggregateEditors,
@@ -26,12 +26,17 @@ import {
   isUnderContentPath,
   normalizeContentPathInput,
 } from "@slash-md/core/paths";
+import { collectPendingReviewMarkdown } from "@slash-md/core/reviewPaths";
 import {
+  fillTemplate,
   humanizeTemplateId,
   isTemplateRepoPath,
   mergeTemplatePicks,
   parseTemplateManifest,
   resolveTemplatesPath,
+  stripTemplatePickerFields,
+  templateDirCandidates,
+  templateFileMeta,
   templateIdFromFilename,
   workspaceTemplatePicks,
 } from "@slash-md/core/templates";
@@ -44,15 +49,19 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   const { assert, root } = ctx;
 
   assert(slashItemsMatching("h1").includes("h1"), "/h1 matches Heading 1");
-  assert(slashItemsMatching("title1").includes("h1"), "/title1 matches Heading 1");
+  assert(slashItemsMatching("title").includes("h1"), "/title matches Heading 1");
+  assert(slashItemsMatching("title1").includes("h1") || slashItemsMatching("titulo").includes("h1"), "/titulo matches Heading 1");
   assert(slashItemsMatching("code").includes("code"), "/code matches code block");
+  assert(slashItemsMatching("codigo").includes("code"), "/codigo matches code block");
   assert(slashItemsMatching("callout").includes("callout"), "/callout matches callout");
   assert(slashItemsMatching("info").includes("callout"), "/info matches callout");
+  assert(slashItemsMatching("nota").includes("callout"), "/nota matches callout");
   assert(slashItemsMatching("warning").includes("warning"), "/warning matches warning");
   assert(slashItemsMatching("tip").includes("tip"), "/tip matches tip callout");
   assert(slashItemsMatching("important").includes("important"), "/important matches important callout");
   assert(slashItemsMatching("caution").includes("caution"), "/caution matches caution callout");
   assert(slashItemsMatching("toggle").includes("toggle"), "/toggle matches toggle");
+  assert(slashItemsMatching("tarea").includes("todo"), "/tarea matches todo");
   assert(slashItemsMatching("diagram").includes("diagram"), "/diagram matches flowchart");
   assert(slashItemsMatching("mermaid").includes("diagram"), "/mermaid matches flowchart");
   assert(slashItemsMatching("flowchart").includes("diagram"), "/flowchart matches flowchart");
@@ -66,7 +75,7 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
       tags.every((tag) => tag.length > 0 && !/[\s`]/.test(tag)),
       "fence tags are single tokens",
     );
-    const gallery = await readFile(path.join(root, "apps/vscode/templates/gallery.md"), "utf8");
+    const gallery = await readFile(path.join(root, "test/fixtures/markdown-gallery.md"), "utf8");
     const missing = tags.filter((tag) => !gallery.includes("```" + tag + "\n"));
     assert(
       missing.length === 0,
@@ -99,10 +108,17 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
     assert(withPr.includes("pr: 42"), "pr writes as a YAML number");
     assert(!withPr.includes('pr: "42"'), "pr is not quoted");
     assert(splitFrontmatter(withPr).fields.pr === "42", "pr parses back as a string field");
-    const withBranch = setFrontmatterField(withPr, "reviewBranch", "review/docs-2026-08");
-    assert(withBranch.includes("reviewBranch: review/docs-2026-08"), "reviewBranch writes");
+    const withBranch = setFrontmatterField(withPr, "reviewBranch", "pub/2026-08-25-mi-nota");
+    assert(withBranch.includes("reviewBranch: pub/2026-08-25-mi-nota"), "reviewBranch writes");
     assert(parsePrNumber("42") === 42, "yaml pr parses as integer");
     assert(parsePrNumber("0") === undefined, "pr 0 is ignored");
+    assert(formatList(parseList("api, onboarding, api")) === "api, onboarding", "parseList dedupes tags");
+    assert(formatList(parsePeople("@Alice, bob, Alice")) === "Alice, bob", "parsePeople strips @ and dedupes");
+    const withPeople = setFrontmatterField(src, "people", "alice, bob");
+    assert(/people:\s*\[alice,\s*bob\]/.test(withPeople), "people writes as flow list");
+    const withTags = setFrontmatterField(src, "tags", "api, onboarding");
+    assert(/tags:\s*\[api,\s*onboarding\]/.test(withTags), "tags writes as flow list");
+    assert(splitFrontmatter(withTags).fields.tags === "api, onboarding", "tags parse back comma-separated");
     const reviewing = setFrontmatterField(withPr, "status", "in_review");
     const yamlGate = reviewThreadTarget({
       markdown: reviewing,
@@ -241,8 +257,8 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
       !shouldShowReviewContextBanner({
         localPr: 42,
         inboxPr: 42,
-        localBranch: "review/docs-2026-08",
-        reviewBranch: "review/docs-2026-08",
+        localBranch: "pub/2026-08-25-mi-nota",
+        reviewBranch: "pub/2026-08-25-mi-nota",
       }).show,
       "aligned PR + branch hides banner",
     );
@@ -250,8 +266,8 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
       shouldShowReviewContextBanner({
         localPr: 41,
         inboxPr: 42,
-        localBranch: "review/docs-2026-08",
-        reviewBranch: "review/docs-2026-08",
+        localBranch: "pub/2026-08-25-mi-nota",
+        reviewBranch: "pub/2026-08-25-mi-nota",
       }).reason === "pr",
       "different PR shows banner",
     );
@@ -260,7 +276,7 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
         localPr: 42,
         inboxPr: 42,
         localBranch: "main",
-        reviewBranch: "review/docs-2026-08",
+        reviewBranch: "pub/2026-08-25-mi-nota",
       }).reason === "branch",
       "different branch shows banner",
     );
@@ -275,7 +291,7 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
       reviewContextBannerText({
         prNumber: 42,
         localBranch: "main",
-        reviewBranch: "review/docs-2026-08",
+        reviewBranch: "pub/2026-08-25-mi-nota",
         reason: "branch",
       }).includes("PR #42"),
       "banner text names PR",
@@ -303,12 +319,30 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   assert(resolveTemplatesPath("docs", "templates/custom") === "templates/custom", "custom templates path");
   assert(resolveTemplatesPath(".") === "_templates", "root contentPath templates");
   assert(resolveTemplatesPath("") === "_templates", "empty contentPath templates");
+  {
+    const root = templateDirCandidates(".", undefined);
+    assert(root[0] === "templates" && root.includes("_templates"), "discovers templates/ then _templates at repo root");
+    const docs = templateDirCandidates("docs", undefined);
+    assert(docs[0] === "docs/templates", "docs contentPath prefers docs/templates");
+    assert(docs.includes("templates") && docs.includes("docs/_templates"), "docs also scans repo-root templates/");
+    const custom = templateDirCandidates("docs", "team/tpl");
+    assert(custom.length === 1 && custom[0] === "team/tpl", "configured templatesPath is exclusive");
+  }
   assert(normalizeContentPathInput(".") === ".", "normalize . to .");
   assert(normalizeContentPathInput("") === ".", "normalize empty to .");
   assert(normalizeContentPathInput("./") === ".", "normalize ./ to .");
   assert(normalizeContentPathInput("docs/") === "docs", "normalize docs/");
   assert(contentPathPrefix(".") === "", "prefix . is empty");
   assert(contentPathPrefix("docs") === "docs", "prefix docs");
+  assert(
+    collectPendingReviewMarkdown(["docs/a.md", "README.md"], ["docs/b.md", "docs/pic.png"]).join(",") ===
+      "README.md,docs/a.md,docs/b.md",
+    "pending review keeps markdown from unpushed + porcelain",
+  );
+  assert(
+    collectPendingReviewMarkdown(["docs/a.md"], ["docs/a.md"]).join(",") === "docs/a.md",
+    "pending review dedupes the same path",
+  );
   {
     const acturo = [
       "README.md",
@@ -328,6 +362,8 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
     assert(root.files.includes("README.md"), "repo-root wiki lists README");
     const fromDot = groupHomeLevel(".", acturo);
     assert(fromDot.folders.includes("docs") && !fromDot.folders.includes("/docs"), "dot dir groups like empty");
+    const emptyTemplates = groupHomeLevel("", [], ["templates"]);
+    assert(emptyTemplates.folders.includes("templates"), "configured templates folder appears even when empty");
     const docs = groupHomeLevel("docs", acturo);
     assert(docs.files.includes("docs/AGENTS.md"), "docs root lists markdown");
     assert(docs.folders.includes("docs/wiki"), "docs lists wiki");
@@ -348,8 +384,10 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   assert(templateIdFromFilename("onboarding.md") === "onboarding", "template id from filename");
   assert(templateIdFromFilename("_manifest.json") === undefined, "manifest is not a template");
   assert(humanizeTemplateId("my-spec") === "My Spec", "humanize template id");
-  assert(isTemplateRepoPath("docs/_templates/foo.md", "docs/_templates"), "path under templates folder");
-  assert(!isTemplateRepoPath("docs/producto/foo.md", "docs/_templates"), "normal page is not template");
+    assert(isTemplateRepoPath("docs/_templates/foo.md", "docs/_templates"), "path under templates folder");
+    assert(isTemplateRepoPath("templates", ["templates", "_templates"]), "templates folder itself is a template path");
+    assert(isTemplateRepoPath("templates/prd.md", ["templates", "_templates"]), "path under discovered templates/");
+    assert(!isTemplateRepoPath("docs/producto/foo.md", "docs/_templates"), "normal page is not template");
   const merged = mergeTemplatePicks(
     [{ id: "spec", label: "Team Spec", description: "Ours", source: "workspace" }],
     [{ id: "spec", label: "Spec", description: "Built-in", source: "builtin" }],
@@ -359,4 +397,15 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   assert(manifest.onboarding?.label === "Onboarding", "parse template manifest");
   const wsPicks = workspaceTemplatePicks(["onboarding.md", "_manifest.json"], manifest);
   assert(wsPicks.length === 1 && wsPicks[0]?.id === "onboarding", "workspace picks from filenames");
+  const fromFile = templateFileMeta("---\ntitle: {{title}}\ndescription: Problem, user, and success\n---\n\n# Hi\n");
+  assert(fromFile.description === "Problem, user, and success", "template description from frontmatter");
+  const filePicks = workspaceTemplatePicks(["prd.md"], {}, {
+    "prd.md": "---\ndescription: From the file\n---\n",
+  });
+  assert(filePicks[0]?.description === "From the file", "workspace pick description comes from the markdown file");
+  const stripped = stripTemplatePickerFields("---\ntitle: X\ndescription: hide me\n---\n\nBody\n");
+  assert(!stripped.includes("description:"), "fill drops picker description");
+  assert(stripped.includes("title: X"), "strip keeps other frontmatter");
+  const filled = fillTemplate("---\ntitle: {{title}}\ndescription: picker only\n---\n", { title: "Hello", date: "2026-08-25" });
+  assert(!filled.includes("picker only"), "new pages do not inherit picker description");
 }

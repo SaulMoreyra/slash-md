@@ -1,45 +1,23 @@
-import { stampDocMeta } from "@slash-md/core/docMeta";
-import { setFrontmatterField } from "@slash-md/core/frontmatter";
+import { parsePeople } from "@slash-md/core/frontmatter";
+import { splitFrontmatter } from "@slash-md/core/frontmatter";
 import { referencedImages } from "@slash-md/core/images";
 import { posixNormalize } from "@slash-md/core/paths";
 import {
   createPullRequest,
   findOpenPull,
-  requestPullReviewers,
-  type GithubPull,
+  githubRequest,
+  requestPullReviewersIndividual,
 } from "@slash-md/github/api";
 import type { ReviewPreviewItem } from "@slash-md/core/homeProtocol";
 import { labeledTitle } from "@slash-md/core/messaging";
 import { posixBasename } from "@slash-md/core/paths";
+import { parseReviewerLogins } from "@slash-md/github/reviewBranch";
 import { currentAuth, resolveToken } from "./auth";
-import { assertSafeRepoPath, fileExists, getContentConfig, readText, repoFile, writeText } from "./config";
-import { GitError, isGitWorkspace, refExists, runGit, switchToBranch } from "./git";
-import { getWorkspaceRoot, readStaging, writeStaging } from "./session";
-import { listLocalDrafts, listLocalMarkdown } from "./workspace";
-import { readSlashmd } from "./config";
-import { resolveTemplatesPath } from "@slash-md/core/templates";
-
-function yearMonth(at = new Date()): string {
-  return `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function datedReviewBranch(at = new Date()): string {
-  return `review/docs-${yearMonth(at)}-${String(at.getDate()).padStart(2, "0")}`;
-}
-
-function parseReviewerLogins(input: string): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const part of input.split(/[\s,]+/)) {
-    const login = part.replace(/^@/, "").trim();
-    if (!login || seen.has(login.toLowerCase())) {
-      continue;
-    }
-    seen.add(login.toLowerCase());
-    out.push(login);
-  }
-  return out;
-}
+import { assertSafeRepoPath, fileExists, getContentConfig, readText, repoFile } from "./config";
+import { GitError, isGitWorkspace, runGit } from "./git";
+import { getWorkspaceRoot } from "./session";
+import { getPublicationState } from "./publication";
+import { listPendingReviewMarkdown } from "./workspace";
 
 function requireRoot(): string {
   const root = getWorkspaceRoot();
@@ -55,61 +33,98 @@ export async function previewReview(): Promise<ReviewPreviewItem[]> {
   if (!config) {
     throw new Error("Repo not configured. Use Init before sending pages to review.");
   }
-  const slashmd = await readSlashmd(root);
-  const files = await listLocalMarkdown(root, config.contentPath, resolveTemplatesPath(config.contentPath, slashmd.templatesPath));
-  const drafts = await listLocalDrafts(root, config.contentPath, files);
-  const selected = new Set(readStaging(root));
-  return drafts
-    .filter((draft) => selected.has(draft.path))
-    .map((draft) => ({
-      path: draft.path,
-      title: draft.title,
-      badge: draft.badge,
-      summary: draft.path,
-    }));
+  if (config.mode !== "workspace") {
+    throw new Error("Review is workspace/PR-only.");
+  }
+  if (!(await isGitWorkspace(root))) {
+    throw new Error("The docs folder is not a Git repository.");
+  }
+  const { publication } = await getPublicationState();
+  if (!publication) {
+    throw new Error("Mount a publication branch (pub/) before sending to review.");
+  }
+
+  const diffPaths = await listPendingReviewMarkdown(root, config.contentPath, config.defaultBranch, publication.branch);
+  if (diffPaths.length === 0) {
+    return [];
+  }
+
+  const items: ReviewPreviewItem[] = [];
+  for (const filePath of diffPaths) {
+    let text: string;
+    try {
+      text = await readText(repoFile(root, filePath));
+    } catch {
+      continue;
+    }
+    const { fields } = splitFrontmatter(text);
+    const people = fields.people ? parsePeople(fields.people) : [];
+    items.push({
+      path: filePath,
+      title: labeledTitle(text, posixBasename(filePath)),
+      badge: fields.status || "draft",
+      summary: filePath,
+      ...(people.length > 0 ? { people } : {}),
+    });
+  }
+  return items;
 }
 
-export async function sendBatchToReview(rawReviewers = ""): Promise<{
+export async function sendBatchToReview(
+  rawReviewers = "",
+  excludePaths?: string[],
+): Promise<{
   prNumber: number;
   prUrl: string;
   created: boolean;
   branch: string;
   paths: string[];
+  mentionedOnly?: string[];
 }> {
   const root = requireRoot();
   const config = await getContentConfig(root);
   if (!config) {
     throw new Error("Repo not configured. Use Init before sending pages to review.");
   }
-  if (config.mode === "personal") {
-    throw new Error("Mandar a Revisión is workspace/PR-only. Personal mode publishes directly.");
+  if (config.mode !== "workspace") {
+    throw new Error("Review is workspace/PR-only. Personal and local modes publish differently or stay on disk.");
   }
   if (!(await isGitWorkspace(root))) {
     throw new Error("The docs folder is not a Git repository.");
   }
-  const selected = readStaging(root).map(posixNormalize).filter(Boolean);
-  if (selected.length === 0) {
-    throw new Error("Select at least one local draft to send to review.");
+  const { publication } = await getPublicationState();
+  if (!publication) {
+    throw new Error("Mount a publication branch (pub/) before sending to review.");
   }
-  const slashmd = await readSlashmd(root);
-  const files = await listLocalMarkdown(root, config.contentPath, resolveTemplatesPath(config.contentPath, slashmd.templatesPath));
-  const drafts = await listLocalDrafts(root, config.contentPath, files);
-  const live = new Set(drafts.map((draft) => draft.path));
-  if (selected.some((item) => !live.has(item))) {
-    throw new Error("Selection includes files that are not local drafts. Refresh and try again.");
-  }
+
   const token = await resolveToken();
   if (!token) {
     throw new Error("Sign in to GitHub to send pages to review.");
   }
   const auth = await currentAuth();
   const author = auth?.login || "slash-md";
-  const reviewers = parseReviewerLogins(rawReviewers);
-  const month = yearMonth();
-  const { branch, openPr } = await resolveReviewBranch(root, token, config, month);
-  await switchToBranch(root, branch);
 
-  await stampSelectedInReview(root, selected);
+  const allDirty = await listPendingReviewMarkdown(root, config.contentPath, config.defaultBranch, publication.branch);
+  const excludeSet = new Set((excludePaths ?? []).map(posixNormalize));
+  const selected = allDirty.filter((p) => !excludeSet.has(p));
+
+  if (selected.length === 0) {
+    throw new Error("No dirty markdown files to send to review.");
+  }
+
+  const peopleLookup = new Map<string, string[]>();
+  for (const filePath of selected) {
+    try {
+      const text = await readText(repoFile(root, filePath));
+      const { fields } = splitFrontmatter(text);
+      if (fields.people) {
+        peopleLookup.set(filePath, parsePeople(fields.people));
+      }
+    } catch {
+      // skip unreadable
+    }
+  }
+
   const addPaths = await collectAddPaths(config, root, selected);
   assertAddList(addPaths, selected, true);
   await assertNoForeignStaged(root, addPaths);
@@ -117,130 +132,82 @@ export async function sendBatchToReview(rawReviewers = ""): Promise<{
   await assertIndexIsLote(root, addPaths);
 
   const dirty = (await runGit(["status", "--porcelain", "--", ...addPaths], { cwd: root })).trim();
-  let committed = false;
+  const branch = publication.branch;
+
   if (dirty) {
-    await commitLote(root, author, `docs: review ${month} (${selected.length} pages)`, addPaths);
-    committed = true;
-  } else if (!openPr) {
-    throw new Error("No changes to review");
+    await commitLote(root, author, `docs: review ${publication.title} (${selected.length} pages)`, addPaths);
   }
 
-  if (committed || !openPr) {
-    await runGit(["push", "-u", "origin", "HEAD"], { cwd: root, token });
+  const existingPr = await findOpenPull(token, { owner: config.owner, name: config.name }, branch);
+
+  await runGit(["push", "-u", "origin", "HEAD"], { cwd: root, token });
+
+  const allPeople = new Set<string>();
+  for (const logins of peopleLookup.values()) {
+    for (const login of logins) {
+      allPeople.add(login);
+    }
   }
+  const explicitReviewers = parseReviewerLogins(rawReviewers);
+  for (const login of explicitReviewers) {
+    allPeople.add(login);
+  }
+  allPeople.delete(author);
+
+  const reviewers = [...allPeople];
+  let mentionedOnly: string[] = [];
 
   let created = false;
-  let pr = openPr ?? (await findOpenPull(token, config, branch));
+  let pr = existingPr;
   if (!pr) {
-    pr = await createPullRequest(token, config, {
-      title: `Docs review ${month}`,
+    const bodyLines = selected.map((item) => `- ${item}`);
+    pr = await createPullRequest(token, { owner: config.owner, name: config.name }, {
+      title: publication.title,
       head: branch,
       base: config.defaultBranch,
-      body: selected.map((item) => `- ${item}`).join("\n"),
+      body: bodyLines.join("\n"),
     });
     created = true;
   }
 
   if (reviewers.length > 0) {
-    await requestPullReviewers(token, config, pr.number, reviewers);
+    const { failed } = await requestPullReviewersIndividual(
+      token,
+      { owner: config.owner, name: config.name },
+      pr.number,
+      reviewers,
+    );
+    mentionedOnly = failed;
   }
 
-  const yamlChanged = await stampPrFields(root, selected, pr.number, branch);
-  if (yamlChanged.length > 0) {
-    assertAddList(yamlChanged, selected, false);
-    await assertNoForeignStaged(root, yamlChanged);
-    await runGit(["add", "--", ...yamlChanged], { cwd: root });
-    await assertIndexIsLote(root, yamlChanged);
-    const yamlDirty = (await runGit(["status", "--porcelain", "--", ...yamlChanged], { cwd: root })).trim();
-    if (yamlDirty) {
-      await commitLote(root, author, `docs: review ${month} (pr ${pr.number})`, yamlChanged);
-      await runGit(["push", "-u", "origin", "HEAD"], { cwd: root, token });
-    }
-  }
-
-  writeStaging(
-    root,
-    readStaging(root).filter((item) => !selected.includes(posixNormalize(item))),
-  );
-
-  return { prNumber: pr.number, prUrl: pr.html_url, created, branch, paths: selected };
-}
-
-async function resolveReviewBranch(
-  cwd: string,
-  token: string,
-  config: { owner: string; name: string },
-  month: string,
-): Promise<{ branch: string; openPr?: GithubPull }> {
-  const now = new Date();
-  const monthly = `review/docs-${month}`;
-  try {
-    await runGit(["fetch", "origin", monthly], { cwd, token });
-  } catch {
-    // may not exist
-  }
-  const monthlyOpen = await findOpenPull(token, config, monthly);
-  if (monthlyOpen) {
-    return { branch: monthly, openPr: monthlyOpen };
-  }
-  if (await refExists(cwd, `refs/remotes/origin/${monthly}`)) {
-    return nextFreeBranch(cwd, token, config, datedReviewBranch(now));
-  }
-  return { branch: monthly };
-}
-
-async function nextFreeBranch(
-  cwd: string,
-  token: string,
-  config: { owner: string; name: string },
-  base: string,
-): Promise<{ branch: string; openPr?: GithubPull }> {
-  const candidates = [base, ...Array.from({ length: 20 }, (_, i) => `${base}-${i + 2}`)];
-  for (const branch of candidates) {
+  if (mentionedOnly.length > 0 && pr) {
+    const mentions = mentionedOnly.map((login) => `@${login}`).join(" ");
+    const updatedBody = [
+      ...selected.map((item) => `- ${item}`),
+      "",
+      `cc ${mentions} (could not be added as reviewers)`,
+    ].join("\n");
     try {
-      await runGit(["fetch", "origin", branch], { cwd, token });
+      await githubRequest(token, "PATCH", `/repos/${config.owner}/${config.name}/pulls/${pr.number}`, {
+        body: updatedBody,
+      });
     } catch {
-      // ignore
-    }
-    const openPr = await findOpenPull(token, config, branch);
-    if (openPr) {
-      return { branch, openPr };
-    }
-    if (!(await refExists(cwd, `refs/heads/${branch}`)) && !(await refExists(cwd, `refs/remotes/origin/${branch}`))) {
-      return { branch };
+      // non-critical: mentions failed to update body
     }
   }
-  throw new Error(`Could not find a free review branch from ${base}.`);
-}
 
-async function stampSelectedInReview(root: string, selected: string[]): Promise<void> {
-  for (const filePath of selected) {
-    const abs = repoFile(root, filePath);
-    const text = await readText(abs);
-    const next = stampDocMeta(text, { status: "in_review", touchUpdated: true });
-    if (next !== text) {
-      await writeText(abs, next);
-    }
-  }
-}
-
-async function stampPrFields(root: string, selected: string[], prNumber: number, branch: string): Promise<string[]> {
-  const changed: string[] = [];
-  for (const filePath of selected) {
-    const abs = repoFile(root, filePath);
-    const text = await readText(abs);
-    let next = setFrontmatterField(text, "pr", String(prNumber));
-    next = setFrontmatterField(next, "reviewBranch", branch);
-    if (next !== text) {
-      await writeText(abs, next);
-      changed.push(filePath);
-    }
-  }
-  return changed;
+  return {
+    prNumber: pr.number,
+    prUrl: pr.html_url,
+    created,
+    branch,
+    paths: selected,
+    ...(mentionedOnly.length > 0 ? { mentionedOnly } : {}),
+  };
 }
 
 async function collectAddPaths(
-  config: { contentPath: string; owner: string; name: string; repo: string; defaultBranch: string; mode: "workspace" | "personal" },
+  config: { contentPath: string; owner: string; name: string; repo: string; defaultBranch: string; mode: "workspace" | "personal" | "local" },
   root: string,
   selected: string[],
 ): Promise<string[]> {

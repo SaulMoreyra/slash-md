@@ -1,5 +1,6 @@
 ---
 title: {{title}}
+description: New teammate checklist
 owner: {{owner}}
 status: draft
 updated: {{date}}

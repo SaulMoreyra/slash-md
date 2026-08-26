@@ -14,63 +14,63 @@ const diagramIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="
 export const slashConfig: BlockEditFeatureConfig = {
   textGroup: {
     label: "Text",
-    text: { label: "Paragraph /p /text" },
-    h1: { label: "Heading 1 /h1 /title1" },
-    h2: { label: "Heading 2 /h2 /title2" },
+    text: { label: "Paragraph /p /text /texto" },
+    h1: { label: "Heading 1 /h1 /title /titulo" },
+    h2: { label: "Heading 2 /h2 /title2 /subtitulo" },
     h3: { label: "Heading 3 /h3 /title3" },
     h4: null,
     h5: null,
     h6: null,
-    quote: { label: "Quote /quote" },
-    divider: { label: "Divider /divider" },
+    quote: { label: "Quote /quote /cita" },
+    divider: { label: "Divider /divider /hr /line /linea" },
   },
   listGroup: {
     label: "Lists",
-    bulletList: { label: "Bullet list /list /ul" },
-    orderedList: { label: "Numbered list /ol" },
-    taskList: { label: "To-do /todo" },
+    bulletList: { label: "Bullet list /list /ul /bullet /viñeta" },
+    orderedList: { label: "Numbered list /ol /numbered /numerada" },
+    taskList: { label: "To-do /todo /task /check /tarea" },
   },
   advancedGroup: {
     label: "Insert",
-    image: { label: "Image /image" },
-    codeBlock: { label: "Code /code" },
-    table: { label: "Table /table" },
+    image: { label: "Image /image /img /foto" },
+    codeBlock: { label: "Code /code /codigo" },
+    table: { label: "Table /table /tabla" },
     math: null,
   },
   buildMenu: (builder) => {
     const group = builder.addGroup("docs", "Docs");
     group.addItem("callout", {
-      label: "Callout /callout /info /note",
+      label: "Callout /callout /info /note /nota",
       icon: calloutIcon,
       onRun: (ctx) => runInsertCallout(ctx, "NOTE"),
     });
     group.addItem("tip", {
-      label: "Tip /tip",
+      label: "Tip /tip /consejo",
       icon: tipIcon,
       onRun: (ctx) => runInsertCallout(ctx, "TIP"),
     });
     group.addItem("important", {
-      label: "Important /important",
+      label: "Important /important /importante",
       icon: importantIcon,
       onRun: (ctx) => runInsertCallout(ctx, "IMPORTANT"),
     });
     group.addItem("warning", {
-      label: "Warning /warning",
+      label: "Warning /warning /aviso",
       icon: warningIcon,
       onRun: (ctx) => runInsertCallout(ctx, "WARNING"),
     });
     group.addItem("caution", {
-      label: "Caution /caution",
+      label: "Caution /caution /cuidado",
       icon: cautionIcon,
       onRun: (ctx) => runInsertCallout(ctx, "CAUTION"),
     });
     group.addItem("toggle", {
-      label: "Toggle /toggle",
+      label: "Toggle /toggle /collapse /acordeon",
       icon: toggleIcon,
       onRun: (ctx) => runInsertToggle(ctx),
     });
     group.addItem("diagram", {
-      label: "Diagram /diagram /mermaid /flowchart",
+      label: "Diagram /diagram /mermaid /flowchart /diagrama",
       icon: diagramIcon,
       onRun: (ctx) => runInsertDiagram(ctx),
     });
@@ -90,13 +90,13 @@ export const slashItemLabels: Record<string, string> = {
   image: slashConfig.advancedGroup?.image?.label ?? "",
   code: slashConfig.advancedGroup?.codeBlock?.label ?? "",
   table: slashConfig.advancedGroup?.table?.label ?? "",
-  callout: "Callout /callout /info /note",
-  tip: "Tip /tip",
-  important: "Important /important",
-  warning: "Warning /warning",
-  caution: "Caution /caution",
-  toggle: "Toggle /toggle",
-  diagram: "Diagram /diagram /mermaid /flowchart",
+  callout: "Callout /callout /info /note /nota",
+  tip: "Tip /tip /consejo",
+  important: "Important /important /importante",
+  warning: "Warning /warning /aviso",
+  caution: "Caution /caution /cuidado",
+  toggle: "Toggle /toggle /collapse /acordeon",
+  diagram: "Diagram /diagram /mermaid /flowchart /diagrama",
 };
 
 /** Same rule Crepe uses: `label.toLowerCase().includes(filter)` after stripping `/`. */

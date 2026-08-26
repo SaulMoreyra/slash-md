@@ -42,6 +42,7 @@ function emptyPayload(overrides: Partial<HomeTreePayload> = {}): HomeTreePayload
     selected: [],
     inbox: [],
     canPublishBatch: false,
+    canSendReview: false,
     ...overrides,
   };
 }

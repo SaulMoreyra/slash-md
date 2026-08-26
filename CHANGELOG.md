@@ -2,6 +2,13 @@
 
 All notable changes to Slash MD are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- VS Code / Cursor extension is a **Markdown editor only**: Open with Slash MD, autosave, images beside the file, optional default editor.
+- Home, GitHub review/publish, drafts tree, Init, and sidecar drafts moved out of the extension (use the Desktop app).
+
 ## [0.1.0] — 2026-08-24
 
 ### Added

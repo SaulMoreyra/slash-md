@@ -1,0 +1,1 @@
+export { NewPageModal } from "./NewPageModal";

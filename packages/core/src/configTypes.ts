@@ -1,11 +1,17 @@
-/** Repo publish mode: workspace = PR review; personal = direct push. */
-export type RepoMode = "workspace" | "personal";
+/** Repo publish mode: workspace = PR review; personal = direct push; local = disk only. */
+export const RepoMode = {
+  Workspace: "workspace",
+  Personal: "personal",
+  Local: "local",
+} as const;
+
+export type RepoMode = (typeof RepoMode)[keyof typeof RepoMode];
 
 export type SlashmdFile = {
   repo?: string;
   /**
-   * Folder for wiki pages. Use `"."` (or omit path segments) for the repo root.
-   * Default when missing: `docs`.
+   * Folder for wiki pages. Omit or use `"."` for the opened folder root.
+   * Default when missing: repo / folder root.
    */
   contentPath?: string;
   defaultBranch?: string;
@@ -27,7 +33,23 @@ export type ContentConfig = {
 };
 
 export function normalizeRepoMode(value: unknown): RepoMode {
-  return value === "personal" ? "personal" : "workspace";
+  if (value === RepoMode.Personal) {
+    return RepoMode.Personal;
+  }
+  if (value === RepoMode.Local) {
+    return RepoMode.Local;
+  }
+  return RepoMode.Workspace;
+}
+
+/** GitHub-backed modes (need owner/name repo). */
+export function isGithubMode(mode: RepoMode): boolean {
+  return mode === RepoMode.Workspace || mode === RepoMode.Personal;
+}
+
+/** PR-review mode only (Inbox, Reviews, Publications). */
+export function isWorkspaceMode(mode: RepoMode | undefined): boolean {
+  return mode === RepoMode.Workspace;
 }
 
 export function parseOwnerName(repo: string): { owner: string; name: string } | undefined {

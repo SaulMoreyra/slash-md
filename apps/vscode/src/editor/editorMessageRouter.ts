@@ -19,20 +19,6 @@ export async function routeEditorMessage(
   }
 
   switch (message.type) {
-    case "threadsRefresh":
-      await deps.refreshThreads();
-      return;
-    case "threadReply":
-      await deps.threadReply(message.threadId, message.body);
-      return;
-    case "threadResolve":
-      await deps.threadResolve(message.threadId, message.resolved);
-      return;
-    case "threadCreate":
-      deps.flushSaveTimer();
-      await deps.persistNow();
-      await deps.threadCreate(message.selectedText);
-      return;
     case "edit":
       deps.applyEdit(message.text);
       deps.persistSoon();
@@ -50,30 +36,15 @@ export async function routeEditorMessage(
     case "resolveImage":
       await deps.resolveImage(message);
       return;
-    case "review":
-    case "publish": {
-      if (deps.workflow === "editor") {
-        return;
-      }
-      if (deps.state.reviewing) {
-        return;
-      }
-      deps.state.reviewing = true;
-      try {
-        deps.flushSaveTimer();
-        if (typeof message.text === "string") {
-          deps.applyEdit(message.text);
-        }
-        await deps.persistNow();
-        await deps.reviewOrPublish(message.type);
-        deps.refreshLabels();
-      } finally {
-        deps.state.reviewing = false;
-      }
-      return;
-    }
     case "openUrl":
       await deps.openUrl(message.url);
+      return;
+    case "threadsRefresh":
+    case "threadReply":
+    case "threadResolve":
+    case "threadCreate":
+    case "review":
+    case "publish":
       return;
     default:
       assertNever(message);

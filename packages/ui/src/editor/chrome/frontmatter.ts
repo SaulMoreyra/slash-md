@@ -1,4 +1,4 @@
-import type { FrontmatterFields, HostToWebview, WebviewToHost } from "@slash-md/core/protocol";
+import type { FrontmatterFields, WebviewToHost } from "@slash-md/core/protocol";
 import { applyHeroTitle } from "./heroTitle";
 
 /** Hero title edits frontmatter.title; owner/status/updated are host-stamped. */

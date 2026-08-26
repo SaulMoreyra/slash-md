@@ -1,31 +1,11 @@
-import { setFrontmatterField, splitFrontmatter } from "@slash-md/core/frontmatter";
+import { setFrontmatterField } from "@slash-md/core/frontmatter";
 import { posixNormalize } from "@slash-md/core/paths";
 import { isInboxMarkdownPath } from "./inboxModel";
-import { parsePrNumber } from "@slash-md/core/threadGate";
-
-export type ReviewPage = {
-  path: string;
-  title: string;
-  pr?: number;
-  status: string;
-  reviewBranch?: string;
-};
 
 export type ResolvePublishPr =
   | { kind: "none" }
   | { kind: "one"; pr: number }
   | { kind: "many"; prs: number[] };
-
-export function parseReviewPage(path: string, markdown: string, title: string): ReviewPage {
-  const fields = splitFrontmatter(markdown).fields;
-  return {
-    path: posixNormalize(path),
-    title,
-    pr: parsePrNumber(fields.pr),
-    status: fields.status.trim().toLowerCase(),
-    reviewBranch: fields.reviewBranch.trim() || undefined,
-  };
-}
 
 export function resolvePublishPr(opts: {
   selectedWithPr: number[];

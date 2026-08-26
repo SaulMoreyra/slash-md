@@ -153,6 +153,49 @@ export async function requestPullReviewers(
   }
 }
 
+/**
+ * Request reviewers one-by-one on 422, collecting logins that failed.
+ * Returns `{ succeeded, failed }` where failed contains logins that could not be added.
+ */
+export async function requestPullReviewersIndividual(
+  token: string,
+  repo: { owner: string; name: string },
+  number: number,
+  reviewers: string[],
+): Promise<{ succeeded: string[]; failed: string[] }> {
+  const logins = [...new Set(reviewers.map((login) => login.trim()).filter(Boolean))];
+  if (logins.length === 0) {
+    return { succeeded: [], failed: [] };
+  }
+  try {
+    await githubRequest(token, "POST", `/repos/${repo.owner}/${repo.name}/pulls/${number}/requested_reviewers`, {
+      reviewers: logins,
+    });
+    return { succeeded: logins, failed: [] };
+  } catch (err) {
+    if (!(err instanceof GithubApiError && err.status === 422)) {
+      throw err;
+    }
+  }
+  const succeeded: string[] = [];
+  const failed: string[] = [];
+  for (const login of logins) {
+    try {
+      await githubRequest(token, "POST", `/repos/${repo.owner}/${repo.name}/pulls/${number}/requested_reviewers`, {
+        reviewers: [login],
+      });
+      succeeded.push(login);
+    } catch (err) {
+      if (err instanceof GithubApiError && err.status === 422) {
+        failed.push(login);
+      } else {
+        throw err;
+      }
+    }
+  }
+  return { succeeded, failed };
+}
+
 export async function listPullReviews(
   token: string,
   repo: { owner: string; name: string },

@@ -15,13 +15,24 @@
     "package:vsix": "npm run package:vsix -w slash-md",
     "test:roundtrip": "node test/build.mjs && node test/boot.mjs",
     "test": "npm run test:roundtrip",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint apps/desktop packages test && tsc --noEmit",
     "desktop:dev": "npm run dev -w @slash-md/desktop",
-    "desktop:build": "npm run build -w @slash-md/desktop"
+    "desktop:build": "npm run build -w @slash-md/desktop",
+    "desktop:lint": "npm run lint -w @slash-md/desktop",
+    "desktop:typecheck": "npm run typecheck -w @slash-md/desktop",
+    "slash": "node apps/desktop/bin/slash"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.0",
     "esbuild": "^0.25.0",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.11.0",
     "happy-dom": "^20.11.6",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.68.0"
   }
 }

@@ -1,0 +1,1 @@
+export { NewPublicationModal } from "./NewPublicationModal";

@@ -1,0 +1,1 @@
+export { WikiSyncAlert } from "./WikiSyncAlert";

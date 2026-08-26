@@ -42,12 +42,56 @@ export function contentPathPrefix(contentPath: string): string {
 }
 
 export function isUnderContentPath(repoPath: string, contentPath: string): boolean {
-  const normalized = posixNormalize(repoPath);
-  const root = contentPathPrefix(contentPath);
+  return isPosixUnder(repoPath, contentPathPrefix(contentPath));
+}
+
+/** True when `path` is `ancestor` or a descendant (`ancestor/...`). */
+export function isPosixUnder(path: string, ancestor: string): boolean {
+  const value = posixNormalize(path);
+  const root = posixNormalize(ancestor);
   if (!root) {
-    return Boolean(normalized);
+    return Boolean(value);
   }
-  return normalized === root || normalized.startsWith(`${root}/`);
+  return value === root || value.startsWith(`${root}/`);
+}
+
+/** Rewrite `from` → `to` when `path` is `from` or lives under it. */
+export function rewritePosixPrefix(path: string, from: string, to: string): string {
+  const value = posixNormalize(path);
+  const src = posixNormalize(from);
+  const dest = posixNormalize(to);
+  if (!src || !isPosixUnder(value, src)) {
+    return value;
+  }
+  if (value === src) {
+    return dest;
+  }
+  return posixJoin(dest, value.slice(src.length + 1));
+}
+
+/** Map a list of repo paths after a rename (`to`) or delete (`to = null`). */
+export function rewritePosixPrefixList(paths: string[], from: string, to: string | null): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of paths) {
+    const value = posixNormalize(item);
+    if (!isPosixUnder(value, from)) {
+      if (!seen.has(item)) {
+        seen.add(item);
+        out.push(item);
+      }
+      continue;
+    }
+    if (to == null) {
+      continue;
+    }
+    const next = rewritePosixPrefix(value, from, to);
+    if (!seen.has(next)) {
+      seen.add(next);
+      out.push(next);
+    }
+  }
+  return out;
 }
 
 export function posixDirname(value: string): string {

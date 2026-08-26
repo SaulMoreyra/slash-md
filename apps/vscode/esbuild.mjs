@@ -22,8 +22,9 @@ const extensionCtx = await esbuild.context({
   absWorkingDir: repoRoot,
 });
 
-const webviewShared = {
+const webviewCtx = await esbuild.context({
   ...shared,
+  minify: true,
   format: "iife",
   platform: "browser",
   target: "es2022",
@@ -31,25 +32,14 @@ const webviewShared = {
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
   },
-};
-
-const webviewCtx = await esbuild.context({
-  ...webviewShared,
-  minify: true,
   entryPoints: [path.join(repoRoot, "packages/ui/src/editor/main.ts")],
   outfile: path.join(__dirname, "dist/webview.js"),
 });
 
-const homeCtx = await esbuild.context({
-  ...webviewShared,
-  entryPoints: [path.join(repoRoot, "packages/ui/src/home/home.ts")],
-  outfile: path.join(__dirname, "dist/home.js"),
-});
-
 if (watch) {
-  await Promise.all([extensionCtx.watch(), webviewCtx.watch(), homeCtx.watch()]);
+  await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
   console.log("watching…");
 } else {
-  await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild(), homeCtx.rebuild()]);
-  await Promise.all([extensionCtx.dispose(), webviewCtx.dispose(), homeCtx.dispose()]);
+  await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild()]);
+  await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()]);
 }

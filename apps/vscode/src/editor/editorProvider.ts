@@ -1,66 +1,34 @@
 import * as vscode from "vscode";
-import { handleOpenUrl, handlePublish, handleReview } from "./barActions";
-import { draftBarState } from "./barState";
-import { getDraftMeta, patchDraftMeta } from "../sidecar/draftMeta";
-import { trackEditor } from "./editorLive";
-import { editorHtml } from "./editorHtml";
 import { joinFrontmatter, setFrontmatterField, splitFrontmatter } from "@slash-md/core/frontmatter";
-import { ContentRepo } from "../github/contentRepo";
-import { getContentConfig } from "../github/config";
-import { docsContentRemotePath } from "../workspace/docsWorkspace";
-import { buildImageMap, imageLocalResourceRoots, resolveImageSrc, saveUploadedImage } from "./imageHost";
-import { displayTitle, heroTitleFromMarkdown, HostToWebview } from "@slash-md/core/messaging";
-import { normalizeMarkdown } from "@slash-md/core/markdown";
-import { FrontmatterKey, PageKind, Workflow } from "@slash-md/core/protocol";
-import { LibraryViews } from "../library/libraryViews";
 import { markdownHash } from "@slash-md/core/hash";
-import type { RepoMode } from "../config/slashmdConfig";
-import { attachThreadPolling } from "./threadsHost";
-import { handleThreadCreate, handleThreadReply, handleThreadResolve } from "./threadActions";
-import { pushFileEditors } from "./fileEditorsHost";
-import { openHomeForWikiPublish, openHomeForWikiReview } from "./wikiHomeActions";
+import { normalizeMarkdown } from "@slash-md/core/markdown";
+import { displayTitle, heroTitleFromMarkdown, HostToWebview } from "@slash-md/core/messaging";
+import { FrontmatterKey } from "@slash-md/core/protocol";
+import { editorHtml } from "./editorHtml";
 import { routeEditorMessage } from "./editorMessageRouter";
 import type { EditorSessionDeps, EditorSessionState } from "./editorSessionDeps";
+import { pushFileEditors } from "./fileEditorsHost";
+import { buildImageMap, imageLocalResourceRoots, resolveImageSrc, saveUploadedImage } from "./imageHost";
+import { workspaceDisplayPath } from "./workspacePath";
 
 const SAVE_DEBOUNCE_MS = 300;
-/** UI may edit title + icon + cover; owner/status/updated are stamped by the host. */
 const FRONTMATTER_KEYS = new Set<FrontmatterKey>(["title", "icon", "cover", "coverPosition"]);
 
 export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
   public static readonly viewType = "slash-md.editor";
 
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly library?: LibraryViews,
-  ) {}
+  constructor(private readonly context: vscode.ExtensionContext) {}
 
   async resolveCustomTextEditor(
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): Promise<void> {
-    const workflow = await resolveWorkflow(document.uri);
-    const pageKind = await resolvePageKind(document.uri);
-    const contentConfig = getContentConfig();
-    const repoMode: RepoMode = contentConfig?.mode ?? "workspace";
     const filename = document.uri.path.split("/").pop() ?? "draft";
-    const meta = workflow === "workspace" ? getDraftMeta(this.context, document.uri) : {};
     const full = document.getText();
     const { body, fields } = splitFrontmatter(full);
-    const status =
-      workflow === "workspace"
-        ? draftBarState(meta, full, { mode: repoMode })
-        : { kind: "draft" as const, label: "", publishEnabled: false, prUrl: undefined };
-    const wikiPath =
-      workflow === "workspace" && contentConfig
-        ? await docsContentRemotePath(document.uri, contentConfig)
-        : undefined;
-    const displayPath =
-      workflow === "workspace"
-        ? (meta.remotePath ?? wikiPath ?? filename)
-        : workspaceDisplayPath(document.uri);
-    const imageRoots = await imageLocalResourceRoots(this.context, document);
-    await vscode.workspace.fs.createDirectory(imageRoots[0]!);
+    const displayPath = workspaceDisplayPath(document.uri);
+    const imageRoots = imageLocalResourceRoots(document);
     webviewPanel.webview.options = {
       enableScripts: true,
       localResourceRoots: [this.context.extensionUri, ...imageRoots],
@@ -69,23 +37,17 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
       type: "init",
       title: heroTitleFromMarkdown(full) || displayTitle(full, filename),
       path: displayPath,
-      savedAt: meta.savedAt ?? null,
-      kind: status.kind,
-      label: status.label,
-      publishEnabled: workflow === "workspace" && pageKind !== "wiki" && status.publishEnabled,
-      prUrl: workflow === "workspace" ? status.prUrl : undefined,
-      workflow,
-      repoMode: workflow === "workspace" ? repoMode : undefined,
-      pageKind,
+      savedAt: await fileMtime(document.uri),
+      kind: "draft",
+      label: "",
+      publishEnabled: false,
+      workflow: "editor",
+      pageKind: "editor",
     };
-    const repos = new ContentRepo(this.context);
     const imageMap = await buildImageMap({
-      context: this.context,
       webview: webviewPanel.webview,
       markdown: full,
       document,
-      remotePath: wikiPath ?? meta.remotePath,
-      repos,
     });
 
     webviewPanel.webview.html = editorHtml({
@@ -108,13 +70,10 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
     const state: EditorSessionState = {
       latestText: full,
       saveTimer: undefined,
-      reviewing: false,
       persisting: false,
     };
     let appliedExternalHash = markdownHash(full);
-    /** Hash of the last bytes we wrote — ignore matching onDidChangeTextDocument echoes. */
     let lastSelfWriteHash = appliedExternalHash;
-    const tracking = trackEditor(document.uri, webviewPanel.webview);
 
     const setPersisting = (value: boolean) => {
       state.persisting = value;
@@ -132,65 +91,28 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
           }
           appliedExternalHash = markdownHash(state.latestText);
           const at = new Date().toISOString();
-          if (workflow === "workspace") {
-            const nextStatus = draftBarState(getDraftMeta(this.context, document.uri), state.latestText, {
-              mode: getContentConfig()?.mode ?? "workspace",
-            });
-            await patchDraftMeta(this.context, document.uri, {
-              savedAt: at,
-              kind: nextStatus.kind,
-              label: nextStatus.label,
-            });
-            this.library?.refreshLabels();
-            await webviewPanel.webview.postMessage({
-              type: "saved",
-              at,
-              title: heroTitleFromMarkdown(state.latestText),
-            } satisfies HostToWebview);
-            await webviewPanel.webview.postMessage({
-              type: "status",
-              kind: nextStatus.kind,
-              label: nextStatus.label,
-              publishEnabled: pageKind !== "wiki" && nextStatus.publishEnabled,
-              prUrl: nextStatus.prUrl,
-              path: getDraftMeta(this.context, document.uri).remotePath ?? wikiPath ?? filename,
-              workflow,
-              repoMode: getContentConfig()?.mode ?? "workspace",
-              pageKind,
-            } satisfies HostToWebview);
-          } else {
-            await webviewPanel.webview.postMessage({
-              type: "saved",
-              at,
-              title: heroTitleFromMarkdown(state.latestText),
-            } satisfies HostToWebview);
-            await webviewPanel.webview.postMessage({
-              type: "status",
-              kind: "draft",
-              label: "",
-              publishEnabled: false,
-              path: workspaceDisplayPath(document.uri),
-              workflow,
-            } satisfies HostToWebview);
-          }
+          await webviewPanel.webview.postMessage({
+            type: "saved",
+            at,
+            title: heroTitleFromMarkdown(state.latestText),
+          } satisfies HostToWebview);
+          await webviewPanel.webview.postMessage({
+            type: "status",
+            kind: "draft",
+            label: "",
+            publishEnabled: false,
+            path: workspaceDisplayPath(document.uri),
+            workflow: "editor",
+            pageKind: "editor",
+          } satisfies HostToWebview);
         })();
       }, SAVE_DEBOUNCE_MS);
     };
 
-    const threads = attachThreadPolling({
-      context: this.context,
-      document,
-      webview: webviewPanel.webview,
-      panel: webviewPanel,
-      workflow,
-      repos,
-    });
     void pushFileEditors(document, webviewPanel.webview);
 
     const deps: EditorSessionDeps = {
       state,
-      workflow,
-      pageKind,
       frontmatterKeys: FRONTMATTER_KEYS,
       applyEdit: (bodyMarkdown) => {
         const { raw } = splitFrontmatter(state.latestText);
@@ -200,31 +122,13 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
         state.latestText = setFrontmatterField(state.latestText, field, value);
       },
       persistSoon,
-      flushSaveTimer: () => {
-        if (state.saveTimer) {
-          clearTimeout(state.saveTimer);
-          state.saveTimer = undefined;
-        }
-      },
-      persistNow: async () => {
-        await persistExact(document, state.latestText, setPersisting);
-      },
-      refreshThreads: () => threads.refresh(),
-      threadReply: (threadId, body) =>
-        handleThreadReply(this.context, document, webviewPanel.webview, repos, threadId, body),
-      threadResolve: (threadId, resolved) =>
-        handleThreadResolve(this.context, document, webviewPanel.webview, repos, threadId, resolved),
-      threadCreate: (selectedText) =>
-        handleThreadCreate(this.context, document, webviewPanel.webview, repos, state.latestText, selectedText),
       uploadImage: async (msg) => {
         try {
           const saved = await saveUploadedImage({
-            context: this.context,
             webview: webviewPanel.webview,
             document,
             name: msg.name ?? "image.png",
             data: msg.data,
-            wikiPath,
           });
           await webviewPanel.webview.postMessage({
             type: "imageUploaded",
@@ -245,12 +149,9 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
       },
       resolveImage: async (msg) => {
         const webviewUri = await resolveImageSrc({
-          context: this.context,
           webview: webviewPanel.webview,
           document,
           src: msg.src,
-          repos,
-          wikiPath,
         });
         await webviewPanel.webview.postMessage({
           type: "imageResolved",
@@ -259,28 +160,7 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
           webviewUri,
         } satisfies HostToWebview);
       },
-      reviewOrPublish: async (kind) => {
-        const config = getContentConfig();
-        if (pageKind === "wiki" && config?.mode === "workspace") {
-          if (kind === "review") {
-            await openHomeForWikiReview(this.context, document, config);
-          } else {
-            await openHomeForWikiPublish(this.context);
-          }
-          return;
-        }
-        if (kind === "review") {
-          await handleReview(this.context, document, webviewPanel.webview, state.latestText);
-        } else {
-          await handlePublish(this.context, document, webviewPanel.webview, state.latestText);
-        }
-        await threads.refresh();
-        await pushFileEditors(document, webviewPanel.webview);
-      },
       openUrl: (url) => handleOpenUrl(url),
-      refreshLabels: () => {
-        this.library?.refreshLabels();
-      },
     };
 
     const fromWebview = webviewPanel.webview.onDidReceiveMessage(async (message) => {
@@ -311,60 +191,17 @@ export class SlashMdEditorProvider implements vscode.CustomTextEditorProvider {
       const split = splitFrontmatter(next);
       void webviewPanel.webview.postMessage({ type: "setText", text: split.body } satisfies HostToWebview);
       void webviewPanel.webview.postMessage({ type: "frontmatter", fields: split.fields } satisfies HostToWebview);
-      if (workflow === "workspace") {
-        this.library?.refreshLabels();
-      }
     });
 
     webviewPanel.onDidDispose(() => {
       if (state.saveTimer) {
         clearTimeout(state.saveTimer);
       }
-      threads.dispose();
-      tracking.dispose();
       fromWebview.dispose();
       fromDoc.dispose();
       void persistExact(document, state.latestText, setPersisting);
     });
   }
-}
-
-export async function resolvePageKind(uri: vscode.Uri): Promise<PageKind> {
-  if (uri.path.endsWith(".slash.md")) {
-    return "sidecar";
-  }
-  if (!uri.path.endsWith(".md")) {
-    return "editor";
-  }
-  const config = getContentConfig();
-  if (!config) {
-    return "editor";
-  }
-  const remotePath = await docsContentRemotePath(uri, config);
-  return remotePath ? "wiki" : "editor";
-}
-
-export async function resolveWorkflow(uri: vscode.Uri): Promise<Workflow> {
-  if (uri.path.endsWith(".slash.md")) {
-    return "workspace";
-  }
-  if (!uri.path.endsWith(".md")) {
-    return "editor";
-  }
-  const config = getContentConfig();
-  if (!config) {
-    return "editor";
-  }
-  const remotePath = await docsContentRemotePath(uri, config);
-  return remotePath ? "workspace" : "editor";
-}
-
-export function workspaceDisplayPath(uri: vscode.Uri): string {
-  const folder = vscode.workspace.getWorkspaceFolder(uri);
-  if (folder) {
-    return vscode.workspace.asRelativePath(uri, false);
-  }
-  return uri.fsPath || uri.path;
 }
 
 async function persistExact(
@@ -384,6 +221,28 @@ async function persistExact(
     return hash;
   } finally {
     setTimeout(() => setPersisting(false), 800);
+  }
+}
+
+async function handleOpenUrl(url: string): Promise<void> {
+  let parsed: vscode.Uri;
+  try {
+    parsed = vscode.Uri.parse(url);
+  } catch {
+    return;
+  }
+  if (parsed.scheme !== "https") {
+    return;
+  }
+  await vscode.env.openExternal(parsed);
+}
+
+async function fileMtime(uri: vscode.Uri): Promise<string | null> {
+  try {
+    const stat = await vscode.workspace.fs.stat(uri);
+    return new Date(stat.mtime).toISOString();
+  } catch {
+    return null;
   }
 }
 

@@ -14,7 +14,7 @@ export function mountEdited(): { apply(payload: FileEditorsPayload): void; onHos
   const popover = document.getElementById("edited-popover")!;
   const pageEl = document.getElementById("page")!;
   if (!btn || !avatarsEl || !labelEl || !popover || !pageEl) {
-    return { apply() {} };
+    return { apply() {}, onHostMessage() {} };
   }
 
   let payload: FileEditorsPayload = {

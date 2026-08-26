@@ -9,14 +9,16 @@ import { createVsCodeHomeBridge } from "./vscode";
 const dom = createHomeDom();
 const state = createHomeState();
 
-let ctx!: ReturnType<typeof createHomeContext>;
-
-function refreshAll(): void {
-  if (state.lastPayload) {
-    renderTree(ctx, state.lastPayload);
-  }
-  renderStage(ctx);
-}
-
-ctx = createHomeContext(dom, state, refreshAll, () => renderStage(ctx), createVsCodeHomeBridge());
+const ctx = createHomeContext(
+  dom,
+  state,
+  () => {
+    if (state.lastPayload) {
+      renderTree(ctx, state.lastPayload);
+    }
+    renderStage(ctx);
+  },
+  () => renderStage(ctx),
+  createVsCodeHomeBridge(),
+);
 startHome(ctx);

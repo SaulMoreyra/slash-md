@@ -25,13 +25,9 @@ export function registerMarkdownAssociation(context: vscode.ExtensionContext): v
       await vscode.window.showInformationMessage("Slash MD is no longer the default Markdown editor.");
     }),
     vscode.commands.registerCommand("slash-md.openMarkdown", async (uri?: vscode.Uri) => {
-      const target = uri ?? activePlainMarkdownUri();
+      const target = uri ?? activeMarkdownUri();
       if (!target) {
         await vscode.window.showWarningMessage("Open a .md file to edit it with Slash MD.");
-        return;
-      }
-      if (target.path.endsWith(".slash.md")) {
-        await vscode.commands.executeCommand("vscode.openWith", target, SlashMdEditorProvider.viewType);
         return;
       }
       await vscode.commands.executeCommand("vscode.openWith", target, SlashMdEditorProvider.viewType);
@@ -75,21 +71,21 @@ async function applyEditorAssociation(enabled: boolean): Promise<void> {
   await config.update("editorAssociations", current, vscode.ConfigurationTarget.Global);
 }
 
-function activePlainMarkdownUri(): vscode.Uri | undefined {
+function activeMarkdownUri(): vscode.Uri | undefined {
   const editor = vscode.window.activeTextEditor?.document.uri;
-  if (editor && isPlainMarkdown(editor)) {
+  if (editor && isMarkdown(editor)) {
     return editor;
   }
   const open = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
   if (open && typeof open === "object" && "uri" in open) {
     const fromTab = (open as { uri: vscode.Uri }).uri;
-    if (isPlainMarkdown(fromTab)) {
+    if (isMarkdown(fromTab)) {
       return fromTab;
     }
   }
   return undefined;
 }
 
-function isPlainMarkdown(uri: vscode.Uri): boolean {
-  return uri.path.endsWith(".md") && !uri.path.endsWith(".slash.md");
+function isMarkdown(uri: vscode.Uri): boolean {
+  return uri.path.endsWith(".md");
 }

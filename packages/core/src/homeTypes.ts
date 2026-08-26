@@ -1,5 +1,9 @@
 /** Pure Home tree / staging types shared by host and webview. */
 
+import type { ConflictFileKind, WikiSyncStatus } from "./conflictModel";
+
+export type { ConflictFileKind, WikiSyncStatus } from "./conflictModel";
+
 export type LocalDraftBadge = "draft" | "modificado" | "in review";
 
 export type LocalDraft = {
@@ -46,6 +50,28 @@ export type LoteReviewSummary = {
   checksOk: boolean | null;
   approvals: number;
   state: "open" | "merged" | "closed";
+  wikiSyncStatus?: WikiSyncStatus;
+};
+
+/** Lifecycle of a workspace publication (branch + optional PR). */
+export type PublicationKind = "draft" | "in_review" | "published";
+
+export type PublicationState = {
+  title: string;
+  branch: string;
+  prNumber?: number;
+  prUrl?: string;
+  kind: PublicationKind;
+};
+
+export type PublicationSummary = {
+  title: string;
+  branch: string;
+  prNumber?: number;
+  prUrl?: string;
+  kind: PublicationKind;
+  /** True when this branch is currently checked out. */
+  mounted: boolean;
 };
 
 export type HomeTreePayload = {
@@ -62,8 +88,33 @@ export type HomeTreePayload = {
   inboxError?: string;
   /** Local in_review + pr, so Home can enable Aprobar y Publicar. */
   canPublishBatch: boolean;
+  /** Uncommitted or unpushed markdown on the mounted publication. */
+  canSendReview?: boolean;
   /** Remote path to the index/portada file, if it exists. */
   indexPath?: string;
   /** Active lote PR summary when there are in_review pages with an open PR. */
   loteReview?: LoteReviewSummary;
+  /** Mounted publication when HEAD is a pub/ branch (workspace). */
+  publication?: PublicationState | null;
+  /** Workspace can write only when a publication is mounted. */
+  canWrite?: boolean;
+  /** Known publications (local/remote pub/ branches + open PRs). */
+  publications?: PublicationSummary[];
+  /** Checked-out git branch (HEAD), when the folder is a repo. */
+  branch?: string;
+  /** Wiki vs this publication: behind / conflicting (GitHub) or local merge in progress. */
+  wikiSyncStatus?: WikiSyncStatus;
+};
+
+export type ConflictFile = {
+  path: string;
+  title: string;
+  kind: ConflictFileKind;
+  oursMarkdown: string | null;
+  theirsMarkdown: string | null;
+};
+
+export type WikiSyncState = {
+  status: WikiSyncStatus;
+  files: ConflictFile[];
 };

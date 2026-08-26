@@ -1,4 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
+import fs from "node:fs/promises";
 import type { DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
 import { currentAuth, signInWithToken, signOut } from "./auth";
 import { detectGit, getContentConfig, readSlashmd, writeSlashmd } from "./config";
@@ -8,14 +9,19 @@ import { resolveImages, uploadImage } from "./images";
 import {
   createFolder,
   createPage,
+  deleteFolder,
   deletePage,
+  discardDraft,
   listTemplates,
   loadPage,
   patchFrontmatter,
+  renameFolder,
   renamePage,
   savePage,
 } from "./pages";
 import { publishBatch, publishPersonal } from "./publish";
+import { abortSyncWithWiki, finishSyncWithWiki, getConflictState, resolveConflict, syncWithWiki } from "./conflicts";
+import { createPublication, leavePublication, listPublications, resumePublication } from "./publication";
 import { previewReview, sendBatchToReview } from "./review";
 import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
 
@@ -64,6 +70,28 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return workspaceInfo();
   });
 
+  handle("closeFolder", async () => {
+    setWorkspaceRoot(null);
+    return workspaceInfo();
+  });
+
+  handle("assertDirectory", async (folderPath: string) => {
+    const trimmed = folderPath?.trim();
+    if (!trimmed) {
+      throw new Error("No folder path.");
+    }
+    let stat;
+    try {
+      stat = await fs.stat(trimmed);
+    } catch {
+      throw new Error("That path does not exist.");
+    }
+    if (!stat.isDirectory()) {
+      throw new Error("FOLDER_REQUIRED");
+    }
+    return trimmed;
+  });
+
   handle("getWorkspace", () => workspaceInfo());
 
   handle("homeTree", () => buildHomeTree());
@@ -82,6 +110,12 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("deletePage", (pagePath: string) => deletePage(pagePath));
 
+  handle("renameFolder", (folderPath: string, name: string) => renameFolder(folderPath, name));
+
+  handle("deleteFolder", (folderPath: string) => deleteFolder(folderPath));
+
+  handle("discardDraft", (pagePath: string) => discardDraft(pagePath));
+
   handle("setDraftSelection", async (paths: string[]) => {
     const root = getWorkspaceRoot();
     if (root) {
@@ -91,11 +125,22 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("previewReview", () => previewReview());
 
-  handle("reviewBatch", (reviewers?: string) => sendBatchToReview(reviewers));
+  handle("reviewBatch", (reviewers?: string, excludePaths?: string[]) => sendBatchToReview(reviewers, excludePaths));
 
   handle("publishBatch", (preferredPr?: number) => publishBatch(preferredPr));
 
   handle("publishPersonal", (pagePath: string) => publishPersonal(pagePath));
+
+  handle("createPublication", (title: string) => createPublication(title));
+  handle("resumePublication", (branch: string) => resumePublication(branch));
+  handle("leavePublication", () => leavePublication());
+  handle("listPublications", () => listPublications());
+
+  handle("getConflictState", () => getConflictState());
+  handle("syncWithWiki", () => syncWithWiki());
+  handle("resolveConflict", (pagePath: string, choice) => resolveConflict(pagePath, choice));
+  handle("abortSyncWithWiki", () => abortSyncWithWiki());
+  handle("finishSyncWithWiki", () => finishSyncWithWiki());
 
   handle("signIn", (token?: string) => signInWithToken(token));
 

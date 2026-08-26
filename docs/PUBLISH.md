@@ -15,10 +15,10 @@ The extension lives in **`apps/vscode/`**. Root `npm run package` delegates to t
 - [x] `README.md` has install instructions and feature summary (add a product GIF/screenshot after smoke test if desired)
 - [x] `CHANGELOG.md` exists
 - [x] `LICENSE` (MIT) exists
-- [x] `Edit with Slash MD` opens workspace files in place (no sidecar copy)
+- [x] `Open with Slash MD` opens workspace `.md` files in place
 - [ ] Run `npm run build` — no errors
 - [ ] Run `npm test` — all pass
-- [ ] Smoke test on a docs sandbox (Home → New → image → Review → Feedback → Publish)
+- [ ] Smoke test: open a `.md` with Slash MD, edit, paste an image, confirm autosave
 - [x] Version set for release (`0.1.0`)
 
 ## Build the VSIX
@@ -39,12 +39,12 @@ cd apps/vscode
 npm run package          # runs vsce package --no-dependencies after build
 ```
 
-`vscode:prepublish` builds `dist/extension.js`, `dist/webview.js`, and `dist/home.js` (UI sourced from `packages/ui`).
+`vscode:prepublish` builds `dist/extension.js` and `dist/webview.js` (editor UI from `packages/ui`).
 
 ## Test the VSIX locally
 
 1. In Cursor / VS Code: **Extensions** → `⋯` → **Install from VSIX…** → pick the `.vsix` under `apps/vscode/`.
-2. Reload. Open a docs repo → Init → Home → New → Review / Publish.
+2. Reload. Open a `.md` → **Open with Slash MD** → edit and autosave.
 
 ## Debug from source
 

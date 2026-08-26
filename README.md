@@ -1,35 +1,84 @@
 # Slash MD
 
-Notion-like Markdown editor for **VS Code** and **Cursor**. Write product docs as real `.md` files in your repo; GitHub handles review and publishing.
+Notion-like Markdown editor for product docs. Pages are real `.md` files in your repo; GitHub handles review and publishing.
+
+Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github`):
+
+| App | Where | Who it’s for |
+| --- | --- | --- |
+| **Desktop** | Electron (`apps/desktop`) | Wiki: nav, drafts, review, publish, and editor in one window |
+| **VS Code / Cursor** | Extension (`apps/vscode`) | WYSIWYG Markdown editor inside the IDE |
 
 ![Slash MD icon](media/slash.png)
 
-## Install
-
-1. Open the Extensions view in VS Code or Cursor.
-2. Search for **Slash MD** (publisher `saulmoreyra`), or install from a `.vsix` via **⋯ → Install from VSIX…**.
-3. Open your **docs repository** as a folder.
-4. Command Palette → **Slash MD: Init** (or **Init** in Home).
-5. Sign in to GitHub when prompted (`repo` scope).
-
-Full walkthrough: [docs/USAGE.md](docs/USAGE.md). Product flows (with diagrams): [docs/FLOWS.md](docs/FLOWS.md).
-
 ## What you get
 
-- **WYSIWYG Markdown** — slash menu (`/h1`, `/code`, `/callout`, `/diagram`, …), covers, page icons, Mermaid flowcharts
+### Desktop (wiki)
+
 - **Local-first pages** — files live under `contentPath` (e.g. `docs/producto/mi-nota.md`); autosave writes the disk file
-- **Images on disk** — paste or `/image` saves to `{contentPath}/images/` with relative paths in the Markdown
 - **Workspace mode** — select drafts → **Mandar a Revisión** → one PR → comments on the canvas → **Aprobar y Publicar**
 - **Personal mode** — **Publish** commits and pushes straight to the default branch (no PR)
 - **Home** — library, staging, feedback inbox, and lote PR status
 - **Team templates** — optional `_templates/` in the docs repo
 
-## Quick start
+### VS Code / Cursor (editor)
+
+- **WYSIWYG Markdown** — slash menu (`/h1`, `/code`, `/callout`, `/diagram`, …), covers, page icons, Mermaid flowcharts
+- **Open with Slash MD** — edit the real `.md` in place (autosave)
+- **Images on disk** — paste or `/image` saves to `{folder}/images/` with relative paths in the Markdown
+- Optional **default Markdown editor** (`slash-md.useAsDefaultMarkdown`)
+
+Product flows (with diagrams): [docs/FLOWS.md](docs/FLOWS.md). Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Desktop (Electron)
+
+From the repo root:
+
+```bash
+npm install
+npm run desktop:dev
+```
+
+Open a folder from the terminal (like `code .` / `cursor .`):
+
+```bash
+# with the app already running
+slash .
+slash ~/Repositorios/Personal
+```
+
+Put `slash` on your PATH once:
+
+```bash
+mkdir -p ~/.local/bin
+ln -sf "$(pwd)/apps/desktop/bin/slash" ~/.local/bin/slash
+# add ~/.local/bin to PATH if needed, then: hash -r
+```
+
+Or from the repo without installing: `npm run slash -- .`
+
+1. **Abrir carpeta** and pick your docs repo.
+2. **Iniciar** writes `.slashmd.json` if the folder does not have one.
+3. Write in the editor; stage drafts in the middle pane → **Mandar a revisión**.
+
+Production bundle: `npm run desktop:build`, then `npm run start -w @slash-md/desktop`.
+
+## VS Code / Cursor extension
+
+1. Open the Extensions view in VS Code or Cursor.
+2. Search for **Slash MD** (publisher `saulmoreyra`), or install a `.vsix` via **⋯ → Install from VSIX…**.
+3. Right-click a `.md` file → **Open with Slash MD**.
+
+Optional: Command Palette → **Slash MD: Use as default Markdown editor**.
+
+Marketplace packaging: [docs/PUBLISH.md](docs/PUBLISH.md). Wiki walkthrough (Desktop): [docs/USAGE.md](docs/USAGE.md).
+
+## Quick start (Desktop wiki)
 
 1. Clone or open your docs repo.
-2. **Slash MD: Init** → writes `.slashmd.json` at the repo root.
-3. **Home → New page** → pick a template → write.
-4. Check pages in **Borradores locales** → **Mandar a Revisión**.
+2. **Init** → writes `.slashmd.json` at the repo root.
+3. **Nueva página** → pick a template → write.
+4. Check pages in **Borradores** → **Mandar a Revisión**.
 5. After approval → **Aprobar y Publicar**.
 
 Example `.slashmd.json`:
@@ -52,25 +101,31 @@ Developers open the `.md` files on GitHub or in their IDE. Optional GitHub Pages
 
 ## Requirements
 
-- VS Code / Cursor `^1.85.0`
-- Git + GitHub authentication (`repo` scope) for review and publish
-- Docs folder opened as the workspace (happy path)
+- **Desktop:** Node 18+; Git + GitHub (`repo` scope) for review and publish
+- **Extension:** VS Code / Cursor `^1.85.0`
+- Docs folder opened as the workspace (Desktop happy path)
 
 ## Development
 
-Monorepo (`apps/` + `packages/`). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+```
+apps/
+  desktop/    Electron wiki app
+  vscode/     VS Code / Cursor Markdown editor (VSIX)
+packages/
+  core/       Domain, paths, protocols
+  ui/         Editor + Home UI
+  github/     GitHub API + inbox / lote models
+```
 
 ```bash
 npm install
-npm run build          # VS Code extension bundles → apps/vscode/dist
+npm run desktop:dev    # Electron
+npm run build          # extension bundles → apps/vscode/dist
 npm test
 npm run package        # → apps/vscode/slash-md-<version>.vsix
-npm run desktop:dev    # Electron skeleton (shared editor UI)
 ```
 
 F5 / debug uses `--extensionDevelopmentPath=apps/vscode`.
-
-Marketplace packaging checklist: [docs/PUBLISH.md](docs/PUBLISH.md).
 
 ## License
 

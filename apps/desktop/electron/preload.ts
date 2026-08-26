@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { DesktopApi } from "../shared/api";
 
 function invoke<K extends keyof DesktopApi>(channel: K) {
@@ -8,6 +8,12 @@ function invoke<K extends keyof DesktopApi>(channel: K) {
 const api: DesktopApi = {
   pickFolder: invoke("pickFolder"),
   openFolder: invoke("openFolder"),
+  closeFolder: invoke("closeFolder"),
+  resolveDroppedFolder: async (file: File) => {
+    const folderPath = webUtils.getPathForFile(file);
+    return ipcRenderer.invoke("assertDirectory", folderPath) as Promise<string>;
+  },
+  assertDirectory: invoke("assertDirectory"),
   getWorkspace: invoke("getWorkspace"),
   homeTree: invoke("homeTree"),
   openPage: invoke("openPage"),
@@ -17,11 +23,23 @@ const api: DesktopApi = {
   newFolder: invoke("newFolder"),
   renamePage: invoke("renamePage"),
   deletePage: invoke("deletePage"),
+  renameFolder: invoke("renameFolder"),
+  deleteFolder: invoke("deleteFolder"),
+  discardDraft: invoke("discardDraft"),
   setDraftSelection: invoke("setDraftSelection"),
   previewReview: invoke("previewReview"),
   reviewBatch: invoke("reviewBatch"),
   publishBatch: invoke("publishBatch"),
   publishPersonal: invoke("publishPersonal"),
+  createPublication: invoke("createPublication"),
+  resumePublication: invoke("resumePublication"),
+  leavePublication: invoke("leavePublication"),
+  listPublications: invoke("listPublications"),
+  getConflictState: invoke("getConflictState"),
+  syncWithWiki: invoke("syncWithWiki"),
+  resolveConflict: invoke("resolveConflict"),
+  abortSyncWithWiki: invoke("abortSyncWithWiki"),
+  finishSyncWithWiki: invoke("finishSyncWithWiki"),
   signIn: invoke("signIn"),
   signOut: invoke("signOut"),
   getConfig: invoke("getConfig"),
@@ -41,6 +59,13 @@ const api: DesktopApi = {
     ipcRenderer.on("theme", wrapped);
     return () => {
       ipcRenderer.removeListener("theme", wrapped);
+    };
+  },
+  onFolderOpened: (listener) => {
+    const wrapped = (_event: unknown, folder: string) => listener(folder);
+    ipcRenderer.on("folder-opened", wrapped);
+    return () => {
+      ipcRenderer.removeListener("folder-opened", wrapped);
     };
   },
 };

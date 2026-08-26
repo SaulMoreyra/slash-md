@@ -7,6 +7,17 @@ updated: {{date}}
 
 ## Context
 
+
+
+## Options
+
+1.
+2.
+
 ## Decision
 
-## Consequences
+
+
+## Follow-up
+
+- [ ]

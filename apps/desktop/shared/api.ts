@@ -1,8 +1,18 @@
 import type { ContentConfig, SlashmdFile } from "@slash-md/core/configTypes";
-import type { HomeTreePayload, HomeTreeNode } from "@slash-md/core/homeTypes";
+import type {
+  HomeTreePayload,
+  HomeTreeNode,
+  PublicationState,
+  PublicationSummary,
+  WikiSyncState,
+  ConflictFile,
+} from "@slash-md/core/homeTypes";
 import type { ReviewPreviewItem } from "@slash-md/core/homeProtocol";
 import type { FrontmatterFields, ReviewThread } from "@slash-md/core/protocol";
 import type { TemplatePick } from "@slash-md/core/templates";
+import type { ConflictChoice } from "@slash-md/core/conflictModel";
+
+export type { ConflictChoice } from "@slash-md/core/conflictModel";
 
 export type AuthInfo = { login: string } | null;
 
@@ -26,6 +36,12 @@ export type PagePayload = {
   /** Local draft (or dirty in_review) that can join a Mandar a Revisión lote. */
   reviewable: boolean;
   prUrl: string | null;
+  /** Mounted publication when HEAD is a pub/ branch (workspace). */
+  publication?: PublicationState | null;
+  /** False on workspace default branch (wiki read-only). */
+  canWrite?: boolean;
+  /** Checked-out git branch (HEAD), when the folder is a repo. */
+  branch?: string;
 };
 
 export type ReviewBatchResult = {
@@ -34,6 +50,8 @@ export type ReviewBatchResult = {
   created: boolean;
   branch: string;
   paths: string[];
+  /** Logins that could not be requested as reviewers (mentioned in PR body). */
+  mentionedOnly?: string[];
 };
 
 export type PublishBatchResult = {
@@ -53,20 +71,42 @@ export type ThreadsPayload = {
 export type DesktopApi = {
   pickFolder(): Promise<string | undefined>;
   openFolder(path: string): Promise<WorkspaceInfo>;
+  closeFolder(): Promise<WorkspaceInfo>;
+  /** Ensure path exists and is a directory; returns the trimmed path. */
+  assertDirectory(path: string): Promise<string>;
+  /** Resolve a dropped File to an absolute directory path (Electron). */
+  resolveDroppedFolder(file: File): Promise<string>;
   getWorkspace(): Promise<WorkspaceInfo>;
   homeTree(): Promise<HomeTreePayload>;
   openPage(path: string): Promise<PagePayload>;
   savePage(path: string, markdown: string): Promise<{ savedAt: string }>;
   patchFrontmatter(path: string, patch: Partial<FrontmatterFields>): Promise<{ markdown: string }>;
-  newPage(input: { title: string; templateId: string; section?: string }): Promise<{ path: string }>;
+  newPage(input: {
+    title: string;
+    templateId: string;
+    section?: string;
+    fileName?: string;
+  }): Promise<{ path: string }>;
   newFolder(input: { name: string; parent?: string }): Promise<{ path: string }>;
   renamePage(path: string, title: string): Promise<{ path: string }>;
   deletePage(path: string): Promise<void>;
+  renameFolder(path: string, name: string): Promise<{ path: string }>;
+  deleteFolder(path: string): Promise<void>;
+  discardDraft(path: string): Promise<{ deleted: boolean }>;
   setDraftSelection(paths: string[]): Promise<void>;
   previewReview(): Promise<ReviewPreviewItem[]>;
-  reviewBatch(reviewers?: string): Promise<ReviewBatchResult>;
+  reviewBatch(reviewers?: string, excludePaths?: string[]): Promise<ReviewBatchResult>;
   publishBatch(preferredPr?: number): Promise<PublishBatchResult>;
   publishPersonal(path: string): Promise<{ url: string }>;
+  createPublication(title: string): Promise<PublicationState>;
+  resumePublication(branch: string): Promise<PublicationState>;
+  leavePublication(): Promise<void>;
+  listPublications(): Promise<PublicationSummary[]>;
+  getConflictState(): Promise<WikiSyncState>;
+  syncWithWiki(): Promise<WikiSyncState>;
+  resolveConflict(path: string, choice: ConflictChoice): Promise<WikiSyncState>;
+  abortSyncWithWiki(): Promise<WikiSyncState>;
+  finishSyncWithWiki(): Promise<WikiSyncState>;
   signIn(token?: string): Promise<AuthInfo>;
   signOut(): Promise<void>;
   getConfig(): Promise<SlashmdFile>;
@@ -82,6 +122,20 @@ export type DesktopApi = {
   threadCreate(pagePath: string, selectedText: string, body: string): Promise<void>;
   openUrl(url: string): Promise<void>;
   onTheme(listener: (theme: "light" | "dark") => void): () => void;
+  onFolderOpened(listener: (folder: string) => void): () => void;
 };
 
-export type { ContentConfig, SlashmdFile, HomeTreePayload, HomeTreeNode, ReviewPreviewItem, FrontmatterFields, ReviewThread, TemplatePick };
+export type {
+  ContentConfig,
+  SlashmdFile,
+  HomeTreePayload,
+  HomeTreeNode,
+  ReviewPreviewItem,
+  FrontmatterFields,
+  ReviewThread,
+  TemplatePick,
+  PublicationState,
+  PublicationSummary,
+  WikiSyncState,
+  ConflictFile,
+};

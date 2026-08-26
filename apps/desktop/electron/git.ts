@@ -83,6 +83,24 @@ export async function currentBranch(cwd: string): Promise<string> {
   return (await runGit(["rev-parse", "--abbrev-ref", "HEAD"], { cwd })).trim();
 }
 
+export async function currentBranchName(cwd: string): Promise<string | undefined> {
+  try {
+    const name = await currentBranch(cwd);
+    return name || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function isMergeInProgress(cwd: string): Promise<boolean> {
+  try {
+    await runGit(["rev-parse", "-q", "--verify", "MERGE_HEAD"], { cwd });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function switchToBranch(cwd: string, branch: string): Promise<void> {
   const current = await currentBranch(cwd);
   if (current === branch) {

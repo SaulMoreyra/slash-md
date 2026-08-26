@@ -1,13 +1,13 @@
 import * as os from "node:os";
 import * as vscode from "vscode";
-import { runGit } from "../github/git";
+import { runGit } from "./git";
 import {
   buildEditorsPayload,
   parseGitAuthorLog,
   type LocalIdentity,
 } from "@slash-md/core/fileEditors";
 import type { FileEditorsPayload, HostToWebview } from "@slash-md/core/protocol";
-import { relativePosix } from "../workspace/docsWorkspace";
+import { relativePosix } from "./workspacePath";
 
 const LOG_LIMIT = 200;
 

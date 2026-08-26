@@ -6,8 +6,8 @@ Mapa para auditar flujos host ↔ webview. Monorepo `apps/` + `packages/` (motor
 
 ```
 apps/
-  vscode/     # extensión Marketplace (host + VSIX)
-  desktop/    # Electron skeleton (mismo editor UI)
+  vscode/     # extensión Marketplace: custom editor Markdown
+  desktop/    # Electron: wiki (Home, review, publish) + editor
 packages/
   core/       # dominio puro + puertos + tipos Home/protocol
   ui/         # editor + home + tokens (bundles IIFE)
@@ -20,18 +20,17 @@ packages/
 |------|-----|-----------|
 | **Core** | Lógica pura (frontmatter, paths, protocolos, puertos) | `packages/core/` |
 | **GitHub (puro)** | REST/GraphQL helpers + inbox/batch models | `packages/github/` |
-| **GitHub (host)** | Review/Publish/clone orquestados con VS Code | `apps/vscode/src/github/` |
-| **Host UI** | Panels, trees, custom editor | `apps/vscode/src/{home,editor,library}/` |
+| **GitHub (host)** | Review/Publish/clone orquestados | `apps/desktop/electron/` |
+| **Host UI (extensión)** | Custom editor Markdown | `apps/vscode/src/editor/` |
+| **Host UI (desktop)** | Home, árbol, editor React | `apps/desktop/` |
 | **UI** | DOM + Milkdown (Crepe) | `packages/ui/src/{editor,home,shared}/` |
-| **Desktop** | Electron main/preload; HostBridge vía preload | `apps/desktop/` |
 
 ## Bundles (VS Code)
 
 | Entry | Output | Responsabilidad |
 |-------|--------|-----------------|
-| `packages/ui/src/home/home.ts` | `apps/vscode/dist/home.js` | Biblioteca, staging, inbox |
 | `packages/ui/src/editor/main.ts` | `apps/vscode/dist/webview.js` | Editor Crepe + chrome |
-| `apps/vscode/src/extension.ts` | `apps/vscode/dist/extension.js` | Composición |
+| `apps/vscode/src/extension.ts` | `apps/vscode/dist/extension.js` | Custom editor + Open with Slash MD |
 
 Build: `npm run build` (workspace `slash-md` → `apps/vscode/esbuild.mjs`).
 
@@ -41,51 +40,30 @@ Desktop: `npm run desktop:dev` → `apps/desktop/dist/webview.js` + `Electron`.
 
 El webview no llama `acquireVsCodeApi()` al importar. Cada app inyecta un bridge:
 
-- VS Code: `createVsCodeBridge()` / `createVsCodeHomeBridge()`
-- Electron: preload expone `acquireVsCodeApi()` con el mismo shape (`postMessage`)
+- VS Code: `createVsCodeBridge()`
+- Electron: preload expone `acquireVsCodeApi()` con el mismo shape (`postMessage`) para el canvas Crepe; Home es React nativo.
 
-## Mensajes — Home
+## Mensajes — Home (Desktop)
 
-**Router host:** [`apps/vscode/src/home/homeMessageRouter.ts`](../apps/vscode/src/home/homeMessageRouter.ts)  
-**Router webview:** [`packages/ui/src/home/homeController.ts`](../packages/ui/src/home/homeController.ts)  
-**Tipos:** [`packages/core/src/homeProtocol.ts`](../packages/core/src/homeProtocol.ts) (simétrico a `protocol.ts`; HTML en [`homeHtml.ts`](../apps/vscode/src/home/homeHtml.ts))
+Home vive en Electron (`apps/desktop/electron/home.ts`, pantallas React). Tipos: [`packages/core/src/homeProtocol.ts`](../packages/core/src/homeProtocol.ts).
 
-| Webview → Host (`HomeFromWebview`) | Handler | Efecto principal |
-|-----------------------------------|---------|------------------|
-| `ready` | `pushTree` | Carga árbol inicial |
-| `refresh` | `invalidateInboxAndPushTree` | Refresca inbox + árbol |
-| `open` / `rename` / `delete` | docs | Abre / renombra / borra página |
-| `new` / `newFolder` | workspace | Crea página o carpeta |
-| `init` / `signIn` | config/auth | Init repo / sesión GitHub |
-| `toggleDraft` / `setDraftSelection` / `selectAllDrafts` | staging | Selección de lote |
-| `previewReview` | staging | Modal confirmación |
-| `reviewBatch` | `sendBatchToReview` | Crea/actualiza PR del lote |
-| `publishBatch` | `publishBatch` (github) | Merge del PR |
-| `openInbox` | inbox | Abre editor + reveal thread |
-| `getConfig` / `saveConfig` | config | `.slashmd.json` |
-| `renameFolder` / `openIndex` / `createIndex` | workspace | Carpetas e índice |
+La UI de biblioteca en `packages/ui/src/home/` queda como motor compartido / tests; el producto wiki es Desktop.
 
-| Host → Webview (`HomeToWebview`) | Efecto |
-|----------------------------------|--------|
-| `tree` | Payload completo (roots, drafts, inbox, loteReview) |
-| `status` | Barra lateral |
-| `configResult` | Panel configuración |
-| `reviewPreview` | Modal “Confirmar revisión” |
-
-## Mensajes — Editor
+## Mensajes — Editor (VS Code)
 
 **Listener webview (único):** [`packages/ui/src/editor/editorController.ts`](../packages/ui/src/editor/editorController.ts) → [`messaging/router.ts`](../packages/ui/src/editor/messaging/router.ts)  
 **Router host:** [`apps/vscode/src/editor/editorMessageRouter.ts`](../apps/vscode/src/editor/editorMessageRouter.ts)  
 **Tipos:** [`packages/core/src/protocol.ts`](../packages/core/src/protocol.ts)
 
-| Webview → Host (`WebviewToHost`) | Handler deps | Efecto |
-|----------------------------------|--------------|--------|
+La extensión siempre arranca en **workflow `editor`**: autosave, frontmatter (title/icon/cover), imágenes locales. Review, publish y threads de GitHub se ignoran en el host (eso es Desktop).
+
+| Webview → Host (`WebviewToHost`) | Handler | Efecto |
+|----------------------------------|---------|--------|
 | `edit` | `applyEdit` + `persistSoon` | Autosave cuerpo (debounced) |
 | `frontmatter` | `applyFrontmatter` + `persistSoon` | Patch YAML (title, icon, cover) |
-| `review` / `publish` | `reviewOrPublish` | Wiki+workspace → Home; sidecar → PR flow |
-| `uploadImage` / `resolveImage` | images | Imágenes locales/wiki |
-| `threadCreate` / `threadReply` / `threadResolve` / `threadsRefresh` | threads | Review threads |
-| `openUrl` | `openUrl` | Abrir PR en browser |
+| `uploadImage` / `resolveImage` | images | Imágenes al lado del `.md` (`images/`) |
+| `openUrl` | `openUrl` | Abrir `https` en el browser |
+| `review` / `publish` / threads | no-op | Solo Desktop |
 
 | Host → Webview (`HostToWebview`) | Router webview → |
 |----------------------------------|------------------|
@@ -93,9 +71,6 @@ El webview no llama `acquireVsCodeApi()` al importar. Cada app inyecta un bridge
 | `frontmatter` | frontmatter + icon + cover `.apply()` |
 | `editors` | `edited.apply()` |
 | `setText` | crepe + bar (sync externo) |
-| `threads` | comments plugin + thread chrome |
-| `revealThread` | scroll + highlight |
-| `reviewContext` | banner mismatch PR |
 | `imageMap` / `imageUploaded` / `imageResolved` | `core/images` + cover |
 
 ## Flujos críticos
@@ -106,9 +81,9 @@ Narrativa de producto + diagramas Mermaid: [FLOWS.md](FLOWS.md).
 
 | Término | Significado |
 |---------|-------------|
-| **Wiki** | `.md` bajo `contentPath` en el repo de docs |
+| **Wiki** | `.md` bajo `contentPath` en el repo de docs (Desktop) |
 | **Sidecar** | `.slash.md` legacy (draft local + meta) |
-| **Staging** | Selección de páginas locales para un lote de review |
+| **Staging** | Selección de páginas locales para un lote de review (Desktop) |
 | **Lote** | Conjunto de páginas en un mismo PR |
 | **contentPath** | Prefijo de docs en el repo (ej. `docs` o `.`) |
 
@@ -117,11 +92,5 @@ Narrativa de producto + diagramas Mermaid: [FLOWS.md](FLOWS.md).
 1. **Un listener por bus** — solo `homeController.ts` / `editorController.ts`; mounts solo DOM + `postMessage` saliente.
 2. **`switch` exhaustivo** — `assertNever` en routers para nuevos tipos.
 3. **Puro en `packages/core`** — sin `vscode` ni `document`.
-4. **`packages/github`** — sin `vscode` (API + models). Orquestación UI queda en `apps/vscode`.
+4. **`packages/github`** — sin `vscode` (API + models). Orquestación UI queda en `apps/desktop`.
 5. **Tests** — `test/` en la raíz; imports `@slash-md/core`, `@slash-md/ui`, `apps/vscode/...`.
-
-## Pendiente (post monorepo)
-
-- Puertos `FsPort` / `Auth` / `HostUi` en batch review/publish y mover orquestación a `packages/github`
-- Auth OAuth en `apps/desktop`
-- Empaquetado Electron (electron-builder) — fuera del skeleton

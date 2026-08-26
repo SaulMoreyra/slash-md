@@ -1,0 +1,82 @@
+---
+description: Folder-per-component conventions and JSX antipatterns for apps/desktop feature screens
+globs: apps/desktop/src/screens/**/*
+alwaysApply: false
+---
+
+# Desktop React screens
+
+## Feature layout
+
+```
+screens/<feature>/
+  <Feature>Screen.tsx          # thin view — composition only (OK at feature root)
+  index.ts                     # public exports
+  hooks/
+    use<Feature>Controller.ts  # screen orchestrator; screen calls this only
+  utils.ts / utils/            # pure helpers (no React)
+  components/                  # feature-local presentational pieces
+```
+
+Welcome lives at `screens/Welcome/` with `WelcomeScreen.tsx` + `index.ts`.
+
+## Folder-per-component (under `components/`)
+
+Every presentational piece under `screens/*/components/` uses:
+
+```
+ComponentName/
+  ComponentName.tsx
+  index.ts
+  __specs__/ComponentName.spec.tsx   # preferred for non-trivial pieces
+  hooks/                             # ONLY when this piece owns local orchestration
+    useComponentNameController.ts
+  components/                        # local list/item/empty subparts
+```
+
+- Import as `./components/ComponentName` (folder resolves via `index.ts`).
+- Nested controllers are OK for modals, panes, and forms; do **not** inflate `useHomeController` / `useEditorController` for piece-local UI state.
+- Preserve public APIs of feature controllers unless there is a clear win.
+
+## Screen rules
+
+1. Screen calls **only** `useFeatureController` (plus i18n / shared chrome).
+2. No fetch, debounce, or IPC orchestration in JSX — that belongs in controllers / nested hooks.
+3. Branch with early returns and flags (`empty`, `needsInit`, `workPaneOpen`), not nested ternaries.
+4. Prefer **namespaced** controller returns for multi-domain screens (`{ editor, threads, comments, chrome }`, `{ search, modals, nav, library }`) — Pattern B in `react-list-screen-pattern`. Never export raw `setState`; only `on*` handlers. Domain hooks own IPC (upload, reply, review). Further-split domains when needed (`useFormatter` / `useSearch` / `useKeyboardShortcuts`); use feature `enums.ts` for status, lifecycle, modal/nav kinds, menu ids, and mode checks — see antipatterns §§6–9.
+
+## Antipatterns (fix these)
+
+Canonical detail + examples: **`desktop-react-antipatterns.mdc`** (applies to all `apps/desktop/src`).
+
+### 1. Heavy conditionals inside JSX
+
+**Bad:** nested ternaries for empty / auth / mode branches in a large return.
+
+**Good:** early returns (`WorkPane`), boolean flags from a controller (`empty`, `needsRepo`), or helper components (`DraftEmpty`, `EditorMoreActions`, `ModeCard`).
+
+### 2. Inline `.map()` in large JSX trees
+
+**Bad:** mapping drafts / inbox / orphans / templates inline inside a 100+ line parent.
+
+**Good:** list/item subcomponents (`DraftList`, `InboxList`, `ReviewDraftList`, `TemplatePickGrid`, `OrphanThreadRail`, `BreadcrumbTrail`).
+
+### 3. Oversized single-file components
+
+**Bad:** form state + mode cards + detection effects all in one modal file; draft toggle/discard logic mixed into pane JSX.
+
+**Good:** segment presentational subparts and lift state into `useXController` (`useInitModalController`, `useDraftPaneController`, `useCreatePageFormController`, `useWelcomeController`).
+
+### 4. God controller / setters / flat field bag
+
+**Bad:** one hook returns 30 flat fields including `setTitle` / `setOpenThread` / `setModal`; screen inlines upload + thread reply IPC.
+
+**Good:** `useEditorController` / `useHomeController` compose domain subhooks + `useKeyboardShortcuts` and return namespaced APIs with descriptive `on*` only. Escape/Cmd shortcuts live in `useKeyboardShortcuts`, not inline in the orchestrator.
+
+## UI conventions (reminder)
+
+- Prefer HeroUI compounds + Tailwind; `onPress` not `onClick` for HeroUI `Button`.
+- User-facing copy via `t("…")` / `src/i18n/locales/`.
+- Follow `slash-md-desktop` and `react-list-screen-pattern` skills.
+- Shared chrome lives under `src/components/` — see `desktop-react-components.mdc`.
+- Do **not** refactor Milkdown `CrepeCanvas` or `packages/ui` vanilla DOM.

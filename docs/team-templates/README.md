@@ -1,17 +1,17 @@
 # Team templates (example)
 
-Copy this folder into your docs repo as `<contentPath>/_templates` (default: `docs/_templates`).
+Copy this folder into your docs repo as `templates/` or `<contentPath>/_templates` (default discovery: `templates/`, then `_templates/`). The folder appears in Home’s library so you can open it and create a new template file there.
 
 ```
 docs/
   _templates/
-    _manifest.json    ← optional labels for the New page picker
+    _manifest.json    ← optional; file `description:` is enough for the picker
     onboarding.md
     adr.md
     ...
 ```
 
-Each file is a normal Markdown template. Slash MD replaces:
+Each file is a normal Markdown template. Put a short picker blurb in frontmatter (`description:`). It is shown in **New page** and dropped when creating a wiki page. Slash MD replaces:
 
 | Placeholder | Value |
 |---|---|

@@ -3,6 +3,7 @@ import path from "node:path";
 import { referencedImages, sanitizeImageName, uniqueImageRepoPath } from "@slash-md/core/images";
 import { imageMarkdownSrc, posixNormalize } from "@slash-md/core/paths";
 import { fileExists, getContentConfig, readText, repoFile, writeText } from "./config";
+import { assertCanWriteWorkspace } from "./pages";
 import { getWorkspaceRoot } from "./session";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -23,6 +24,7 @@ export async function uploadImage(
   if (bytes.byteLength > MAX_IMAGE_BYTES) {
     throw new Error("Image is larger than 8 MB.");
   }
+  await assertCanWriteWorkspace();
   const root = requireRoot();
   const config = await getContentConfig(root);
   const contentPath = config?.contentPath ?? "";

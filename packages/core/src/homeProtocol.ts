@@ -7,6 +7,8 @@ export type ReviewPreviewItem = {
   title: string;
   badge: string;
   summary: string;
+  /** GitHub logins from document `people` field. */
+  people?: string[];
 };
 
 /** Host → Home webview. Symmetric to HostToWebview in protocol.ts. */

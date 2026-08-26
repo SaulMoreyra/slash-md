@@ -11,13 +11,10 @@ function mockDeps(overrides: Partial<EditorSessionDeps> = {}): {
   const state: EditorSessionState = {
     latestText: "---\ntitle: A\n---\n\nbody\n",
     saveTimer: undefined,
-    reviewing: false,
     persisting: false,
   };
   const deps: EditorSessionDeps = {
     state,
-    workflow: "workspace",
-    pageKind: "wiki",
     frontmatterKeys: new Set<FrontmatterKey>(["title", "icon", "cover", "coverPosition"]),
     applyEdit: (body) => {
       calls.push(`applyEdit:${body.slice(0, 20)}`);
@@ -28,38 +25,14 @@ function mockDeps(overrides: Partial<EditorSessionDeps> = {}): {
     persistSoon: () => {
       calls.push("persistSoon");
     },
-    flushSaveTimer: () => {
-      calls.push("flushSaveTimer");
-    },
-    persistNow: async () => {
-      calls.push("persistNow");
-    },
-    refreshThreads: async () => {
-      calls.push("refreshThreads");
-    },
-    threadReply: async (id, body) => {
-      calls.push(`threadReply:${id}:${body}`);
-    },
-    threadResolve: async (id, resolved) => {
-      calls.push(`threadResolve:${id}:${resolved}`);
-    },
-    threadCreate: async (text) => {
-      calls.push(`threadCreate:${text}`);
-    },
     uploadImage: async (msg) => {
       calls.push(`uploadImage:${msg.id}`);
     },
     resolveImage: async (msg) => {
       calls.push(`resolveImage:${msg.id}`);
     },
-    reviewOrPublish: async (kind) => {
-      calls.push(`reviewOrPublish:${kind}`);
-    },
     openUrl: async (url) => {
       calls.push(`openUrl:${url}`);
-    },
-    refreshLabels: () => {
-      calls.push("refreshLabels");
     },
     ...overrides,
   };
@@ -97,43 +70,13 @@ export async function runEditorRouterTests(assert: (ok: boolean, message: string
   {
     const { deps, calls } = mockDeps();
     await routeEditorMessage(deps, { type: "threadsRefresh" });
-    assert(calls.includes("refreshThreads"), "routeEditorMessage threadsRefresh delegates");
+    assert(calls.length === 0, "routeEditorMessage ignores review threads in the editor-only host");
   }
 
   {
     const { deps, calls } = mockDeps();
-    await routeEditorMessage(deps, { type: "threadCreate", selectedText: "snip" });
-    assert(
-      calls.includes("flushSaveTimer") && calls.includes("persistNow") && calls.includes("threadCreate:snip"),
-      "routeEditorMessage threadCreate flushes then creates",
-    );
-  }
-
-  {
-    const { deps, calls, state } = mockDeps();
     await routeEditorMessage(deps, { type: "review", text: "body" });
-    assert(
-      calls.includes("flushSaveTimer") &&
-        calls.includes("applyEdit:body") &&
-        calls.includes("persistNow") &&
-        calls.includes("reviewOrPublish:review") &&
-        calls.includes("refreshLabels") &&
-        state.reviewing === false,
-      "routeEditorMessage review persists and publishes via Home/sidecar",
-    );
-  }
-
-  {
-    const { deps, calls } = mockDeps({ workflow: "editor" });
-    await routeEditorMessage(deps, { type: "publish" });
-    assert(calls.length === 0, "routeEditorMessage ignores review/publish in editor workflow");
-  }
-
-  {
-    const { deps, calls, state } = mockDeps();
-    state.reviewing = true;
-    await routeEditorMessage(deps, { type: "publish" });
-    assert(calls.length === 0, "routeEditorMessage ignores concurrent review/publish");
+    assert(calls.length === 0, "routeEditorMessage ignores review/publish in the editor-only host");
   }
 
   {

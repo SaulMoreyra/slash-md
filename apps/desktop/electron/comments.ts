@@ -11,6 +11,7 @@ import {
 import type { ThreadsPayload } from "../shared/api";
 import { resolveToken } from "./auth";
 import { getContentConfig, readText, repoFile } from "./config";
+import { getPublicationState } from "./publication";
 import { getWorkspaceRoot } from "./session";
 
 function requireRoot(): string {
@@ -24,11 +25,17 @@ function requireRoot(): string {
 export async function loadThreads(repoPath: string): Promise<ThreadsPayload> {
   const root = requireRoot();
   const config = await getContentConfig(root);
-  if (!config || config.mode === "personal") {
+  if (!config || config.mode !== "workspace") {
     return { threads: [], prUrl: null, canWrite: false, headOid: null };
   }
   const markdown = await readText(repoFile(root, repoPath));
-  const target = reviewThreadTarget({ markdown, fileRemotePath: repoPath });
+
+  const { publication } = await getPublicationState();
+  const target = reviewThreadTarget({
+    markdown,
+    fileRemotePath: repoPath,
+    draftPr: publication?.prNumber,
+  });
   if (!target) {
     return { threads: [], prUrl: null, canWrite: false, headOid: null };
   }
@@ -67,7 +74,12 @@ export async function threadReply(repoPath: string, threadId: string, body: stri
     throw new Error("Sign in to GitHub to comment.");
   }
   const markdown = await readText(repoFile(root, repoPath));
-  const target = reviewThreadTarget({ markdown, fileRemotePath: repoPath });
+  const { publication } = await getPublicationState();
+  const target = reviewThreadTarget({
+    markdown,
+    fileRemotePath: repoPath,
+    draftPr: publication?.prNumber,
+  });
   if (!target) {
     throw new Error("Open a Review (PR) before commenting.");
   }
@@ -101,11 +113,16 @@ export async function threadCreate(repoPath: string, selectedText: string, body:
   if (!config || !token) {
     throw new Error("Sign in to GitHub to comment.");
   }
-  if (config.mode === "personal") {
+  if (config.mode !== "workspace") {
     throw new Error("Comments are available in Workspace mode with an open PR.");
   }
   const markdown = await readText(repoFile(root, repoPath));
-  const target = reviewThreadTarget({ markdown, fileRemotePath: repoPath });
+  const { publication } = await getPublicationState();
+  const target = reviewThreadTarget({
+    markdown,
+    fileRemotePath: repoPath,
+    draftPr: publication?.prNumber,
+  });
   if (!target) {
     throw new Error("Open a Review (PR) before commenting.");
   }

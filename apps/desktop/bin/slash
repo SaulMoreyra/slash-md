@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+/**
+ * Open a folder in Slash MD from the terminal, like `code .` / `cursor .`.
+ *
+ *   slash .
+ *   slash ~/Repositorios/Personal
+ */
+const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const net = require("node:net");
+const path = require("node:path");
+
+const desktopRoot = path.resolve(__dirname, "..");
+
+function printHelp() {
+  process.stdout.write(`Usage: slash [folder]
+
+Open a docs folder in Slash MD (same idea as \`code .\` or \`cursor .\`).
+
+  slash .
+  slash ~/Repositorios/Personal
+
+If the app is already running, the folder opens in that window.
+If not, start it with \`npm run desktop:dev\`, or this command will launch
+Electron when the Vite server or a production build is available.
+
+Install on PATH (zsh):
+
+  mkdir -p ~/.local/bin
+  ln -sf ${path.join(desktopRoot, "bin/slash")} ~/.local/bin/slash
+  # ensure ~/.local/bin is in PATH, then: hash -r
+
+`);
+}
+
+function fail(message) {
+  process.stderr.write(`${message}\n`);
+  process.exit(1);
+}
+
+function viteDevUrl() {
+  return new Promise((resolve) => {
+    const socket = net.connect({ port: 5173, host: "127.0.0.1" }, () => {
+      socket.end();
+      resolve("http://localhost:5173");
+    });
+    socket.on("error", () => resolve(undefined));
+  });
+}
+
+function electronBin() {
+  try {
+    return require("electron");
+  } catch {
+    return undefined;
+  }
+}
+
+async function main() {
+  const arg = process.argv[2];
+  if (arg === "-h" || arg === "--help") {
+    printHelp();
+    return;
+  }
+
+  const target = arg ?? ".";
+  const abs = path.resolve(process.cwd(), target);
+  if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) {
+    fail(`Not a folder: ${target}`);
+  }
+
+  const electron = electronBin();
+  if (typeof electron !== "string") {
+    fail("Electron is not installed. From the repo: npm install && npm run desktop:dev");
+  }
+
+  const env = { ...process.env };
+  const hasMain = fs.existsSync(path.join(desktopRoot, "dist-electron/main.js"));
+  const hasRenderer = fs.existsSync(path.join(desktopRoot, "dist/index.html"));
+  const devUrl = await viteDevUrl();
+  if (devUrl) {
+    env.VITE_DEV_SERVER_URL = env.VITE_DEV_SERVER_URL || devUrl;
+  } else if (!hasMain || !hasRenderer) {
+    fail("Slash MD is not running. Start it with: npm run desktop:dev");
+  }
+
+  const child = spawn(electron, [".", "--", abs], {
+    cwd: desktopRoot,
+    env,
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+}
+
+void main();

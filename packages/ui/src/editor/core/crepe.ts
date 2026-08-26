@@ -15,6 +15,7 @@ import { registerComments } from "../plugins/commentsPlugin";
 import { codeLanguages, vscodeCmTheme } from "../plugins/languages";
 import { mermaidLanguage, renderMermaidPreview } from "../plugins/mermaid";
 import { slashConfig } from "../plugins/slash";
+import { registerEmptyTaskList } from "../plugins/taskList";
 import { registerToggle } from "../plugins/toggle";
 
 const commentIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
@@ -29,6 +30,8 @@ export async function createSlashCrepe(opts: {
   comments?: boolean;
   /** Called from the selection toolbar Comment action. */
   onCommentSelection?: (selectedText: string) => void;
+  /** Set to false to make the editor read-only (default true). */
+  editable?: boolean;
 }): Promise<CrepeBuilder> {
   const builder = new CrepeBuilder({
     root: opts.root,
@@ -37,7 +40,11 @@ export async function createSlashCrepe(opts: {
 
   builder
     .addFeature(blockEdit, slashConfig)
-    .addFeature(listItem)
+    .addFeature(listItem, {
+      // Crepe SVGs lose their <svg> wrapper in DOMPurify; draw tasks in CSS instead.
+      checkBoxCheckedIcon: "",
+      checkBoxUncheckedIcon: "",
+    })
     .addFeature(codeMirror, {
       languages: [...codeLanguages, mermaidLanguage],
       theme: vscodeCmTheme,
@@ -80,6 +87,7 @@ export async function createSlashCrepe(opts: {
 
   registerCallout(builder.editor);
   registerToggle(builder.editor);
+  registerEmptyTaskList(builder.editor);
   if (opts.comments) {
     registerComments(builder.editor);
   }
@@ -93,6 +101,14 @@ export async function createSlashCrepe(opts: {
   }
 
   await builder.create();
+
+  if (opts.editable === false) {
+    builder.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      view.setProps({ editable: () => false });
+    });
+  }
+
   return builder;
 }
 

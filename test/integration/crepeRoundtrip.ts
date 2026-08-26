@@ -23,6 +23,23 @@ export async function runCrepeRoundtripSuite(ctx: SuiteCtx): Promise<void> {
     assert(normalizeMarkdown(draftSeed) === normalizeMarkdown(out), "round-trip # Untitled (new draft)");
   }
 
+  {
+    const source = "* [ ] pendiente\n* [x] hecho\n- [ ]\n";
+    const host = document.createElement("div");
+    document.body.append(host);
+    const crepe = await createSlashCrepe({ root: host, markdown: source });
+    const unchecked = host.querySelectorAll(".label.unchecked").length;
+    const checked = host.querySelectorAll(".label.checked").length;
+    const bodyText = host.textContent ?? "";
+    const out = crepe.getMarkdown();
+    await crepe.destroy();
+    host.remove();
+    assert(unchecked === 2, "unchecked task items render checkbox labels");
+    assert(checked === 1, "checked task item renders checkbox label");
+    assert(!bodyText.includes("[ ]") && !bodyText.includes("[x]"), "task markers are not left as literal text");
+    assert(out.includes("[ ]") && out.includes("[x]"), "task items serialize checkbox syntax");
+  }
+
   for (const name of files) {
     const source = await readFile(path.join(fixturesDir, name), "utf8");
     const host = document.createElement("div");

@@ -1,8 +1,11 @@
 # Slash MD — Usage guide (PO)
 
-Notion-like Markdown editor for Cursor / VS Code. Pages live in your docs repo; GitHub handles review and publishing.
+Two surfaces:
 
-## Install
+- **Desktop** — wiki: Home, drafts, GitHub review, and publish. This guide is mostly that cycle.
+- **VS Code / Cursor extension** — Markdown editor only. Open a `.md` with Slash MD; no Init, Home, or GitHub.
+
+## Install the editor (VS Code / Cursor)
 
 ### From the Marketplace
 
@@ -13,16 +16,17 @@ Search **Slash MD** in the Extensions view (VS Code or Cursor) and install.
 1. Get the `.vsix` (from your team, or `npm run package` in the extension repo).
 2. **Extensions** → `⋯` → **Install from VSIX…** → pick the file.
 3. Reload the window if prompted.
+4. Right-click a `.md` → **Open with Slash MD**. Optional: **Use as default Markdown editor**.
 
-## First time (once)
+## First time (Desktop wiki)
 
-1. Open the **docs repo** as a folder in Cursor.
-2. Command Palette → `Slash MD: Init` (or Init in **Home**).
+1. Open the **docs repo** as a folder in the Desktop app — **Abrir carpeta**, or from a terminal (`slash .` / `slash ~/Repositorios/Personal`). See [README](../README.md#desktop-electron).
+2. **Iniciar** (Init) if the folder has no `.slashmd.json`.
 3. Confirm the GitHub repo if asked.
 4. Choose **publish mode**:
    - **Workspace** — shared docs: Review opens a PR; Publish merges after approval.
    - **Personal** — solo docs: Publish commits and pushes straight to the default branch (no PR).
-5. Sign in to GitHub when Cursor prompts (`repo` scope).
+5. Sign in to GitHub when prompted (`repo` scope).
 
 Init writes **`.slashmd.json`** at the repo root. After a successful Init, **Home** opens automatically so you can start writing right away. Example config:
 
@@ -40,123 +44,100 @@ Missing `mode` defaults to **workspace**. Missing `contentPath` defaults to **`.
 
 **Subfolder:** set `"contentPath": "docs"` (or any folder) when Markdown should not sit at the repo root. Team templates default to `_templates/` under that path (or `_templates/` at root when `contentPath` is `.`).
 
-## The cycle: local-first wiki
+## The cycle: publication = branch (Workspace)
 
 Diagrams, surfaces (Home vs editor), and “how it should be used”: [FLOWS.md](FLOWS.md).
 
-The recommended workflow for documentation:
+In **Workspace** mode the published wiki (`defaultBranch`) is **read-only**. To write, create a **publication** (a `pub/…` branch), send it for review (PR), then **Publish** (merge and return to `defaultBranch`).
 
-### 1. New page (Borrador Local)
+### 1. Nueva publicación
 
-- **Home** → **New page** → pick a template → enter a title.
-- Built-in templates: Blank, PRD, Spec, Decision, **Gallery** (every slash block, a Mermaid flowchart, and one code fence per language). **Team templates** from `docs/_templates/` (or `templatesPath` in `.slashmd.json`) appear first, marked **(team)**.
+- On Home (or the read-only editor banner), click **Nueva publicación** and enter a title.
+- Slash MD checks out a branch `pub/YYYY-MM-DD-<slug>` (adds `-2` if the name already exists). The **branch name is always shown** in Home and editor banners.
+- You can leave several publications as branches and **Retomar** one later; only one is mounted at a time.
+- **Volver a la wiki** checks out `defaultBranch` again (read-only).
+
+### 2. New page (inside a publication)
+
+- **Home** → **New page** → pick a template → enter a title. Without a publication mounted, this CTA opens **Nueva publicación** instead.
+- Built-in templates: Blank, Meeting, Tasks, Project, Notes, Decision. **Team templates** from `templates/` or `_templates/` at the repo root (or under `contentPath`) appear first, marked **Repo**. Those folders show in the library like any other folder — open `templates/` and use **New template** to add a `.md` (placeholders such as `{{title}}` stay unfilled). Override the folder with `templatesPath` in `.slashmd.json`.
 - Type `/diagram` (or `/mermaid` / `/flowchart`) to insert a flowchart. It is a ` ```mermaid ` fence: Slash MD draws it in the page, and GitHub does the same after publish. Click **Hide** on the block to see only the diagram.
-- Copy the example from [docs/team-templates/](team-templates/) into your repo. Optional `_manifest.json` sets picker labels.
-- A `.md` file is created under `contentPath` (e.g. `docs/producto/mi-nota.md`) with `status: draft` in its frontmatter.
+- Copy the example from [docs/team-templates/](team-templates/) into your repo. Team templates use a `description:` line in the file’s frontmatter for the picker (not app translations). Optional `_manifest.json` can still override labels.
+- A `.md` file is created under `contentPath` (e.g. `docs/producto/mi-nota.md`).
 - The editor opens immediately. Hover above the title for **Add icon** and **Add cover**. The icon is a single emoji in frontmatter (`icon: 🚀`); it is not part of the title text.
-- Paste or insert an image (`/image`, cover, or drag): the file is saved under `{contentPath}/images/` (e.g. `docs/images/foto.png`). The Markdown keeps a relative path (`images/…` or `../images/…`). Covers use the same folder via YAML `cover:`. Images show up in Explorer and in `git status` like any other file, and Mandar a Revisión includes them when you send the page.
-- Under the title, **Edited … ago** lists everyone who committed the page (git history) plus you while it is dirty. Click for avatars, edit counts, and dates.
-- No GitHub call, no login needed — just start writing.
-- Autosave writes to disk every 300 ms. Your file is a normal `.md` in the workspace.
+- Under the title: **Etiquetados** (`people` — GitHub logins) and **Tags** (`tags`). People become PR reviewers when you send for review; tags stay document metadata.
+- Paste or insert an image (`/image`, cover, or drag): the file is saved under `{contentPath}/images/`. Images are included when you send the publication for review.
+- Under the title, **Edited … ago** lists everyone who committed the page (git history) plus you while it is dirty.
+- Autosave writes to disk every 300 ms while you can write. Your file is a normal `.md` in the workspace.
 
-### 2. Borradores Locales (staging)
+### 3. Cambios de la publicación
 
-- **Home** shows a **Borradores Locales** section listing every page that is `draft` or locally modified.
-- Use the checkboxes to select the pages you want to send for review.
-- Pages with `status: published` and no local changes do not appear.
+- **Home** lists dirty / untracked pages on the mounted publication (no staging checkboxes).
+- Lifecycle is **derived**: draft = dirty on the publication branch; in review = open PR for that branch; published = clean on `defaultBranch`.
 
-### 3. Mandar a Revisión
+### 4. Enviar a revisión
 
-- With pages selected, click **Mandar a Revisión**.
-- Home shows a **preview** of the batch: each page’s title, status badge, and a short `git diff` summary. Confirm with **Enviar a Revisión** or cancel.
-- Slash MD creates (or reuses) a branch `review/docs-YYYY-MM`, commits only the selected files, pushes, and opens a PR.
-- Each file's frontmatter is updated to `status: in_review` with `pr: <number>`.
-- Re-sending the same or updated pages pushes to the **same PR** — one review cycle per batch.
-- While a lote PR is open, **Home** shows an **En revisión** card: PR number, reviewers, checks, branch, **Abrir en GitHub**, and **Aprobar y Publicar** when ready.
+- With a publication mounted, click **Enviar a revisión**.
+- Preview shows each changed page, a short diff summary, **people** to tag, and optional **file exclusion**.
+- Confirm with **Enviar a revisión**. Slash MD commits the included paths (+ referenced images), pushes the current `pub/…` branch, and opens (or updates) a PR for that head.
+- Reviewers = union of document `people` + anyone you type, minus yourself. If GitHub rejects a login, the send still succeeds and those people are **mentioned in the PR body** (UI reports them).
+- Re-sending pushes to the **same PR** and only requests the reviewer delta.
 
-### 4. Feedback
+### 5. Feedback
 
 - The Activity Bar badge shows unresolved review threads.
 - **Home** → **Feedback recibido** lists every pending comment across your PRs.
 - Click a comment to open the page and scroll to the matching block.
 - Slash MD **does not switch git branches** when you open Feedback. If your local branch or PR does not match the comment’s PR, a banner appears with **Open on GitHub**. Your unsaved local work is left alone. If the file is not on disk, you get a toast with the same GitHub action.
 
-### 5. Comments on the canvas (Workspace + open PR)
+### 6. Comments on the canvas (Workspace + open PR)
 
-While a page is **in review**, PR review threads appear inline:
+While the publication has an **open PR**, review threads appear inline:
 
 - Highlight + bubble on matching text; unmatched threads in the **Unanchored** rail (with **Abrir en GitHub** if the anchor moved).
 - Click a bubble to read the thread, **Reply**, **Resolve**, or **Abrir en GitHub** from the popover.
-- Select text → **Comment** (may push the page to the review branch first if you are ahead).
+- Select text → **Comment** (may push the page to the publication branch first if you are ahead).
 
 Personal mode has no PRs, so comments stay off.
 
-### 6. Aprobar y Publicar
+### 7. Publicar
 
 - A teammate approves the PR on GitHub.
-- In **Home**, click **Aprobar y Publicar**. Slash MD merges the PR and pulls the changes locally.
-- Each file's frontmatter becomes `status: published`.
+- In **Home** (publication banner), click **Publicar**. Slash MD merges the PR, checks out `defaultBranch`, pulls `--ff-only`, and deletes the local `pub/…` branch.
+- There is no pre-merge “published” stamp commit; status comes from being clean on `defaultBranch`.
 
 If Publish is blocked, the UI says why (`needs approval`, `checks failing`, `conflict`, `no GitHub session`).
 
 ## Personal mode (`"mode": "personal"`)
 
-Bar shows **Publish** only (no Review).
+Bar shows **Publish** only (no Review / publications).
 
 1. Edit the page.
 2. **Publish** → commit + push to the default branch (`main` by default).
 
 Use this for solo docs repos without required PR reviews. If the default branch is protected against direct pushes, Publish fails with a clear message — switch to **Workspace** mode or relax branch protection.
 
-## Editor mode (local Markdown, no GitHub)
+## VS Code / Cursor editor (no GitHub)
 
-Useful outside the docs repo, or when you only want WYSIWYG:
+The extension is WYSIWYG only:
 
 1. Right-click a `.md` → **Open with Slash MD** (or Command Palette → `Slash MD: Open with Slash MD`).
-2. You edit the **real file** (autosave in place). No Review / Publish.
+2. You edit the **real file** (autosave in place). Images go to `{folder}/images/`.
 3. Optional: `Slash MD: Use as default Markdown editor` (or setting `slash-md.useAsDefaultMarkdown`) so all `*.md` open this way. Turn off with **Stop using as default Markdown editor**.
 
-### Wiki pages in the docs repo
+Review, publish, Home, and inbox are **Desktop** only.
+
+### Wiki pages in the docs repo (Desktop)
 
 When the file lives under your configured `contentPath` (Init / `.slashmd.json`):
 
-- **Write in the editor** — WYSIWYG, images, comments on open PRs.
-- **Review and Publish** — use **Home** only. The editor bar shows **Revisión en Home** (stages the page and opens Home). **Publish** is hidden; merge via **Aprobar y Publicar** in Home after GitHub approval.
+- **Write in the editor** — only inside a publication (Workspace) or always (Personal).
+- **Review and Publish** — Desktop Home: **Enviar a revisión** → **Publicar**.
 
-Legacy `.slash.md` sidecar drafts still use **Review** / **Publish** in the editor bar.
-
-## Activity Bar
-
-The **Slash MD** icon in the Activity Bar shows two panels:
-
-- **Pages** — the docs tree from the workspace (or GitHub).
-- **Drafts** — legacy sidecar drafts (`.slash.md`). When the workspace is a docs wiki, this panel points you to **Home** instead, since pages live in the workspace directly.
-
-Use **Home** for the full library UI: tree, staging, inbox, and batch actions.
-
-## Deep links
-
-Open a page from Slack, a PR comment, or another tool:
-
-```
-vscode://saulmoreyra.slash-md/open?path=docs/producto/mi-nota.md
-```
-
-| Param | Required | Effect |
-|---|---|---|
-| `path` | yes | Repo-relative path to the `.md` (resolves under the docs workspace) |
-| `snippet` | no | Scroll / highlight that text (PR thread reveal) |
-| `threadId` | no | Prefer that thread when revealing |
-
-Example with reveal:
-
-```
-vscode://saulmoreyra.slash-md/open?path=docs/producto/mi-nota.md&snippet=Hello%20world
-```
-
-Readers who do not use the extension: see [READING.md](READING.md). Publishing the extension: [PUBLISH.md](PUBLISH.md).
+Readers who do not use the app: see [READING.md](READING.md). Publishing the extension: [PUBLISH.md](PUBLISH.md).
 
 ## What it does not do
 
-- It does not replace GitHub's PR UI for approvals (Workspace mode).
-- Code-repo `README.md` files are not claimed by default (only `*.slash.md` drafts and what you open via Slash MD).
+- The VS Code extension does not replace GitHub or Desktop for review/publish.
+- Desktop does not replace GitHub's PR UI for approvals (Workspace mode).
+- Code-repo `README.md` files are not claimed by default in VS Code (only what you open via Slash MD, or if you enable the default-editor setting).

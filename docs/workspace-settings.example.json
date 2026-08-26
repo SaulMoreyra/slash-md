@@ -1,5 +1,3 @@
 {
-  "slash-md.contentRepo": "SaulMoreyra/docs-sandbox",
-  "slash-md.contentPath": ".",
-  "slash-md.defaultBranch": "main"
+  "slash-md.useAsDefaultMarkdown": true
 }

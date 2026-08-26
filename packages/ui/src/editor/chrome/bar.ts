@@ -1,4 +1,4 @@
-import type { BarKind, HostToWebview, PageKind, RepoMode, WebviewToHost, Workflow } from "@slash-md/core/protocol";
+import type { BarKind, HostToWebview, PageKind, RepoMode, Workflow } from "@slash-md/core/protocol";
 import type { VsCodeApi } from "../vscode";
 import { applyHeroTitle } from "./heroTitle";
 
@@ -140,7 +140,7 @@ export function mountBar(
 
   function persist(text: string): void {
     lastText = text;
-    vscode.setState({
+    vscode.setState?.({
       kind: statusEl.dataset.kind,
       label: statusEl.dataset.label,
       savedAt,
