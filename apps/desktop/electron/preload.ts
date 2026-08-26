@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
-import type { DesktopApi } from "../shared/api";
+import type { AppTheme, DesktopApi } from "../shared/api";
 
 function invoke<K extends keyof DesktopApi>(channel: K) {
   return ((...args: unknown[]) => ipcRenderer.invoke(channel, ...args)) as DesktopApi[K];
@@ -54,6 +54,7 @@ const api: DesktopApi = {
   threadResolve: invoke("threadResolve"),
   threadCreate: invoke("threadCreate"),
   openUrl: invoke("openUrl"),
+  setTheme: invoke("setTheme"),
   onTheme: (listener) => {
     const wrapped = (_event: unknown, theme: "light" | "dark") => listener(theme);
     ipcRenderer.on("theme", wrapped);
@@ -71,3 +72,7 @@ const api: DesktopApi = {
 };
 
 contextBridge.exposeInMainWorld("slashmd", api);
+contextBridge.exposeInMainWorld(
+  "__SLASHMD_INITIAL_THEME__",
+  ipcRenderer.sendSync("theme:getSync") as AppTheme | null,
+);

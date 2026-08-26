@@ -5,6 +5,7 @@ import { parseFolderArg } from "../shared/cliArg";
 import { registerIpc } from "./ipc";
 import { resolveExistingFolder } from "./openFolder";
 import { setWorkspaceRoot } from "./session";
+import { applyWindowChrome, getTheme, resolveWindowTheme, themeColors } from "./themeStore";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RENDERER_DIST = path.join(__dirname, "../dist");
@@ -28,6 +29,8 @@ function applyCliFolder(argv: string[], cwd = process.cwd()): void {
 }
 
 function createWindow(): void {
+  const windowTheme = resolveWindowTheme();
+  const chrome = themeColors(windowTheme);
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -35,14 +38,14 @@ function createWindow(): void {
     minHeight: 640,
     title: "Slash MD",
     show: false,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? "#000000" : "#f4f4f5",
+    backgroundColor: chrome.background,
     titleBarStyle: "hidden",
     trafficLightPosition: { x: 14, y: 14 },
     ...(process.platform !== "darwin"
       ? {
           titleBarOverlay: {
-            color: nativeTheme.shouldUseDarkColors ? "#000000" : "#f4f4f5",
-            symbolColor: nativeTheme.shouldUseDarkColors ? "#ececec" : "#18181b",
+            color: chrome.background,
+            symbolColor: chrome.symbol,
             height: 36,
           },
         }
@@ -60,7 +63,11 @@ function createWindow(): void {
   });
 
   nativeTheme.on("updated", () => {
-    mainWindow?.webContents.send("theme", nativeTheme.shouldUseDarkColors ? "dark" : "light");
+    const osTheme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
+    if (!getTheme() && mainWindow) {
+      applyWindowChrome(mainWindow, osTheme);
+    }
+    mainWindow?.webContents.send("theme", osTheme);
   });
 
   if (VITE_DEV_SERVER_URL) {

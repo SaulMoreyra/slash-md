@@ -16,13 +16,15 @@ export type { ConflictChoice } from "@slash-md/core/conflictModel";
 
 export type AuthInfo = { login: string } | null;
 
+export type AppTheme = "light" | "dark";
+
 export type WorkspaceInfo = {
   root: string | null;
   config: ContentConfig | null;
   slashmd: SlashmdFile;
   needsInit: boolean;
   auth: AuthInfo;
-  theme: "light" | "dark";
+  theme: AppTheme;
 };
 
 export type PagePayload = {
@@ -121,7 +123,8 @@ export type DesktopApi = {
   threadResolve(pagePath: string, threadId: string, resolved: boolean): Promise<void>;
   threadCreate(pagePath: string, selectedText: string, body: string): Promise<void>;
   openUrl(url: string): Promise<void>;
-  onTheme(listener: (theme: "light" | "dark") => void): () => void;
+  setTheme(theme: AppTheme): Promise<void>;
+  onTheme(listener: (theme: AppTheme) => void): () => void;
   onFolderOpened(listener: (folder: string) => void): () => void;
 };
 

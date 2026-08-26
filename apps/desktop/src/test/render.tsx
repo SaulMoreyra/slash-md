@@ -1,10 +1,15 @@
 import { render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { LocaleProvider } from "../i18n/LocaleProvider";
+import { ThemeProvider } from "../theme";
 
 export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">) {
   return render(ui, {
-    wrapper: ({ children }) => <LocaleProvider>{children}</LocaleProvider>,
+    wrapper: ({ children }) => (
+      <ThemeProvider>
+        <LocaleProvider>{children}</LocaleProvider>
+      </ThemeProvider>
+    ),
     ...options,
   });
 }

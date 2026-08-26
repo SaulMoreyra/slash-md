@@ -98,7 +98,7 @@
 }
 
 /* Dark — Milkdown / Crepe tokens aligned to HeroUI blue */
-body,
+html.dark body,
 body.vscode-dark,
 body.vscode-high-contrast {
   color-scheme: dark;
@@ -152,6 +152,7 @@ body.vscode-high-contrast {
   --color-outline-variant: #3f3f46;
 }
 
+html.light body,
 body.vscode-light,
 body.vscode-high-contrast-light {
   color-scheme: light;

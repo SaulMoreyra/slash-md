@@ -1,6 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
 import fs from "node:fs/promises";
-import type { DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
+import type { AppTheme, DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
 import { currentAuth, signInWithToken, signOut } from "./auth";
 import { detectGit, getContentConfig, readSlashmd, writeSlashmd } from "./config";
 import { loadThreads, threadCreate, threadReply, threadResolve } from "./comments";
@@ -24,8 +24,9 @@ import { abortSyncWithWiki, finishSyncWithWiki, getConflictState, resolveConflic
 import { createPublication, leavePublication, listPublications, resumePublication } from "./publication";
 import { previewReview, sendBatchToReview } from "./review";
 import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
+import { applyWindowChrome, getTheme, setTheme as persistTheme } from "./themeStore";
 
-function theme(): "light" | "dark" {
+function theme(): AppTheme {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light";
 }
 
@@ -200,5 +201,18 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("openUrl", async (url: string) => {
     await shell.openExternal(url);
+  });
+
+  ipcMain.removeAllListeners("theme:getSync");
+  ipcMain.on("theme:getSync", (event) => {
+    event.returnValue = getTheme();
+  });
+
+  handle("setTheme", async (next: AppTheme) => {
+    persistTheme(next);
+    const win = getWindow();
+    if (win) {
+      applyWindowChrome(win, next);
+    }
   });
 }

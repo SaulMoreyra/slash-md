@@ -1,7 +1,18 @@
 <!doctype html>
-<html lang="es" class="dark" data-theme="dark">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var t = window.__SLASHMD_INITIAL_THEME__;
+          if (!t) t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          var r = document.documentElement;
+          r.classList.add(t);
+          r.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"

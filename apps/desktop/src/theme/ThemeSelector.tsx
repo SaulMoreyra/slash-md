@@ -1,7 +1,6 @@
-import { useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { Moon, Sun } from "lucide-react";
-import { getThemeSnapshot, setTheme, subscribeTheme, type AppTheme } from "./theme";
+import { useTheme } from "./context";
 
 type Props = {
   className?: string;
@@ -10,8 +9,8 @@ type Props = {
 /** Single switch: sun (light) ↔ moon (dark). */
 export function ThemeSelector({ className }: Props) {
   const { t } = useTranslation();
-  const current = useSyncExternalStore(subscribeTheme, getThemeSnapshot, () => "dark" as AppTheme);
-  const isDark = current === "dark";
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
   function toggle() {
     setTheme(isDark ? "light" : "dark");

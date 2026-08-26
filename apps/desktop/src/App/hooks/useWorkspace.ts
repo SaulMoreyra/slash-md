@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { HomeTreePayload, WorkspaceInfo } from "../../../shared/api";
 import type { Run } from "../../screens/home/types";
-import { applyTheme, getStoredTheme, resolveTheme } from "../../theme/theme";
 import { toErrorMessage } from "../utils";
 
 const api = () => window.slashmd;
@@ -19,7 +18,6 @@ export function useWorkspace({ run, onError, onClearPage }: Params) {
   const onRefresh = useCallback(async () => {
     const ws = await api().getWorkspace();
     setWorkspace(ws);
-    applyTheme(resolveTheme(ws.theme));
     if (ws.root) {
       setTree(await api().homeTree());
     } else {
@@ -32,17 +30,6 @@ export function useWorkspace({ run, onError, onClearPage }: Params) {
       onError(toErrorMessage(err));
     });
   }, [onRefresh, onError]);
-
-  useEffect(
-    () =>
-      api().onTheme((osTheme) => {
-        if (getStoredTheme()) {
-          return;
-        }
-        applyTheme(osTheme);
-      }),
-    [],
-  );
 
   useEffect(() => {
     const subscribe = api().onFolderOpened;

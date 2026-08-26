@@ -1,32 +1,21 @@
-const STORAGE_KEY = "slashmd-theme";
+import type { AppTheme } from "../../shared/api";
+import { ThemeSource } from "./enums";
 
-export type AppTheme = "light" | "dark";
-
-type Listener = () => void;
-
-const listeners = new Set<Listener>();
-
-function notify(): void {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-export function getStoredTheme(): AppTheme | null {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === "light" || value === "dark" ? value : null;
-  } catch {
-    return null;
-  }
-}
+export type { AppTheme };
 
 export function getThemeSnapshot(): AppTheme {
   const fromDom = document.documentElement.dataset.theme;
   if (fromDom === "light" || fromDom === "dark") {
     return fromDom;
   }
-  return getStoredTheme() ?? "dark";
+  const initial = window.__SLASHMD_INITIAL_THEME__;
+  if (initial === "light" || initial === "dark") {
+    return initial;
+  }
+  if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: light)").matches) {
+    return "light";
+  }
+  return "dark";
 }
 
 export function applyTheme(theme: AppTheme): void {
@@ -36,26 +25,11 @@ export function applyTheme(theme: AppTheme): void {
   root.dataset.theme = theme;
   document.body.classList.toggle("vscode-dark", theme === "dark");
   document.body.classList.toggle("vscode-light", theme === "light");
-  notify();
 }
 
-/** Persist and apply. OS theme updates are ignored after the user chooses. */
-export function setTheme(theme: AppTheme): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, theme);
-  } catch {
-    /* ignore quota / private mode */
+export function resolveThemeSource(): ThemeSource {
+  if (window.__SLASHMD_INITIAL_THEME__ === "light" || window.__SLASHMD_INITIAL_THEME__ === "dark") {
+    return ThemeSource.User;
   }
-  applyTheme(theme);
-}
-
-export function resolveTheme(fallback: AppTheme): AppTheme {
-  return getStoredTheme() ?? fallback;
-}
-
-export function subscribeTheme(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+  return ThemeSource.Os;
 }
