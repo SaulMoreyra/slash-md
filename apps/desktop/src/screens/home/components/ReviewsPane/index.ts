@@ -1,1 +1,0 @@
-export { ReviewsPane } from "./ReviewsPane";

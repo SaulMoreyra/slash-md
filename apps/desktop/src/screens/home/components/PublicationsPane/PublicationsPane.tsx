@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { IconPlus } from "../../../../components/icons";
 import type { HomeTreePayload } from "../../../../../shared/api";
 import type { Run } from "../../types";
-import { publicationRowsForList } from "../../utils";
+import { isPublicationsPaneEmpty, publicationRowsForList } from "../../utils";
 import { PaneHeader } from "../PaneHeader";
 import { CurrentPublication } from "./components/CurrentPublication";
-import { PublicationList } from "./components/PublicationList";
+import { OtherPublications } from "./components/OtherPublications";
+import { PublicationReview } from "./components/PublicationReview";
 import { PublicationsEmpty } from "./components/PublicationsEmpty";
 
 const api = () => window.slashmd;
@@ -14,17 +15,31 @@ const api = () => window.slashmd;
 type Props = {
   payload: HomeTreePayload;
   busy: boolean;
+  pagePath: string | null;
+  trails: Map<string, string>;
   run: Run;
   onRefresh: () => Promise<void>;
+  onOpenPage: (path: string) => void;
+  onSignIn: () => void;
   onNewPublication: () => void;
 };
 
-export function PublicationsPane({ payload, busy, run, onRefresh, onNewPublication }: Props) {
+export function PublicationsPane({
+  payload,
+  busy,
+  pagePath,
+  trails,
+  run,
+  onRefresh,
+  onOpenPage,
+  onSignIn,
+  onNewPublication,
+}: Props) {
   const { t } = useTranslation();
   const pubs = payload.publications ?? [];
   const current = payload.publication;
   const listPubs = publicationRowsForList(pubs, Boolean(current));
-  const empty = !current && pubs.length === 0;
+  const empty = isPublicationsPaneEmpty(payload);
 
   async function onResume(branch: string) {
     await run(() => api().resumePublication(branch));
@@ -50,16 +65,14 @@ export function PublicationsPane({ payload, busy, run, onRefresh, onNewPublicati
         ) : (
           <>
             {current ? <CurrentPublication publication={current} /> : null}
-            {listPubs.length > 0 ? (
-              <div className="space-y-2">
-                {current ? (
-                  <p className="px-4 text-[11px] font-medium text-muted">
-                    {t("home.publication.others")}
-                  </p>
-                ) : null}
-                <PublicationList pubs={listPubs} busy={busy} onResume={onResume} />
-              </div>
-            ) : null}
+            <PublicationReview
+              payload={payload}
+              pagePath={pagePath}
+              trails={trails}
+              onOpenPage={onOpenPage}
+              onSignIn={onSignIn}
+            />
+            <OtherPublications current={Boolean(current)} pubs={listPubs} busy={busy} onResume={onResume} />
           </>
         )}
       </ScrollShadow>

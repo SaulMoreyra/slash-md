@@ -6,6 +6,8 @@ import {
   createIntentForSection,
   findFolderCover,
   isPublishReady,
+  inReviewDrafts,
+  isPublicationsPaneEmpty,
   loteReviewFromPayload,
   prCheckStatus,
   publicationKindLabel,
@@ -116,6 +118,37 @@ describe("prCheckStatus", () => {
     expect(prCheckStatus(true)).toBe(PrCheckStatus.Ok);
     expect(prCheckStatus(false)).toBe(PrCheckStatus.Failing);
     expect(prCheckStatus(null)).toBe(PrCheckStatus.Pending);
+  });
+});
+
+describe("isPublicationsPaneEmpty", () => {
+  it("is empty without publications or review", () => {
+    expect(isPublicationsPaneEmpty(mockPayload())).toBe(true);
+  });
+
+  it("is not empty when a PR or in-review page exists", () => {
+    expect(
+      isPublicationsPaneEmpty(
+        mockPayload({
+          loteReview: {
+            prNumber: 1,
+            prUrl: "",
+            title: "Onboarding",
+            branch: "pub/onboarding",
+            reviewers: [],
+            checksOk: true,
+            approvals: 1,
+            state: "open",
+          },
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      isPublicationsPaneEmpty(mockPayload({ drafts: [{ path: "docs/a.md", title: "A", badge: "in review" }] })),
+    ).toBe(false);
+    expect(inReviewDrafts(mockPayload({ drafts: [{ path: "docs/a.md", title: "A", badge: "in review" }] }))).toHaveLength(
+      1,
+    );
   });
 });
 

@@ -45,7 +45,7 @@ describe("DraftPane", () => {
     renderComponent();
     expect(screen.getByText(t("home.drafts.emptyNeedsTitle"))).toBeInTheDocument();
     expect(screen.getByText(t("home.drafts.emptyNeedsPublication"))).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: t("home.publication.new") }));
+    await user.click(screen.getByRole("button", { name: new RegExp(t("home.publication.new")) }));
     expect(onNewPublication).toHaveBeenCalled();
   });
 

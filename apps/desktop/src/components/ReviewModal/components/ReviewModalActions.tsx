@@ -1,6 +1,6 @@
 import { Button } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconMerge } from "../../../icons";
+import { IconMerge } from "../../icons";
 import type { ReviewModalHub } from "../types";
 
 type Props = {
@@ -12,9 +12,10 @@ type Props = {
 
 export function ReviewModalActions({ canSend, hub, onClose, onSend }: Props) {
   const { t } = useTranslation();
-  const showPublish = Boolean(hub?.showPublish);
+  const busy = Boolean(hub?.busy);
   const showLeave = Boolean(hub?.showLeave);
-  const sendDisabled = !canSend || Boolean(hub?.busy);
+  const showPublish = Boolean(hub?.showPublish);
+  const showSend = canSend;
 
   return (
     <div className="hang-actions">
@@ -22,28 +23,25 @@ export function ReviewModalActions({ canSend, hub, onClose, onSend }: Props) {
         {t("common.cancel")}
       </Button>
       {showLeave ? (
-        <Button variant="ghost" isDisabled={hub?.busy} onPress={hub?.onLeave}>
+        <Button variant="ghost" isDisabled={busy} onPress={hub?.onLeave}>
           {t("home.publication.leave")}
         </Button>
       ) : null}
       {showPublish ? (
         <Button
-          variant="ghost"
-          isDisabled={hub?.busy || !hub?.publishReady}
-          aria-label={
-            hub?.publishHint
-              ? `${t("home.publication.publish")}. ${hub.publishHint}`
-              : undefined
-          }
+          variant={showSend ? "ghost" : "primary"}
+          isDisabled={busy}
           onPress={hub?.onPublish}
         >
           {t("home.publication.publish")}
         </Button>
       ) : null}
-      <Button variant="primary" isDisabled={sendDisabled} onPress={onSend}>
-        <IconMerge size={14} />
-        {t("modal.review.send")}
-      </Button>
+      {showSend ? (
+        <Button variant="primary" isDisabled={busy} onPress={onSend}>
+          <IconMerge size={14} />
+          {t("modal.review.send")}
+        </Button>
+      ) : null}
     </div>
   );
 }

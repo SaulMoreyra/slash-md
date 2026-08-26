@@ -33,7 +33,6 @@ export function ReviewModal({ onClose, onSend, note, hub }: ReviewModalProps) {
   return (
     <Modal title={t("modal.review.title")} onClose={onClose}>
       {note ? <p className="lede">{note}</p> : null}
-      {hub?.publishHint ? <p className="text-sm text-muted">{hub.publishHint}</p> : null}
       <ReviewPreviewBody
         loading={loading}
         isEmpty={isEmpty}

@@ -28,7 +28,9 @@ describe("RailCollapsedNav", () => {
     renderComponent();
     expect(screen.getByRole("button", { name: `${t("home.nav.inbox")} (${shortcutLabel.inbox()})` })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: `${t("home.nav.drafts")} (${shortcutLabel.drafts()})` })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: `${t("home.nav.inReview")} (${shortcutLabel.reviews()})` })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: `${t("home.nav.inReview")} (${shortcutLabel.reviews()})` }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: `${t("home.publication.listTitle")} (${shortcutLabel.publications()})` }),
     ).toBeInTheDocument();

@@ -109,7 +109,7 @@ export function useKeyboardShortcuts({
         }
         if (key === "2" && !ev.shiftKey && nav.isWorkspace) {
           ev.preventDefault();
-          nav.onNavigate({ kind: NavKind.Reviews });
+          nav.onNavigate({ kind: NavKind.Publications });
           return;
         }
         if (key === "3" && !ev.shiftKey && nav.isWorkspace) {

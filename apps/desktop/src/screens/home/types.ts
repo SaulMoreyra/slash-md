@@ -23,7 +23,6 @@ export type HomeScreenProps = {
 export type NavView =
   | { kind: NavKind.Drafts }
   | { kind: NavKind.Inbox }
-  | { kind: NavKind.Reviews }
   | { kind: NavKind.Folder; path: string; title: string }
   | { kind: NavKind.Publications }
   | { kind: NavKind.Conflicts };

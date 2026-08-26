@@ -1,6 +1,6 @@
 import { Chip, Header, Label, ListBox } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconDrafts, IconHistory, IconInbox, IconReviews } from "../../../../../components/icons";
+import { IconDrafts, IconHistory, IconInbox } from "../../../../../components/icons";
 import { ShortcutKbd, shortcutLabel } from "../../../../../components/ShortcutKbd";
 import type { HomeTreePayload } from "../../../../../../shared/api";
 import { NavKind, RailHint } from "../../../enums";
@@ -26,8 +26,6 @@ function workNavFromKey(id: string): NavView | undefined {
       return { kind: NavKind.Inbox };
     case NavKind.Drafts:
       return { kind: NavKind.Drafts };
-    case NavKind.Reviews:
-      return { kind: NavKind.Reviews };
     case NavKind.Publications:
       return { kind: NavKind.Publications };
     default:
@@ -77,13 +75,6 @@ export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
           <Label>{t("home.nav.drafts")}</Label>
           <ShortcutKbd keys={shortcutLabel.drafts()} className="ml-auto" />
         </ListBox.Item>
-        {isWorkspace ? (
-          <ListBox.Item id={NavKind.Reviews} textValue={t("home.nav.inReview")} className="w-full pr-1">
-            <IconReviews />
-            <Label>{t("home.nav.inReview")}</Label>
-            <ShortcutKbd keys={shortcutLabel.reviews()} className="ml-auto" />
-          </ListBox.Item>
-        ) : null}
         {isWorkspace ? (
           <ListBox.Item id={NavKind.Publications} textValue={t("home.publication.listTitle")} className="w-full pr-1">
             <IconHistory />

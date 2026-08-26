@@ -129,6 +129,21 @@ export function prCheckStatus(checksOk: boolean | null): PrCheckStatus {
   return PrCheckStatus.Pending;
 }
 
+export function inReviewDrafts(payload: HomeTreePayload): LocalDraft[] {
+  return payload.drafts.filter((draft) => draft.badge === "in review");
+}
+
+export function isPublicationsPaneEmpty(payload: HomeTreePayload): boolean {
+  const pubs = payload.publications ?? [];
+  if (payload.publication || pubs.length > 0 || payload.needsAuth) {
+    return false;
+  }
+  if (loteReviewFromPayload(payload)) {
+    return false;
+  }
+  return inReviewDrafts(payload).length === 0;
+}
+
 export function loteReviewFromPayload(payload: HomeTreePayload): LoteReviewSummary | undefined {
   if (payload.loteReview) {
     return payload.loteReview;

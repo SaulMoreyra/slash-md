@@ -1,7 +1,7 @@
 import { ReviewModal } from "../../../../../components/ReviewModal";
 import { SearchPalette } from "../../../../../components/SearchPalette";
 import { InitModalVariant, ConflictConfirmKind, ModalKind, TreeEntryKind } from "../../../enums";
-import { isPublishReady, publishLockCopy } from "../../../utils";
+import { isPublishReady } from "../../../utils";
 import { FolderModal } from "../../FolderModal";
 import { InitModal } from "../../InitModal";
 import { NewPageModal } from "../../NewPageModal";
@@ -11,21 +11,18 @@ import { ConfirmDeleteModal } from "../../ConfirmDeleteModal";
 import { ConflictConfirmModal } from "../../ConflictConfirmModal";
 import { SignInModal } from "../../SignInModal";
 import { useHome } from "../context";
-import { useTranslation } from "react-i18next";
 
 export function Overlays() {
-  const { t } = useTranslation();
   const home = useHome();
   const { modals, nav, search, library, workspace, actions, treeActions, conflicts, onOpenPage, busy } = home;
   const payload = library.payload;
   const wikiSyncStatus = payload?.wikiSyncStatus ?? conflicts.status ?? "idle";
   const blocked = wikiSyncStatus === "conflicting" || wikiSyncStatus === "merging";
-  const showPublish = Boolean(payload?.canPublishBatch) && !blocked;
+  const publishReady = isPublishReady(payload?.loteReview);
+  const showPublish = Boolean(payload?.canPublishBatch) && !blocked && publishReady;
   const reviewHub = payload?.publication
     ? {
         showPublish,
-        publishReady: isPublishReady(payload.loteReview),
-        publishHint: showPublish ? publishLockCopy(payload.loteReview, t) : null,
         showLeave: wikiSyncStatus !== "merging",
         busy,
         onPublish: () => {

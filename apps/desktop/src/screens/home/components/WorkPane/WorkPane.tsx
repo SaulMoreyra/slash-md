@@ -1,6 +1,6 @@
 import { Card, Skeleton } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import type { HomeTreePayload } from "../../../../../shared/api";
+import type { HomeTreeNode, HomeTreePayload } from "../../../../../shared/api";
 import { CreateIntent, NavKind } from "../../enums";
 import type { ConflictsApi } from "../../hooks/useConflicts";
 import type { NavView, Run } from "../../types";
@@ -9,7 +9,6 @@ import { DraftPane } from "../DraftPane";
 import { InboxPane } from "../InboxPane";
 import { PaneChrome, PaneHeader } from "../PaneHeader";
 import { PublicationsPane } from "../PublicationsPane";
-import { ReviewsPane } from "../ReviewsPane";
 import { SectionPane } from "../SectionPane";
 
 type Props = {
@@ -22,6 +21,7 @@ type Props = {
   folder?: HomeTreeNode;
   hasCover?: boolean;
   run: Run;
+  onRefresh: () => Promise<void>;
   onOpenPage: (path: string, threadId?: string) => void;
   onClosePage: () => void;
   onReview: () => void;
@@ -105,17 +105,6 @@ function WorkPaneBody({
   if (nav.kind === NavKind.Inbox) {
     return <InboxPane payload={payload} onOpenPage={onOpenPage} />;
   }
-  if (nav.kind === NavKind.Reviews) {
-    return (
-      <ReviewsPane
-        payload={payload}
-        pagePath={pagePath}
-        trails={trails}
-        onOpenPage={onOpenPage}
-        onSignIn={onSignIn}
-      />
-    );
-  }
   if (nav.kind === NavKind.Conflicts && conflicts) {
     return (
       <ConflictPane
@@ -137,8 +126,12 @@ function WorkPaneBody({
       <PublicationsPane
         payload={payload}
         busy={busy}
+        pagePath={pagePath}
+        trails={trails}
         run={run}
         onRefresh={onRefresh}
+        onOpenPage={onOpenPage}
+        onSignIn={onSignIn}
         onNewPublication={() => onNewPublication?.()}
       />
     );

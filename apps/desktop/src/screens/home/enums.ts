@@ -50,7 +50,6 @@ export enum CreateIntent {
 export enum NavKind {
   Drafts = "drafts",
   Inbox = "inbox",
-  Reviews = "reviews",
   Folder = "folder",
   Publications = "publications",
   Conflicts = "conflicts",
@@ -111,11 +110,10 @@ export enum InitModalVariant {
   Settings = "settings",
 }
 
-/** Inbox / Reviews / Publications only exist in workspace (PR) mode. */
+/** Inbox / Publications only exist in workspace (PR) mode. */
 export function isWorkspaceOnlyNav(kind: NavKind): boolean {
   return (
     kind === NavKind.Inbox ||
-    kind === NavKind.Reviews ||
     kind === NavKind.Publications ||
     kind === NavKind.Conflicts
   );

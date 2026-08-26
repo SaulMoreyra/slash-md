@@ -2,12 +2,7 @@ import { Button } from "@heroui/react";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  IconDrafts,
-  IconHistory,
-  IconInbox,
-  IconReviews,
-} from "../../../../../components/icons";
+import { IconDrafts, IconHistory, IconInbox } from "../../../../../components/icons";
 import { shortcutLabel } from "../../../../../components/ShortcutKbd";
 import { NavKind } from "../../../enums";
 import type { NavView } from "../../../types";
@@ -56,20 +51,12 @@ function collapsedNavItems(t: TFunction, isWorkspace: boolean, inboxCount: numbe
     icon: <IconDrafts />,
   });
   if (isWorkspace) {
-    items.push(
-      {
-        kind: NavKind.Reviews,
-        label: t("home.nav.inReview"),
-        keys: shortcutLabel.reviews(),
-        icon: <IconReviews />,
-      },
-      {
-        kind: NavKind.Publications,
-        label: t("home.publication.listTitle"),
-        keys: shortcutLabel.publications(),
-        icon: <IconHistory />,
-      },
-    );
+    items.push({
+      kind: NavKind.Publications,
+      label: t("home.publication.listTitle"),
+      keys: shortcutLabel.publications(),
+      icon: <IconHistory />,
+    });
   }
   return items;
 }
@@ -77,9 +64,6 @@ function collapsedNavItems(t: TFunction, isWorkspace: boolean, inboxCount: numbe
 function viewFromKind(kind: NavKind): NavView {
   if (kind === NavKind.Inbox) {
     return { kind: NavKind.Inbox };
-  }
-  if (kind === NavKind.Reviews) {
-    return { kind: NavKind.Reviews };
   }
   if (kind === NavKind.Publications) {
     return { kind: NavKind.Publications };

@@ -16,16 +16,21 @@ export function PublicationFab({ visible, pending, onOpen }: Props) {
   }
 
   return (
-    <Button
-      isIconOnly
-      className="app-no-drag relative fixed bottom-6 right-6 z-40 size-14 rounded-full bg-orange-500 text-white shadow-lg data-[hovered=true]:bg-orange-400 data-[pressed=true]:bg-orange-600"
-      aria-label={t("home.publication.fabAria")}
-      onPress={onOpen}
-    >
-      <IconBranch size={22} />
-      {pending ? (
-        <span className="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-white" aria-hidden />
-      ) : null}
-    </Button>
+    <div className="pointer-events-none fixed bottom-10 right-5 z-40">
+      <Button
+        isIconOnly
+        className="pointer-events-auto relative size-14 rounded-full opacity-80 border border-orange-500 bg-orange-500/25 text-orange-500 shadow-lg data-[hovered=true]:bg-orange-400/40 data-[pressed=true]:bg-orange-600/40"
+        aria-label={t("home.publication.fabAria")}
+        onPress={onOpen}
+      >
+        <IconBranch size={36} className="text-orange-500/80" />
+        {pending ? (
+          <span
+            className="absolute right-2.5 top-2.5 size-2.5 rounded-full bg-white"
+            aria-hidden
+          />
+        ) : null}
+      </Button>
+    </div>
   );
 }

@@ -56,6 +56,26 @@ describe("ReviewModal", () => {
     await waitFor(() => {
       expect(screen.getByText(t("modal.review.empty"))).toBeInTheDocument();
     });
+    expect(screen.queryByRole("button", { name: t("modal.review.send") })).not.toBeInTheDocument();
+  });
+
+  it("hides send and publish when the hub has nothing to do", async () => {
+    previewReview.mockResolvedValue([]);
+    renderComponent({
+      hub: {
+        showPublish: false,
+        showLeave: true,
+        busy: false,
+        onPublish: vi.fn(),
+        onLeave: vi.fn(),
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByText(t("modal.review.empty"))).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: t("modal.review.send") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("home.publication.publish") })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("home.publication.leave") })).toBeInTheDocument();
   });
 
   it("shows leave and publish when the publication hub allows them", async () => {
@@ -65,8 +85,6 @@ describe("ReviewModal", () => {
     renderComponent({
       hub: {
         showPublish: true,
-        publishReady: true,
-        publishHint: null,
         showLeave: true,
         busy: false,
         onPublish,

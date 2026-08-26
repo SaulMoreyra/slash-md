@@ -116,4 +116,33 @@ describe("WorkPane", () => {
     expect(screen.queryByRole("button", { name: t("home.publication.publish") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("home.publication.leave") })).not.toBeInTheDocument();
   });
+
+  it("shows the PR under the current publication", () => {
+    renderWithProviders(
+      <WorkPane
+        nav={{ kind: NavKind.Publications }}
+        payload={mockPayload({
+          publication: {
+            title: "Onboarding",
+            branch: "pub/onboarding",
+            kind: "in_review",
+          },
+          loteReview: {
+            prNumber: 12,
+            prUrl: "https://example.com/pull/12",
+            title: "Onboarding lote",
+            branch: "pub/onboarding",
+            reviewers: [],
+            checksOk: true,
+            approvals: 1,
+            state: "open",
+          },
+        })}
+        {...base}
+        onNewPublication={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(t("home.publication.current"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.pr.number", { number: 12 }))).toBeInTheDocument();
+  });
 });

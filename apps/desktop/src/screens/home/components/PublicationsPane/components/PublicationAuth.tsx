@@ -5,7 +5,7 @@ type Props = {
   onSignIn: () => void;
 };
 
-export function ReviewsAuth({ onSignIn }: Props) {
+export function PublicationAuth({ onSignIn }: Props) {
   const { t } = useTranslation();
   return (
     <Alert status="warning" className="mx-3">
