@@ -26,6 +26,18 @@ export enum ConflictSide {
   Incoming = "incoming",
 }
 
+/** GitHub CLI probe for the sign-in modal. */
+export enum GhCliStatus {
+  Loading = "loading",
+  Ready = "ready",
+  LoggedOut = "loggedOut",
+  Missing = "missing",
+}
+
+export const GH_AUTH_LOGIN_COMMAND = "gh auth login";
+export const GITHUB_PAT_CREATE_URL =
+  "https://github.com/settings/tokens/new?scopes=repo&description=SlashMD";
+
 /** Overlay modals owned by the home screen. */
 export enum ModalKind {
   None = "none",

@@ -74,6 +74,8 @@ open /Applications/SlashMD.app
 
 Or System Settings → Privacy & Security → Open Anyway. A Developer ID + notarized build is the long-term fix.
 
+**GitHub sign-in:** `gh auth login` only authenticates the CLI. You still have to connect inside SlashMD (account menu → **Iniciar sesión**). The installed `.app` often cannot see Homebrew `gh`; if **Conectar como @…** does not appear, paste a classic token with `repo` scope. Details: [docs/USAGE.md](docs/USAGE.md#sign-in-to-github-desktop).
+
 ## VS Code / Cursor extension
 
 1. Open the Extensions view in VS Code or Cursor.
@@ -112,7 +114,7 @@ Developers open the `.md` files on GitHub or in their IDE. Optional GitHub Pages
 
 ## Requirements
 
-- **Desktop:** Node 18+; Git + GitHub (`repo` scope) for review and publish
+- **Desktop:** Node 18+; Git + GitHub (`repo` scope) for review and publish. Connecting GitHub CLI is a second step in the app — see [sign-in](docs/USAGE.md#sign-in-to-github-desktop).
 - **Extension:** VS Code / Cursor `^1.85.0`
 - Docs folder opened as the workspace (Desktop happy path)
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { APP_COPYRIGHT, APP_ID, APP_NAME } from "../shared/brand";
 import { parseFolderArg } from "../shared/cliArg";
 import { notifyFolderOpened } from "./folders";
-import { appIconImage, resolveAppIcon } from "./icon";
+import { resolveAppIcon } from "./icon";
 import { registerIpc } from "./ipc";
 import { registerAppMenu } from "./menu";
 import { resolveExistingFolder } from "./openFolder";
@@ -31,12 +31,6 @@ function applyNativeIdentity(): void {
     version: app.getVersion(),
     ...(icon ? { iconPath: icon } : {}),
   });
-  if (process.platform === "darwin" && !app.isPackaged) {
-    const image = appIconImage();
-    if (image) {
-      app.dock?.setIcon(image);
-    }
-  }
 }
 
 function applyCliFolder(argv: string[], cwd = process.cwd()): void {

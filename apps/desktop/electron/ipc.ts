@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import fs from "node:fs/promises";
 import type { AppTheme, DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
-import { currentAuth, signInWithToken, signOut } from "./auth";
+import { currentAuth, probeGhAuth, signInWithToken, signOut } from "./auth";
 import { detectGit, getContentConfig, readSlashmd, writeSlashmd } from "./config";
 import { loadThreads, threadCreate, threadReply, threadResolve } from "./comments";
 import { buildHomeTree } from "./home";
@@ -151,6 +151,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle("finishSyncWithWiki", () => finishSyncWithWiki());
 
   handle("signIn", (token?: string) => signInWithToken(token));
+  handle("probeGhAuth", () => probeGhAuth());
 
   handle("signOut", async () => {
     signOut();

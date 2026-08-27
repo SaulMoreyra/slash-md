@@ -1,9 +1,7 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { getAuthenticatedLogin } from "@slash-md/github/comments";
+import type { GhCliProbe } from "../shared/api";
+import { readGhCliToken, resolveGhBinary } from "./ghCli";
 import { readToken, writeToken } from "./session";
-
-const execFileAsync = promisify(execFile);
 
 export async function resolveToken(): Promise<string | undefined> {
   const stored = readToken()?.trim();
@@ -13,16 +11,20 @@ export async function resolveToken(): Promise<string | undefined> {
   return readGhCliToken();
 }
 
-async function readGhCliToken(): Promise<string | undefined> {
+export async function probeGhAuth(): Promise<GhCliProbe> {
+  const binary = await resolveGhBinary();
+  if (!binary) {
+    return { available: false, login: null };
+  }
+  const token = await readGhCliToken();
+  if (!token) {
+    return { available: true, login: null };
+  }
   try {
-    const { stdout } = await execFileAsync("gh", ["auth", "token"], {
-      encoding: "utf8",
-      timeout: 8_000,
-    });
-    const token = stdout.trim();
-    return token || undefined;
+    const login = await getAuthenticatedLogin(token);
+    return { available: true, login };
   } catch {
-    return undefined;
+    return { available: true, login: null };
   }
 }
 

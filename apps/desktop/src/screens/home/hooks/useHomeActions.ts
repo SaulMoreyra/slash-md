@@ -189,7 +189,7 @@ export function useHomeActions({
     modals.onClose();
   }
 
-  async function onSignIn(token: string) {
+  async function onSignIn(token?: string) {
     await runOp(AppOperation.SignIn, async () => {
       await api().signIn(token);
       await onRefresh();

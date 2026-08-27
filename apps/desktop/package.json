@@ -13,9 +13,10 @@
   },
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "node ./scripts/brand-electron.mjs && vite",
     "build": "vite build",
-    "start": "electron .",
+    "start": "node ./scripts/brand-electron.mjs && electron .",
+    "postinstall": "node ./scripts/brand-electron.mjs",
     "pack": "npm run build && electron-builder --mac --arm64",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src electron shared && tsc --noEmit -p tsconfig.json",
@@ -83,6 +84,10 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.inherit.plist",
       "darkModeSupport": true,
+      "extendInfo": {
+        "CFBundleName": "SlashMD",
+        "CFBundleDisplayName": "SlashMD"
+      },
       "target": [
         {
           "target": "dmg",

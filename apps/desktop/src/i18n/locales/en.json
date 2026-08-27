@@ -383,11 +383,25 @@
         "saveSettings": "Save"
       },
       "signIn": {
-        "title": "GitHub",
-        "lede": "Use `gh auth login` or paste a token with repo scope.",
-        "token": "Token (optional)",
+        "title": "Sign in to GitHub",
+        "lede": "`gh auth login` only signs in the CLI. You still have to connect SlashMD here.",
+        "cliTitle": "GitHub CLI",
+        "cliHint": "In Terminal pick GitHub.com, HTTPS, and repo access.",
+        "cliCopy": "Copy command",
+        "cliCopied": "Copied",
+        "cliChecking": "Looking for a GitHub CLI session…",
+        "cliReady": "GitHub CLI is ready as @{{login}}.",
+        "cliLoggedOut": "The CLI has no session yet. Run the command, then check again.",
+        "cliMissing": "We couldn't find `gh` (common if you opened SlashMD from Applications). Install it or paste a token.",
+        "cliConnect": "Connect with GitHub CLI",
+        "cliConnectAs": "Connect as @{{login}}",
+        "cliRecheck": "I already did — check again",
+        "tokenTitle": "Personal token",
+        "tokenLede": "Create a classic token with repo scope and paste it. Most reliable for the installed .app.",
+        "token": "Token",
         "placeholder": "ghp_…",
-        "connect": "Connect"
+        "tokenCreate": "Create a token on GitHub",
+        "connect": "Connect with token"
       }
     }
   },

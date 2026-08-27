@@ -77,8 +77,9 @@ export function Overlays() {
       ) : null}
       {modals.kind === ModalKind.SignIn ? (
         <SignInModal
+          busy={busy}
           onClose={modals.onClose}
-          onSave={(token) => void actions.onSignIn(token ?? "")}
+          onSave={(token) => void actions.onSignIn(token)}
         />
       ) : null}
       {modals.kind === ModalKind.Review ? (

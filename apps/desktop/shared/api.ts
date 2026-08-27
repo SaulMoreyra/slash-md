@@ -18,6 +18,12 @@ export type { MenuAction } from "./menu";
 
 export type AuthInfo = { login: string } | null;
 
+/** Whether `gh` is on PATH (or a known macOS path) and already logged in. */
+export type GhCliProbe = {
+  available: boolean;
+  login: string | null;
+};
+
 export type AppTheme = "light" | "dark";
 
 export type WorkspaceInfo = {
@@ -120,6 +126,7 @@ export type DesktopApi = {
   abortSyncWithWiki(): Promise<WikiSyncState>;
   finishSyncWithWiki(): Promise<WikiSyncState>;
   signIn(token?: string): Promise<AuthInfo>;
+  probeGhAuth(): Promise<GhCliProbe>;
   signOut(): Promise<void>;
   getConfig(): Promise<SlashmdFile>;
   saveConfig(config: SlashmdFile): Promise<void>;

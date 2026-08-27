@@ -45,6 +45,7 @@ const api: DesktopApi = {
   abortSyncWithWiki: invoke("abortSyncWithWiki"),
   finishSyncWithWiki: invoke("finishSyncWithWiki"),
   signIn: invoke("signIn"),
+  probeGhAuth: invoke("probeGhAuth"),
   signOut: invoke("signOut"),
   getConfig: invoke("getConfig"),
   saveConfig: invoke("saveConfig"),

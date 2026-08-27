@@ -26,7 +26,7 @@ Search **Slash MD** in the Extensions view (VS Code or Cursor) and install.
 4. Choose **publish mode**:
    - **Workspace** — shared docs: Review opens a PR; Publish merges after approval.
    - **Personal** — solo docs: Publish commits and pushes straight to the default branch (no PR).
-5. Sign in to GitHub when prompted (`repo` scope).
+5. Sign in to GitHub (see [Sign in to GitHub](#sign-in-to-github-desktop)). `gh auth login` alone is not enough.
 
 Init writes **`.slashmd.json`** at the repo root. After a successful Init, **Home** opens automatically so you can start writing right away. Example config:
 
@@ -43,6 +43,33 @@ Init writes **`.slashmd.json`** at the repo root. After a successful Init, **Hom
 Missing `mode` defaults to **workspace**. Missing `contentPath` defaults to **`.`** (repo root). Use `"contentPath": "docs"` if pages live under a `docs/` folder.
 
 **Subfolder:** set `"contentPath": "docs"` (or any folder) when Markdown should not sit at the repo root. Team templates default to `_templates/` under that path (or `_templates/` at root when `contentPath` is `.`).
+
+## Sign in to GitHub (Desktop)
+
+SlashMD talks to GitHub with a **token stored in the app**. Signing in to GitHub CLI in Terminal does **not** log you into SlashMD until you connect that session (or paste a token) in the app.
+
+**Why `gh auth login` looks like it did nothing**
+
+1. `gh auth login` only authenticates the `gh` CLI. SlashMD does not watch the terminal; you still have to open **Iniciar sesión** and connect.
+2. The installed `.app` (opened from Applications / Dock) often **cannot see `gh`**. GUI apps on macOS do not inherit your shell `PATH`, so Homebrew’s `/opt/homebrew/bin/gh` is missing unless the app looks there itself.
+3. Review, publish, inbox, and comments stay local-only until SlashMD has a token with **`repo`** scope.
+
+### In the app
+
+Account menu (avatar) → **Iniciar sesión**.
+
+**GitHub CLI**
+
+1. In Terminal: `gh auth login` → GitHub.com, HTTPS, and repo access.
+2. Back in SlashMD, if it shows **Conectar como @tu-usuario**, click it.
+3. If you already ran the command, click **Ya lo hice — comprobar**. That re-reads `gh` (including Homebrew paths) and connects when it finds a session.
+
+**Personal access token** (most reliable for the installed `.app`)
+
+1. In the modal, **Crear token en GitHub** (classic token, **`repo`** scope).
+2. Paste `ghp_…` → **Conectar con token**.
+
+You are signed in when the account menu shows your GitHub login. **Cerrar sesión** drops the stored token; it does not run `gh auth logout`.
 
 ## The cycle: publication = branch (Workspace)
 

@@ -6,6 +6,8 @@ Cómo deben usarse los flujos del producto: **quién hace qué**, **en qué supe
 
 Guía de instalación y UI: [USAGE.md](USAGE.md). Mapa técnico host ↔ webview: [ARCHITECTURE.md](ARCHITECTURE.md). Lectura publicada: [READING.md](READING.md).
 
+**Sesión GitHub (Desktop):** `gh auth login` solo autentica el CLI. SlashMD guarda su propio token: hay que **Iniciar sesión** en la app y pulsar **Conectar**. El `.app` instalado a menudo no ve Homebrew `gh`; si no aparece **Conectar como @…**, usa un PAT con alcance `repo`. Detalle: [USAGE.md — Sign in](USAGE.md#sign-in-to-github-desktop).
+
 ---
 
 ## 1. Elegir el modo
