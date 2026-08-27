@@ -65,6 +65,15 @@ Production bundle: `npm run desktop:build`, then `npm run start -w @slash-md/des
 
 macOS installers (arm64 `.dmg` + `.zip`): `npm run desktop:pack` → `apps/desktop/release/`.
 
+If macOS says the download is damaged, it is Gatekeeper (the file is fine). After copying SlashMD to Applications:
+
+```bash
+xattr -cr /Applications/SlashMD.app
+open /Applications/SlashMD.app
+```
+
+Or System Settings → Privacy & Security → Open Anyway. A Developer ID + notarized build is the long-term fix.
+
 ## VS Code / Cursor extension
 
 1. Open the Extensions view in VS Code or Cursor.

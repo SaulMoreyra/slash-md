@@ -16,7 +16,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "electron .",
-    "pack": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64",
+    "pack": "npm run build && electron-builder --mac --arm64",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src electron shared && tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
@@ -77,6 +77,11 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
+      "identity": "-",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
       "darkModeSupport": true,
       "target": [
         {
