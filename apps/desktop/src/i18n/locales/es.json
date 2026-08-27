@@ -380,7 +380,10 @@
         "modePersonalTitle": "Personal",
         "modePersonalBody": "Publicas directo sin lote de review.",
         "save": "Iniciar",
-        "saveSettings": "Guardar"
+        "saveSettings": "Guardar",
+        "siteTitle": "Publicar sitio de lectura (GitHub Pages)",
+        "siteBody": "Genera árbol, búsqueda y preview de Slash MD cuando esta wiki llega a la rama publicada.",
+        "siteHint": "Añade el workflow de USAGE y elige Pages → GitHub Actions. En planes Free/Pro/Team el sitio es público."
       },
       "signIn": {
         "title": "Iniciar sesión en GitHub",

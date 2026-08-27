@@ -8,6 +8,7 @@ import { runGithubSuite } from "./github/githubSuite";
 import type { SuiteCtx } from "./harness";
 import { runHomeControllerTests } from "./homeController";
 import { runCrepeRoundtripSuite } from "./integration/crepeRoundtrip";
+import { runReaderSiteSuite } from "./reader/siteSuite";
 import { runHomeUtilsSuite } from "./webview/homeUtils";
 import { runMessageListenerSuite } from "./webview/messageListeners";
 
@@ -38,6 +39,7 @@ export async function run(): Promise<void> {
   };
 
   await runDomainSuite(ctx);
+  await runReaderSiteSuite(ctx);
   runGithubSuite(ctx);
   await runCrepeRoundtripSuite(ctx);
 

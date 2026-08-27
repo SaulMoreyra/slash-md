@@ -380,7 +380,10 @@
         "modePersonalTitle": "Personal",
         "modePersonalBody": "Publish directly without a review batch.",
         "save": "Get started",
-        "saveSettings": "Save"
+        "saveSettings": "Save",
+        "siteTitle": "Publish reading site (GitHub Pages)",
+        "siteBody": "Build a Slash MD tree, search, and read-only preview when this wiki lands on the default branch.",
+        "siteHint": "Add the docs workflow from USAGE and set Pages → GitHub Actions. The site is public on GitHub’s free/Pro/Team plans."
       },
       "signIn": {
         "title": "Sign in to GitHub",

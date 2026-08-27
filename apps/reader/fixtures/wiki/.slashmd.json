@@ -1,0 +1,10 @@
+{
+  "repo": "acme/Help",
+  "contentPath": ".",
+  "mode": "personal",
+  "site": {
+    "enabled": true,
+    "name": "Fixture",
+    "basePath": "/"
+  }
+}

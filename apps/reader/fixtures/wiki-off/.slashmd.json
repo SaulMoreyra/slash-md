@@ -1,0 +1,9 @@
+{
+  "repo": "acme/Help",
+  "contentPath": ".",
+  "mode": "personal",
+  "site": {
+    "enabled": false,
+    "name": "Off"
+  }
+}

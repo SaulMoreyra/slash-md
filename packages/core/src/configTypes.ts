@@ -7,6 +7,14 @@ export const RepoMode = {
 
 export type RepoMode = (typeof RepoMode)[keyof typeof RepoMode];
 
+/** Optional GitHub Pages reader (`site.enabled` opts in). */
+export type SlashmdSite = {
+  enabled: boolean;
+  name?: string;
+  /** Site URL prefix (`/Help/`). `"/"` is a user/org site root. */
+  basePath?: string;
+};
+
 export type SlashmdFile = {
   repo?: string;
   /**
@@ -19,6 +27,7 @@ export type SlashmdFile = {
   sections?: string[];
   /** Repo-relative folder for team `.md` templates (default: `<contentPath>/_templates`). */
   templatesPath?: string;
+  site?: SlashmdSite;
 };
 
 /** Resolved repo config used by hosts (VS Code / Electron). */

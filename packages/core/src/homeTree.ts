@@ -1,4 +1,5 @@
-import { posixJoin, posixNormalize } from "./paths";
+import type { HomeTreeNode } from "./homeTypes";
+import { posixBasename, posixJoin, posixNormalize } from "./paths";
 
 /**
  * Path of `file` relative to `dir` when `file` is strictly inside `dir`.
@@ -60,4 +61,31 @@ export function groupHomeLevel(
   }
 
   return { folders: [...folders].sort(), files: docs.sort() };
+}
+
+/** Recursive Home tree from a flat list of markdown paths. */
+export async function buildHomeTree(
+  dir: string,
+  files: string[],
+  configured: string[],
+  titleOf: (path: string) => Promise<string>,
+): Promise<HomeTreeNode[]> {
+  const { folders, files: docs } = groupHomeLevel(dir, files, configured);
+  const nodes: HomeTreeNode[] = [];
+  for (const folderPath of folders) {
+    nodes.push({
+      kind: "folder",
+      path: folderPath,
+      title: posixBasename(folderPath) || folderPath,
+      children: await buildHomeTree(folderPath, files, configured, titleOf),
+    });
+  }
+  for (const filePath of docs) {
+    nodes.push({
+      kind: "file",
+      path: filePath,
+      title: await titleOf(filePath),
+    });
+  }
+  return nodes;
 }

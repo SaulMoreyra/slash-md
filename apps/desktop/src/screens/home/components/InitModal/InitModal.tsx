@@ -126,6 +126,22 @@ export function InitModal({ workspace, variant = InitModalVariant.Init, onClose,
               ) : null}
             </div>
 
+            {c.needsRepo ? (
+              <label className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={c.siteEnabled}
+                    aria-label={t("home.modals.init.siteTitle")}
+                    onChange={(ev) => c.onSiteEnabledChange(ev.target.checked)}
+                  />
+                  {t("home.modals.init.siteTitle")}
+                </span>
+                <span className="text-xs text-muted">{t("home.modals.init.siteBody")}</span>
+                <span className="text-xs text-muted">{t("home.modals.init.siteHint")}</span>
+              </label>
+            ) : null}
+
             <div className="flex items-center justify-end gap-2">
               <Button variant="ghost" onPress={onClose}>
                 {t("common.cancel")}

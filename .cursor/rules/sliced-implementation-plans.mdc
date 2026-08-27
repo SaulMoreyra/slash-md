@@ -1,0 +1,19 @@
+---
+description: Split large implementation plans into an index plus small slices (11 / 11a / 11b)
+globs: docs/plans/**/*.md
+alwaysApply: false
+---
+
+# Sliced plans (`docs/plans`)
+
+Do not put a whole feature in one plan file. Follow **`.cursor/skills/sliced-implementation-plans`**.
+
+- **Index** (`NN-name.md`): intent, DAG, table of slices, **closed decisions**, out of scope. No file lists, no implementation.
+- **Slices** (`NNa-….md`): one entrega, one layer. Depends + files + “qué puede salir mal” + checkbox criterios. Do not re-open index decisions.
+- Split on **runtime** (core / Node / browser / Actions / Desktop UI / docs). 3–6 slices. Parallel work still gets letters; the DAG shows forks.
+- Link slices in `docs/plans/README.md`. Gold: `11-reader-site.md`, `10-wiki-after-github-merge.md`.
+
+```
+# ❌ BAD — one plan owns JSON + build + Crepe + workflow + Init
+# ✅ GOOD — 11 index; 11a config; 11b _site; 11c reader; 11d Action; 11e Init
+```

@@ -24,6 +24,7 @@ export function useInitModalController({ workspace, onSave }: Params) {
   const [contentPath, setContentPath] = useState(() => displayContentPath(workspace.slashmd.contentPath));
   const [defaultBranch, setDefaultBranch] = useState(workspace.slashmd.defaultBranch ?? "main");
   const [mode, setMode] = useState<RepoMode>(() => toRepoMode(workspace.slashmd.mode));
+  const [siteEnabled, setSiteEnabled] = useState(() => workspace.slashmd.site?.enabled === true);
   const needsRepo = mode !== RepoMode.Local;
   const repoOk = Boolean(parseOwnerName(repo));
   const canSave = needsRepo ? repoOk : true;
@@ -47,11 +48,20 @@ export function useInitModalController({ workspace, onSave }: Params) {
     if (!canSave) {
       return;
     }
+    const parsed = parseOwnerName(repo);
+    const existingSite = workspace.slashmd.site;
     onSave({
       repo: needsRepo ? repo.trim() : undefined,
       contentPath: normalizeContentPathInput(contentPath),
       defaultBranch: needsRepo ? defaultBranch.trim() || "main" : undefined,
       mode,
+      site: needsRepo
+        ? {
+            enabled: siteEnabled,
+            name: siteEnabled ? existingSite?.name?.trim() || parsed?.name : existingSite?.name,
+            basePath: existingSite?.basePath,
+          }
+        : existingSite,
     });
   }
 
@@ -60,6 +70,7 @@ export function useInitModalController({ workspace, onSave }: Params) {
     contentPath,
     defaultBranch,
     mode,
+    siteEnabled,
     needsRepo,
     canSave,
     repoInvalid,
@@ -67,6 +78,7 @@ export function useInitModalController({ workspace, onSave }: Params) {
     onContentPathChange: setContentPath,
     onDefaultBranchChange: setDefaultBranch,
     onModeChange: setMode,
+    onSiteEnabledChange: setSiteEnabled,
     onSubmit,
   };
 }

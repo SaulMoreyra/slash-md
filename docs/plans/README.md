@@ -103,6 +103,23 @@ Ejecutar **en secuencia**. Los planes 00–01 son prerrequisitos de calidad; 03�
 | 10a | [10a-detect-merged-publication.md](./10a-detect-merged-publication.md) | **Hecho.** Detectar PR mergeado → `kind: published` |
 | 10b | [10b-land-wiki.md](./10b-land-wiki.md) | **Hecho.** Actualizar wiki / Leave / prune |
 
+---
+
+## Planes de sitio de lectura (GitHub Pages)
+
+Índice y decisiones: [11-reader-site.md](./11-reader-site.md).
+
+| # | Plan | Resumen |
+|---|------|---------|
+| 11 | [11-reader-site.md](./11-reader-site.md) | **Hecho.** Índice. Opt-in `site.enabled` → artifact Crepe → Pages |
+| 11a | [11a-site-config-and-routes.md](./11a-site-config-and-routes.md) | **Hecho.** `site` en `.slashmd.json`; parse en core; `routeFor` / qué publicar |
+| 11b | [11b-build-site.md](./11b-build-site.md) | **Hecho.** `apps/reader` walk + `_site/` (manifest, un HTML por `.md`) |
+| 11c | [11c-reader-ui.md](./11c-reader-ui.md) | **Hecho.** Árbol, ⌘K, Crepe `editable: false`, hero, links internos |
+| 11d | [11d-github-workflow.md](./11d-github-workflow.md) | **Hecho.** Reusable workflow; mismo YAML personal y Help |
+| 11e | [11e-init-and-docs.md](./11e-init-and-docs.md) | **Hecho.** Toggle Init; READING deja Docsify como legacy |
+
+**Orden:** 11a → 11b → 11c → 11d. 11e tras 11a (el snippet de 11d se pega en la guía).
+
 ### Decisiones — carpetas (acordadas previamente)
 
 | Tema | Decisión |
@@ -133,6 +150,10 @@ npm run desktop:lint
 
 # App en dev
 npm run desktop:dev
+
+# Sitio de lectura (plan 11)
+npm run test -- --run packages/core
+npm run test -- --run apps/reader
 ```
 
 ---

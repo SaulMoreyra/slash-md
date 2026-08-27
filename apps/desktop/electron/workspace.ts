@@ -2,11 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { splitFrontmatter } from "@slash-md/core/frontmatter";
 import type { ContentConfig, SlashmdFile } from "@slash-md/core/configTypes";
-import { groupHomeLevel } from "@slash-md/core/homeTree";
+import { buildHomeTree } from "@slash-md/core/homeTree";
 import type { HomeTreeNode, InReviewPage, LocalDraft, PublicationState } from "@slash-md/core/homeTypes";
 import { draftBadge, hasGitChanges, isLocalDraft } from "@slash-md/core/localDrafts";
 import { labeledTitle } from "@slash-md/core/messaging";
 import { contentPathPrefix, posixBasename, posixJoin, posixNormalize } from "@slash-md/core/paths";
+import { isContentMarkdown } from "@slash-md/core/sitePages";
 import { collectPendingReviewMarkdown } from "@slash-md/core/reviewPaths";
 import { parsePrNumber } from "@slash-md/core/threadGate";
 import { parsePorcelain, refExists, runGit, type GitPathState } from "./git";
@@ -222,17 +223,6 @@ export async function listInReviewPages(
   return pages.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-function isContentMarkdown(filePath: string, contentPath: string): boolean {
-  if (!filePath.endsWith(".md") || filePath.endsWith(".slash.md")) {
-    return false;
-  }
-  const root = posixNormalize(contentPath);
-  if (!root) {
-    return true;
-  }
-  return filePath === root || filePath.startsWith(`${root}/`);
-}
-
 async function readContentGitStatus(root: string, contentPath: string): Promise<Map<string, GitPathState>> {
   const scope = posixNormalize(contentPath) || ".";
   try {
@@ -249,24 +239,7 @@ export async function buildLevel(
   configured: string[],
   titleOf: (path: string) => Promise<string>,
 ): Promise<HomeTreeNode[]> {
-  const { folders, files: docs } = groupHomeLevel(dir, files, configured);
-  const nodes: HomeTreeNode[] = [];
-  for (const folderPath of folders) {
-    nodes.push({
-      kind: "folder",
-      path: folderPath,
-      title: posixBasename(folderPath) || folderPath,
-      children: await buildLevel(folderPath, files, configured, titleOf),
-    });
-  }
-  for (const filePath of docs) {
-    nodes.push({
-      kind: "file",
-      path: filePath,
-      title: await titleOf(filePath),
-    });
-  }
-  return nodes;
+  return buildHomeTree(dir, files, configured, titleOf);
 }
 
 export async function titleFor(root: string, remotePath: string): Promise<string> {

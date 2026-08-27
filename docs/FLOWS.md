@@ -62,6 +62,8 @@ stateDiagram-v2
 | 5 | Autor | Home → **Feedback** | Abre comentario en el canvas |
 | 6 | Autor | Home / banner | **Publicar** cuando el PR esté listo → merge + checkout `defaultBranch` |
 
+Tras merge (o push en Personal), si `site.enabled` es true, el workflow de Pages genera el reader. Eso es CI, no un botón de la app.
+
 ### Diagrama de secuencia (publicación → PR)
 
 ```mermaid

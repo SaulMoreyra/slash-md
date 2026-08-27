@@ -144,6 +144,16 @@ Bar shows **Publish** only (no Review / publications).
 
 Use this for solo docs repos without required PR reviews. If the default branch is protected against direct pushes, Publish fails with a clear message — switch to **Workspace** mode or relax branch protection.
 
+## Public reading site (GitHub Pages)
+
+Optional. Same for **Workspace** and **Personal**: when `main` (your `defaultBranch`) updates, a GitHub Action can publish a Slash MD reader (tree, search, read-only preview).
+
+1. In Init / Settings, turn on **Publish reading site** (hidden in Local mode). That writes `"site": { "enabled": true }` in `.slashmd.json`.
+2. Add `.github/workflows/docs.yml` as in [READING.md](READING.md).
+3. Repo **Settings → Pages → GitHub Actions**.
+
+The Action is a no-op until `site.enabled` is true. Details and plan limits: [READING.md](READING.md).
+
 ## VS Code / Cursor editor (no GitHub)
 
 The extension is WYSIWYG only:
