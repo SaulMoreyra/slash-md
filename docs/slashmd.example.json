@@ -4,5 +4,9 @@
   "templatesPath": "_templates",
   "defaultBranch": "main",
   "mode": "workspace",
-  "sections": ["producto", "specs", "decisions"]
+  "sections": ["producto", "specs", "decisions"],
+  "site": {
+    "enabled": false,
+    "name": "Docs"
+  }
 }

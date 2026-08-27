@@ -1,6 +1,6 @@
 # Reading path — how others read your docs
 
-Slash MD is a writer's tool. Readers don't need the extension — they just need a way to browse the published Markdown. Writer flows (review → publish): [FLOWS.md](FLOWS.md).
+Slash MD is a writer's tool. Readers don't need the app — they browse published Markdown. Writer flows (review → publish): [FLOWS.md](FLOWS.md).
 
 ## Option 1 — GitHub (always works)
 
@@ -8,32 +8,44 @@ GitHub renders `.md` files natively. Readers navigate the repo tree or open dire
 
 **Recommended for private free-tier repos** where GitHub Pages is unavailable.
 
-## Option 2 — GitHub Pages (public / Pro / Team / Enterprise)
+## Option 2 — GitHub Pages (Slash MD reader)
 
-Turn the content repo into a static site with zero build steps using [Docsify](https://docsify.js.org/).
+Opt in with `site.enabled` in `.slashmd.json`. A reusable workflow builds a static site: folder tree, search, and the same Crepe preview as the desktop wiki (read-only).
 
-### Quick setup
+### In Slash MD (Desktop)
 
-1. In the content repo, create `docs/index.html` (or copy `docs-site/index.html` from the extension repo — it works as-is).
+Init / Settings → **Publish reading site (GitHub Pages)** when the mode is Team or Personal (not Local). That only writes `site.enabled`. It does **not** add the workflow or flip GitHub Settings.
 
-2. Go to **Settings → Pages** in the content repo:
-   - Source: **Deploy from a branch**
-   - Branch: `main` (or your `defaultBranch`)
-   - Folder: `/docs` (must match your `contentPath`)
+### Workflow (once per docs repo)
 
-3. Save. GitHub builds the site at `https://<owner>.github.io/<repo>/`.
+```yaml
+# .github/workflows/docs.yml
+name: Docs site
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  site:
+    uses: SaulMoreyra/slash-md/.github/workflows/publish-reader.yml@main
+```
 
-The included `docs-site/index.html` is a single-file Docsify setup that reads `.md` files via fetch — no build, no Node, no CI.
+Until a `v1` tag exists, pin `@main`. After a release, pin the same ref as `reader_ref`.
 
-### Customizing
+Then in the docs repo: **Settings → Pages → Source: GitHub Actions** (not “Deploy from a branch” + `/docs` — that fights this reader).
 
-Edit the `<script>` block in `index.html` to change:
-- `name` — site title
-- `repo` — GitHub corner link
-- `loadSidebar` — set to `true` and add `_sidebar.md` for custom nav
-- `search` — full-text search plugin (included)
+The job no-ops (green, no deploy) unless `site.enabled` is `true`. Personal and Team wikis use the same YAML; the trigger is a push to the default branch.
 
-See [Docsify configuration](https://docsify.js.org/#/configuration) for all options.
+Project sites live at `https://<owner>.github.io/<repo>/`. Private Pages still follow GitHub’s plan rules (public site on Pro/Team; private site only on Enterprise).
+
+Implementation: [plan 11](plans/11-reader-site.md).
+
+### Legacy — Docsify
+
+`docs-site/index.html` is a zero-build Docsify shell. **Not recommended** for new wikis: it does not use the Slash MD parser (no Crepe callouts/hero). Prefer the reader above.
 
 ## Option 3 — Read in Slash MD
 
@@ -49,8 +61,8 @@ The recipient must have the extension installed and the content repo cloned. See
 
 | Repo visibility | Recommended reading path |
 |----------------|--------------------------|
-| Public | GitHub Pages (Docsify) + GitHub rendered `.md` |
-| Private (Pro / Team / Enterprise) | GitHub Pages (private Pages available) |
+| Public | GitHub Pages (Slash MD reader) + GitHub rendered `.md` |
+| Private (Pro / Team / Enterprise) | GitHub Pages if you accept the plan’s visibility rules |
 | Private (free tier) | GitHub rendered `.md` + Slash MD deep links |
 | Internal (GHES / EMU) | GitHub Pages or rendered `.md` (depends on org policy) |
 

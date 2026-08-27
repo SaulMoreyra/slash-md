@@ -22,7 +22,9 @@
     "desktop:pack": "npm run pack -w @slash-md/desktop",
     "desktop:lint": "npm run lint -w @slash-md/desktop",
     "desktop:typecheck": "npm run typecheck -w @slash-md/desktop",
-    "slash": "node apps/desktop/bin/slash"
+    "slash": "node apps/desktop/bin/slash",
+    "reader:build": "npm run build -w @slash-md/reader",
+    "reader:site": "node apps/reader/dist/build-site.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

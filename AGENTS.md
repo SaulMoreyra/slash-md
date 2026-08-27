@@ -9,6 +9,7 @@ When working on this repo, read skills under **`.cursor/skills/`** before large 
 | **`slash-md-desktop`** | Desktop app (`apps/desktop`) screens, hooks, feature folders |
 | **`react-list-screen-pattern`** | Thin views + `useXController` + presentational components |
 | **`react-compound-components`** | Compound APIs / future HeroUI-style primitives |
+| **`sliced-implementation-plans`** | Plan de implementación → índice `NN` + slices `NNa`; `docs/plans/` |
 
 Also available: `react-testing`, `vercel-react-best-practices`, `vercel-composition-patterns` (also installed under `.agents/skills/`).
 
@@ -16,12 +17,13 @@ Do not touch Milkdown `CrepeCanvas` or `packages/ui` vanilla DOM unless the task
 
 ## Desktop React rules (antipatterns)
 
-Cursor rules under **`.cursor/rules/`** (globs `apps/desktop/src/**`):
+Cursor rules under **`.cursor/rules/`**:
 
 | Rule | Covers |
 |------|--------|
 | **`desktop-react-antipatterns`** | No heavy JSX conditionals; no inline `.map()`; no oversized files; domain subhooks + enums (not magic strings); extract `useKeyboardShortcuts` |
 | **`desktop-react-components`** | Folder-per-component under `src/components/` |
 | **`desktop-react-screens`** | Feature screens + nested `components/` folders; further-split domains (`useFormatter` / `useComments`) when needed |
+| **`sliced-implementation-plans`** | `docs/plans/**` — índice + slices, no un plan monolítico |
 
 **Layout:** each component in `Name/` with `Name.tsx`, `index.ts`, `__specs__/`, and `hooks/useNameController.ts` when it owns local state/effects.

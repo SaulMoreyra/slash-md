@@ -95,7 +95,7 @@ Lo que se configura en GitHub, sin código (fase 0.5):
 | Actions: markdownlint + link checker | Que los links relativos no se rompan |
 | Branch protection en `main` | Forzar revisión (por eso el plan pagado) |
 
-Los devs consumen los `.md` en el repo o en su IDE. GitHub Pages queda fuera de v1 (en repo privado exige plan pagado y el sitio sería público salvo Enterprise).
+Los devs consumen los `.md` en el repo o en el IDE. Un sitio de lectura en GitHub Pages es **opt-in** (`site.enabled` en `.slashmd.json` + reusable workflow); no forma parte del ciclo Review → Publish. En repo privado el sitio sigue las reglas de plan de GitHub (público en Pro/Team; privado solo Enterprise).
 
 ## Sidecar soft-deprecation (Pillar 1)
 

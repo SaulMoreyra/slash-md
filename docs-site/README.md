@@ -1,6 +1,8 @@
-# docs-site — zero-build reading site
+# docs-site — legacy Docsify shell
 
-Copy `index.html` into the root of your content folder (e.g. `docs/`) in the documentation repo, then enable **GitHub Pages** on that folder.
+Prefer the Slash MD reader (Crepe, tree, search) from [plan 11](../docs/plans/11-reader-site.md) and [READING.md](../docs/READING.md). This folder is a **legacy** zero-build Docsify `index.html` and is not the recommended public site.
+
+Copy `index.html` into the root of your content folder only if you still want Docsify.
 
 ## Setup
 

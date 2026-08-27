@@ -20,6 +20,14 @@ import {
   shouldShowReviewContextBanner,
 } from "@slash-md/core/reviewContext";
 import { groupHomeLevel } from "@slash-md/core/homeTree";
+import { parseSlashmd, siteEnabled } from "@slash-md/core/slashmd";
+import {
+  isContentMarkdown,
+  joinSitePath,
+  normalizeBasePath,
+  routeFor,
+  shouldPublishPage,
+} from "@slash-md/core/sitePages";
 import {
   contentPathPrefix,
   imageMarkdownSrc,
@@ -408,4 +416,50 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   assert(stripped.includes("title: X"), "strip keeps other frontmatter");
   const filled = fillTemplate("---\ntitle: {{title}}\ndescription: picker only\n---\n", { title: "Hello", date: "2026-08-25" });
   assert(!filled.includes("picker only"), "new pages do not inherit picker description");
+
+  {
+    const parsed = parseSlashmd({
+      repo: "acme/Help",
+      contentPath: ".",
+      mode: "workspace",
+      site: { enabled: true, name: "Help", basePath: "Help" },
+    });
+    assert(parsed.site?.enabled === true, "parseSlashmd site.enabled true");
+    assert(parsed.site?.name === "Help", "parseSlashmd site.name");
+    assert(parsed.site?.basePath === "/Help/", "parseSlashmd normalizes basePath");
+    assert(siteEnabled(parsed), "siteEnabled true");
+    assert(parseSlashmd({ site: true }).site === undefined, "boolean site is ignored");
+    assert(parseSlashmd({ site: { enabled: "yes" } }).site?.enabled === false, "non-true enabled is off");
+    assert(!siteEnabled(parseSlashmd({})), "missing site is off");
+    const saved = parseSlashmd({
+      repo: "acme/Help",
+      mode: "personal",
+      site: { enabled: true, name: "Help" },
+    });
+    assert(saved.site?.enabled === true, "Init-save parse keeps site");
+  }
+
+  assert(normalizeBasePath("") === "", "empty basePath stays empty");
+  assert(normalizeBasePath("/") === "/", "root basePath stays slash");
+  assert(normalizeBasePath("Help") === "/Help/", "bare basePath gets slashes");
+  assert(joinSitePath("/Help/", "assets/reader.js") === "/Help/assets/reader.js", "join site path with prefix");
+  assert(joinSitePath("", "assets/reader.js") === "/assets/reader.js", "join site path with empty base");
+
+  assert(isContentMarkdown("guide.md", "."), "root md is content");
+  assert(!isContentMarkdown("guide.slash.md", "."), "sidecar is not content markdown");
+  assert(!shouldPublishPage("_templates/no.md", ".", undefined), "default _templates not published");
+  assert(!shouldPublishPage("templates/prd.md", ".", undefined), "discovered templates/ not published");
+  assert(shouldPublishPage("producto/guia.md", ".", undefined), "wiki page is published");
+  assert(!shouldPublishPage("docs/_templates/x.md", "docs", undefined), "contentPath templates not published");
+
+  assert(routeFor("README.md", ".") === "/", "root README is /");
+  assert(routeFor("readME.md", ".") === "/", "README match is case-insensitive");
+  assert(routeFor("getting-started.md", ".") === "/getting-started/", "file route");
+  assert(routeFor("producto/guia.md", ".") === "/producto/guia/", "nested file route");
+  assert(routeFor("docs/foo.md", "docs") === "/foo/", "route strips contentPath");
+  assert(routeFor("docs/README.md", "docs") === "/", "contentPath README is /");
+  assert(routeFor("foo/README.md", ".") === "/foo/", "folder README is folder route");
+  const collided = ["foo.md", "foo/README.md"];
+  assert(routeFor("foo.md", ".", collided) === "/foo/", "foo.md wins /foo/");
+  assert(routeFor("foo/README.md", ".", collided) === "/foo/readme/", "colliding folder README is /foo/readme/");
 }

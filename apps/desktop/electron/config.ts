@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { RepoMode, type ContentConfig, type SlashmdFile, normalizeRepoMode, parseOwnerName } from "@slash-md/core/configTypes";
 import { contentPathPrefix, normalizeContentPathInput } from "@slash-md/core/paths";
+import { parseSlashmd } from "@slash-md/core/slashmd";
 import { getWorkspaceRoot } from "./session";
+
+export { parseSlashmd };
 
 export const SLASHMD_FILENAME = ".slashmd.json";
 
@@ -35,34 +38,6 @@ export async function readText(abs: string): Promise<string> {
 export async function writeText(abs: string, text: string): Promise<void> {
   await fs.mkdir(path.dirname(abs), { recursive: true });
   await fs.writeFile(abs, text, "utf8");
-}
-
-export function parseSlashmd(raw: unknown): SlashmdFile {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return {};
-  }
-  const rec = raw as Record<string, unknown>;
-  const out: SlashmdFile = {};
-  const repo = typeof rec.repo === "string" ? rec.repo : undefined;
-  if (repo && /^[^/\s]+\/[^/\s]+$/.test(repo.trim().replace(/\.git$/i, ""))) {
-    out.repo = repo.trim().replace(/\.git$/i, "");
-  }
-  if (typeof rec.contentPath === "string") {
-    out.contentPath = normalizeContentPathInput(rec.contentPath);
-  }
-  if (typeof rec.defaultBranch === "string" && rec.defaultBranch.trim()) {
-    out.defaultBranch = rec.defaultBranch.trim();
-  }
-  if (rec.mode === RepoMode.Personal || rec.mode === RepoMode.Workspace || rec.mode === RepoMode.Local) {
-    out.mode = rec.mode;
-  }
-  if (Array.isArray(rec.sections)) {
-    out.sections = rec.sections.filter((s): s is string => typeof s === "string" && Boolean(s.trim()));
-  }
-  if (typeof rec.templatesPath === "string" && rec.templatesPath.trim()) {
-    out.templatesPath = rec.templatesPath.trim().replace(/^\/+|\/+$/g, "");
-  }
-  return out;
 }
 
 export async function readSlashmd(root: string): Promise<SlashmdFile> {

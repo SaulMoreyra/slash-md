@@ -1,0 +1,99 @@
+name: Publish Slash MD reader
+
+on:
+  workflow_call:
+    inputs:
+      reader_ref:
+        description: Git ref of the slash-md repo that contains the reader (match the workflow pin).
+        type: string
+        required: false
+        default: main
+      reader_repo:
+        description: GitHub repo that ships the reader (owner/name).
+        type: string
+        required: false
+        default: SaulMoreyra/slash-md
+      base_path:
+        description: Site URL prefix. Empty = /<repo>/ or / for user/org sites.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.generate.outputs.publish }}
+    steps:
+      - name: Checkout docs repo
+        uses: actions/checkout@v4
+
+      - name: Checkout reader
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.reader_repo }}
+          ref: ${{ inputs.reader_ref }}
+          path: .slash-md-reader
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install and build reader
+        working-directory: .slash-md-reader
+        run: |
+          npm ci
+          npm run reader:build
+
+      - name: Resolve base path
+        run: |
+          if [ -n "${{ inputs.base_path }}" ]; then
+            echo "SITE_BASE=${{ inputs.base_path }}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+            echo "SITE_BASE=/" >> "$GITHUB_ENV"
+          else
+            echo "SITE_BASE=/${{ github.event.repository.name }}/" >> "$GITHUB_ENV"
+          fi
+
+      - name: Generate site
+        id: generate
+        working-directory: .slash-md-reader
+        env:
+          SITE_ROOT: ${{ github.workspace }}
+          SITE_OUT: ${{ github.workspace }}/_site
+        run: |
+          node apps/reader/dist/build-site.mjs
+          if [ -f "$GITHUB_WORKSPACE/_site/.nojekyll" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Pages
+        if: steps.generate.outputs.publish == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: steps.generate.outputs.publish == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
