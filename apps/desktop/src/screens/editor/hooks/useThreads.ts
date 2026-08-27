@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PagePayload, ReviewThread } from "../../../../shared/api";
+import { AppOperation } from "../../../App/enums";
+import type { RunOp } from "../../home/types";
 
 const api = () => window.slashmd;
 
 type Params = {
   page: PagePayload;
   focusThreadId?: string | null;
-  run: <T>(fn: () => Promise<T>) => Promise<T | undefined>;
+  runOp: RunOp;
 };
 
-export function useThreads({ page, focusThreadId, run }: Params) {
+export function useThreads({ page, focusThreadId, runOp }: Params) {
   const [threads, setThreads] = useState<ReviewThread[]>([]);
   const [orphans, setOrphans] = useState<ReviewThread[]>([]);
   const [openThread, setOpenThread] = useState<ReviewThread | null>(null);
@@ -61,16 +63,20 @@ export function useThreads({ page, focusThreadId, run }: Params) {
     if (!openThread) {
       return;
     }
-    await run(() => api().threadReply(page.path, openThread.id, body));
-    await onThreadsRefresh();
+    await runOp(AppOperation.ThreadReply, async () => {
+      await api().threadReply(page.path, openThread.id, body);
+      await onThreadsRefresh();
+    });
   }
 
   async function onThreadResolve(resolved: boolean) {
     if (!openThread) {
       return;
     }
-    await run(() => api().threadResolve(page.path, openThread.id, resolved));
-    await onThreadsRefresh();
+    await runOp(AppOperation.ThreadResolve, async () => {
+      await api().threadResolve(page.path, openThread.id, resolved);
+      await onThreadsRefresh();
+    });
     setOpenThread(null);
   }
 

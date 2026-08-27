@@ -1,4 +1,5 @@
 import type { AuthInfo, PagePayload } from "../../../../shared/api";
+import type { RunOp } from "../../home/types";
 import { useComments } from "./useComments";
 import { useEditorChrome } from "./useEditorChrome";
 import { useFormatter } from "./useFormatter";
@@ -13,9 +14,10 @@ export type EditorScreenProps = {
   auth: AuthInfo;
   onError: (message: string | null) => void;
   onPage: (page: PagePayload) => void;
+  onRefresh: () => Promise<void>;
   onClose: () => void;
   onCreatePublication?: () => void;
-  run: <T>(fn: () => Promise<T>) => Promise<T | undefined>;
+  runOp: RunOp;
 };
 
 export function useEditorController({
@@ -26,18 +28,20 @@ export function useEditorController({
   auth,
   onError,
   onPage,
+  onRefresh,
   onClose,
   onCreatePublication,
-  run,
+  runOp,
 }: EditorScreenProps) {
   const canWrite = page.canWrite !== false;
-  const editor = useFormatter({ page, trail, canWrite, onError, onPage, run });
-  const threads = useThreads({ page, focusThreadId, run });
-  const comments = useComments({ page, run, onThreadsRefresh: threads.onThreadsRefresh });
+  const editor = useFormatter({ page, trail, canWrite, onError, onPage, runOp });
+  const threads = useThreads({ page, focusThreadId, runOp });
+  const comments = useComments({ page, runOp, onThreadsRefresh: threads.onThreadsRefresh });
   const chrome = useEditorChrome({
     page,
     onPage,
-    run,
+    onRefresh,
+    runOp,
     onFlushSave: editor.onFlushSave,
   });
 

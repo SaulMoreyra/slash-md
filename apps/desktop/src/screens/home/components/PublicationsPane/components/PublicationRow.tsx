@@ -1,39 +1,53 @@
-import { Chip } from "@heroui/react";
+import { Button, Chip } from "@heroui/react";
 import type { PublicationSummary } from "@slash-md/core/homeTypes";
 import { useTranslation } from "react-i18next";
+import { PublicationKind } from "../../../enums";
 import { publicationChipColor, publicationKindLabel } from "../../../utils";
+import { PublicationMenu } from "./PublicationMenu";
+import { PublicationRowMeta } from "./PublicationRowMeta";
 
 type Props = {
   pub: PublicationSummary;
   busy: boolean;
   onResume: (branch: string) => void;
+  onLand: (branch: string) => void;
+  onDiscard: (pub: PublicationSummary) => void;
 };
 
-export function PublicationRow({ pub, busy, onResume }: Props) {
+export function PublicationRow({ pub, busy, onResume, onLand, onDiscard }: Props) {
   const { t } = useTranslation();
   const kindLabel = publicationKindLabel(t, pub.kind);
+  const published = pub.kind === PublicationKind.Published;
+  const rowAction = published ? t("home.publication.landWiki") : t("home.publication.resume");
 
   return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => onResume(pub.branch)}
-      aria-label={`${t("home.publication.resume")}: ${pub.title}`}
-      className={[
-        "flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-separator bg-default/40 px-3 py-3 text-left shadow-none",
-        "outline-none transition-colors duration-150 ease-out",
-        "hover:bg-default/60",
-        "focus-visible:ring-2 focus-visible:ring-accent/40",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        "motion-reduce:transition-none",
-      ].join(" ")}
-    >
-      <p className="min-w-0 flex-1 truncate text-sm font-medium" title={pub.title}>
-        {pub.title}
-      </p>
-      <Chip size="sm" variant="soft" color={publicationChipColor(pub.kind)} className="shrink-0">
-        <Chip.Label>{kindLabel}</Chip.Label>
-      </Chip>
-    </button>
+    <div className="flex items-center gap-1 rounded-2xl border border-separator bg-default/40 pr-1 shadow-none hover:bg-default/60">
+      <Button
+        fullWidth
+        variant="ghost"
+        isDisabled={busy}
+        onPress={() => (published ? onLand(pub.branch) : onResume(pub.branch))}
+        aria-label={`${rowAction}: ${pub.title}`}
+        className="h-auto min-w-0 flex-1 flex-col items-stretch justify-start gap-0 rounded-2xl border-0 bg-transparent px-3 py-3 text-left shadow-none"
+      >
+        <span className="flex w-full items-center gap-3">
+          <span className="min-w-0 flex-1 truncate text-sm font-medium" title={pub.title}>
+            {pub.title}
+          </span>
+          <Chip size="sm" variant="soft" color={publicationChipColor(pub.kind)} className="shrink-0">
+            <Chip.Label>{kindLabel}</Chip.Label>
+          </Chip>
+        </span>
+        <PublicationRowMeta pub={pub} />
+      </Button>
+      {published ? null : (
+        <PublicationMenu
+          title={pub.title}
+          branch={pub.branch}
+          busy={busy}
+          onDiscard={() => onDiscard(pub)}
+        />
+      )}
+    </div>
   );
 }

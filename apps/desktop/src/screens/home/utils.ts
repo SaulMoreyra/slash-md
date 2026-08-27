@@ -1,29 +1,14 @@
 import { unwrapHostError } from "@slash-md/core/conflictModel";
 import type {
-  HomeTreeNode,
   LocalDraft,
   LoteReviewSummary,
   PublicationSummary,
+  WikiSyncStatus,
 } from "@slash-md/core/homeTypes";
-import { posixBasename } from "@slash-md/core/paths";
 import { isTemplateRepoPath, templateDirCandidates } from "@slash-md/core/templates";
 import type { TFunction } from "i18next";
 import type { HomeTreePayload } from "../../../shared/api";
-import { CreateIntent, FolderCoverBasename, PrCheckStatus, PublicationKind, PublishBlocker } from "./enums";
-
-const COVER_BASENAMES = [FolderCoverBasename.Readme, FolderCoverBasename.Index];
-
-/** Direct child README.md / index.md, if the folder has a cover page. */
-export function findFolderCover(folder: HomeTreeNode): HomeTreeNode | undefined {
-  const files = folder.children?.filter((node) => node.kind === "file") ?? [];
-  for (const name of COVER_BASENAMES) {
-    const hit = files.find((file) => posixBasename(file.path).toLowerCase() === name);
-    if (hit) {
-      return hit;
-    }
-  }
-  return undefined;
-}
+import { CreateIntent, ModalKind, PrCheckStatus, PublicationCta, PublicationKind, PublicationStatusTone, PublishBlocker } from "./enums";
 
 export function createIntentForSection(
   section: string | undefined,
@@ -35,6 +20,20 @@ export function createIntentForSection(
   }
   const dirs = templateDirCandidates(contentPath ?? ".", templatesPath);
   return isTemplateRepoPath(section, dirs) ? CreateIntent.Template : CreateIntent.Page;
+}
+
+export function newPageModalKind(needsInit: boolean, isWorkspace: boolean, canWrite: boolean): ModalKind {
+  if (needsInit) {
+    return ModalKind.Init;
+  }
+  if (isWorkspace && !canWrite) {
+    return ModalKind.Publication;
+  }
+  return ModalKind.New;
+}
+
+export function settingsModalKind(needsInit: boolean): ModalKind {
+  return needsInit ? ModalKind.Init : ModalKind.Config;
 }
 
 export function workspaceTitle(
@@ -76,6 +75,9 @@ export function fileLabel(title: string, path: string): string {
 }
 
 export function badgeChip(badge: LocalDraft["badge"]): { letter: string; className: string } {
+  if (badge === "eliminado") {
+    return { letter: "−", className: "chip-deleted" };
+  }
   if (badge === "modificado") {
     return { letter: "M", className: "chip-m" };
   }
@@ -103,6 +105,126 @@ export function publicationChipColor(kind: PublicationKind | string): "default" 
     return "success";
   }
   return "default";
+}
+
+export type PublicationStatusInput = {
+  kind: PublicationKind | string;
+  canSendReview: boolean;
+  wikiSyncStatus?: WikiSyncStatus;
+  loteReview?: LoteReviewSummary;
+};
+
+/** Next step for the mounted publication. Null when the kind chip is enough. */
+export function publicationStatusLine(t: TFunction, input: PublicationStatusInput): string | null {
+  const { kind, canSendReview, wikiSyncStatus, loteReview } = input;
+  if (kind === PublicationKind.Published) {
+    return t("home.publication.statusOnWiki");
+  }
+  if (wikiSyncStatus === "conflicting") {
+    return t("home.publication.statusWikiConflict");
+  }
+  if (wikiSyncStatus === "merging") {
+    return t("home.publication.statusWikiMerging");
+  }
+  if (wikiSyncStatus === "behind") {
+    return t("home.publication.statusWikiBehind");
+  }
+  if (kind === PublicationKind.Draft) {
+    return canSendReview ? t("home.publication.statusUnsent") : null;
+  }
+  if (kind !== PublicationKind.InReview) {
+    return null;
+  }
+  if (!loteReview) {
+    return null;
+  }
+  if (loteReview.approvals === 0) {
+    return t("home.publication.statusWaitingApproval");
+  }
+  if (loteReview.checksOk === false) {
+    return t("home.publication.statusChecksFail");
+  }
+  if (loteReview.checksOk === null) {
+    return t("home.publication.statusChecking");
+  }
+  if (loteReview.state === "open" && loteReview.approvals > 0 && loteReview.checksOk === true) {
+    return t("home.publication.statusReadyToPublish");
+  }
+  return null;
+}
+
+export function publicationStatusTone(input: PublicationStatusInput): PublicationStatusTone {
+  const { kind, canSendReview, wikiSyncStatus, loteReview } = input;
+  if (kind === PublicationKind.Published) {
+    return PublicationStatusTone.Success;
+  }
+  if (wikiSyncStatus === "conflicting" || wikiSyncStatus === "merging") {
+    return PublicationStatusTone.Danger;
+  }
+  if (wikiSyncStatus === "behind") {
+    return PublicationStatusTone.Warning;
+  }
+  if (kind === PublicationKind.Draft) {
+    return canSendReview ? PublicationStatusTone.Warning : PublicationStatusTone.Default;
+  }
+  if (kind !== PublicationKind.InReview || !loteReview) {
+    return PublicationStatusTone.Default;
+  }
+  if (loteReview.approvals === 0) {
+    return PublicationStatusTone.Warning;
+  }
+  if (loteReview.checksOk === false) {
+    return PublicationStatusTone.Danger;
+  }
+  if (loteReview.state === "open" && loteReview.approvals > 0 && loteReview.checksOk === true) {
+    return PublicationStatusTone.Success;
+  }
+  return PublicationStatusTone.Default;
+}
+
+export function publicationChangeCount(input: {
+  drafts: number;
+  kind: PublicationKind | string;
+  canSendReview: boolean;
+  wikiSyncStatus?: WikiSyncStatus;
+}): number {
+  if (input.drafts <= 0) {
+    return 0;
+  }
+  const wikiIdle = !input.wikiSyncStatus || input.wikiSyncStatus === "idle";
+  if (input.kind === PublicationKind.Draft && input.canSendReview && wikiIdle) {
+    return 0;
+  }
+  return input.drafts;
+}
+
+export function publicationCta(input: {
+  kind?: PublicationKind | string;
+  canSendReview: boolean;
+  canPublishBatch: boolean;
+  wikiSyncStatus?: WikiSyncStatus;
+  loteReview?: LoteReviewSummary;
+}): PublicationCta {
+  if (input.kind === PublicationKind.Published) {
+    return PublicationCta.Land;
+  }
+  if (input.canSendReview) {
+    return PublicationCta.Send;
+  }
+  const blocked = input.wikiSyncStatus === "conflicting" || input.wikiSyncStatus === "merging";
+  if (input.canPublishBatch && !blocked && input.loteReview && isPublishReady(input.loteReview)) {
+    return PublicationCta.Publish;
+  }
+  return PublicationCta.None;
+}
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function publicationRowsForList(

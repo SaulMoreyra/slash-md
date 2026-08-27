@@ -1,0 +1,1 @@
+export { ConfirmDiscardPublicationModal } from "./ConfirmDiscardPublicationModal";

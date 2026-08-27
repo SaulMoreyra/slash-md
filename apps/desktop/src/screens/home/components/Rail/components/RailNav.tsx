@@ -1,23 +1,36 @@
-import { Chip, Header, Label, ListBox } from "@heroui/react";
+import { Button, Chip, Header, Label, ListBox } from "@heroui/react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { IconDrafts, IconHistory, IconInbox } from "../../../../../components/icons";
+import { IconCollapseAll, IconDrafts, IconExpandAll, IconHistory, IconInbox } from "../../../../../components/icons";
 import { ShortcutKbd, shortcutLabel } from "../../../../../components/ShortcutKbd";
 import type { HomeTreePayload } from "../../../../../../shared/api";
-import { NavKind, RailHint } from "../../../enums";
+import { NavKind, RailHint, TreeExpandMode } from "../../../enums";
 import type { NavView } from "../../../types";
 
 type Props = {
   nav: NavView;
   payload: HomeTreePayload | null;
   isWorkspace: boolean;
+  canToggleAllFolders?: boolean;
+  treeExpandMode?: TreeExpandMode;
   onNav: (nav: NavView) => void;
+  onToggleAllFolders?: () => void;
 };
+
+type WorkKind = NavKind.Inbox | NavKind.Drafts | NavKind.Publications;
 
 function navKey(nav: NavView): string {
   if (nav.kind === NavKind.Folder) {
     return `folder:${nav.path}`;
   }
   return nav.kind;
+}
+
+function emitWorkNav(id: string, onNav: (nav: NavView) => void) {
+  const next = workNavFromKey(id);
+  if (next) {
+    onNav(next);
+  }
 }
 
 function workNavFromKey(id: string): NavView | undefined {
@@ -33,7 +46,15 @@ function workNavFromKey(id: string): NavView | undefined {
   }
 }
 
-export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
+export function RailNav({
+  nav,
+  payload,
+  isWorkspace,
+  canToggleAllFolders,
+  treeExpandMode = TreeExpandMode.Expand,
+  onNav,
+  onToggleAllFolders,
+}: Props) {
   const { t } = useTranslation();
   const selected = new Set([navKey(nav)]);
   const pubCount = payload?.publications?.length ?? 0;
@@ -44,22 +65,20 @@ export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
     <ListBox
       aria-label={t("home.nav.myWork")}
       selectionMode="single"
+      disallowEmptySelection
       selectedKeys={selected}
       onSelectionChange={(keys) => {
         const key = [...keys][0];
         if (key == null) {
           return;
         }
-        const next = workNavFromKey(String(key));
-        if (next) {
-          onNav(next);
-        }
+        emitWorkNav(String(key), onNav);
       }}
     >
       <ListBox.Section>
         <Header>{t("home.nav.myWork")}</Header>
         {isWorkspace ? (
-          <ListBox.Item id={NavKind.Inbox} textValue={t("home.nav.inbox")} className="w-full pr-1">
+          <WorkNavItem id={NavKind.Inbox} label={t("home.nav.inbox")} onNav={onNav}>
             <IconInbox />
             <Label>{t("home.nav.inbox")}</Label>
             {inboxCount > 0 ? (
@@ -68,15 +87,15 @@ export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
               </Chip>
             ) : null}
             <ShortcutKbd keys={shortcutLabel.inbox()} className="ml-auto" />
-          </ListBox.Item>
+          </WorkNavItem>
         ) : null}
-        <ListBox.Item id={NavKind.Drafts} textValue={t("home.nav.drafts")} className="w-full pr-1">
+        <WorkNavItem id={NavKind.Drafts} label={t("home.nav.drafts")} onNav={onNav}>
           <IconDrafts />
           <Label>{t("home.nav.drafts")}</Label>
           <ShortcutKbd keys={shortcutLabel.drafts()} className="ml-auto" />
-        </ListBox.Item>
+        </WorkNavItem>
         {isWorkspace ? (
-          <ListBox.Item id={NavKind.Publications} textValue={t("home.publication.listTitle")} className="w-full pr-1">
+          <WorkNavItem id={NavKind.Publications} label={t("home.publication.listTitle")} onNav={onNav}>
             <IconHistory />
             <Label>{t("home.publication.listTitle")}</Label>
             {hasPubs ? (
@@ -85,11 +104,15 @@ export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
               </Chip>
             ) : null}
             <ShortcutKbd keys={shortcutLabel.publications()} className="ml-auto" />
-          </ListBox.Item>
+          </WorkNavItem>
         ) : null}
       </ListBox.Section>
       <ListBox.Section>
-        <Header>{t("home.nav.workspace")}</Header>
+        <WorkspaceHeader
+          canToggle={Boolean(canToggleAllFolders && onToggleAllFolders)}
+          mode={treeExpandMode}
+          onToggle={onToggleAllFolders}
+        />
         {payload?.needsInit ? (
           <ListBox.Item id={RailHint.Init} textValue={t("home.nav.initHint")} isDisabled>
             <Label className="text-muted">{t("home.nav.initHint")}</Label>
@@ -97,5 +120,62 @@ export function RailNav({ nav, payload, isWorkspace, onNav }: Props) {
         ) : null}
       </ListBox.Section>
     </ListBox>
+  );
+}
+
+function WorkNavItem({
+  id,
+  label,
+  onNav,
+  children,
+}: {
+  id: WorkKind;
+  label: string;
+  onNav: (nav: NavView) => void;
+  children: ReactNode;
+}) {
+  return (
+    <ListBox.Item
+      id={id}
+      textValue={label}
+      className="w-full pr-1"
+      onClick={() => emitWorkNav(id, onNav)}
+    >
+      {children}
+    </ListBox.Item>
+  );
+}
+
+type WorkspaceHeaderProps = {
+  canToggle: boolean;
+  mode: TreeExpandMode;
+  onToggle?: () => void;
+};
+
+function WorkspaceHeader({ canToggle, mode, onToggle }: WorkspaceHeaderProps) {
+  const { t } = useTranslation();
+  if (!canToggle || !onToggle) {
+    return <Header>{t("home.nav.workspace")}</Header>;
+  }
+
+  const collapse = mode === TreeExpandMode.Collapse;
+  const label = collapse ? t("home.tree.collapseAll") : t("home.tree.expandAll");
+
+  return (
+    <Header>
+      <span className="flex w-full items-center justify-between gap-1">
+        <span className="truncate">{t("home.nav.workspace")}</span>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          className="size-6 min-w-6 shrink-0"
+          aria-label={label}
+          onPress={onToggle}
+        >
+          {collapse ? <IconCollapseAll /> : <IconExpandAll />}
+        </Button>
+      </span>
+    </Header>
   );
 }

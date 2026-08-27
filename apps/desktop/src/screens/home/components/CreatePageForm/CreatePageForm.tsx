@@ -2,11 +2,14 @@ import { Button, Spinner } from "@heroui/react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { CreateIntent } from "../../enums";
+import { CreateFilePreview } from "./components/CreateFilePreview";
+import { CreateTargetHeading } from "./components/CreateTargetHeading";
 import { TemplatePickGrid } from "./components/TemplatePickGrid";
 import {
   useCreatePageFormController,
   type CreatePageInput,
 } from "./hooks/useCreatePageFormController";
+import { formatCreatePaths } from "./utils";
 
 export type { CreatePageInput };
 
@@ -33,33 +36,44 @@ export function CreatePageForm({
   const blocked = busy || loading;
   const submitLabel = busy ? t("common.creating") : t("common.create");
   const copy = formCopy(t, createIntent);
+  const { folderPath, filePath } = formatCreatePaths(section, title, t("common.untitled"));
 
   return (
     <div
       className={compact ? "relative flex flex-col gap-6" : "relative mx-auto flex w-full max-w-lg flex-col gap-8"}
       aria-busy={busy}
     >
-      <input
-        className={[
-          "w-full bg-transparent text-foreground outline-none placeholder:text-muted/40",
-          compact ? "text-3xl font-semibold tracking-tight" : "text-4xl font-semibold tracking-tight",
-        ].join(" ")}
-        value={title}
-        placeholder={copy.placeholder}
-        aria-label={copy.titleLabel}
-        autoFocus
-        disabled={busy}
-        onChange={(ev) => onTitleChange(ev.target.value)}
-        onKeyDown={(ev) => {
-          if (ev.key === "Enter") {
-            ev.preventDefault();
-            if (!blocked) {
-              onSubmit();
-            }
-          }
-        }}
+      <CreateTargetHeading
+        path={folderPath}
+        compact={compact}
+        ariaLabel={t("home.create.targetAria", { path: folderPath })}
       />
-      {section ? <p className="text-sm text-muted">{t("home.modals.page.folder", { section })}</p> : null}
+      <div className="flex flex-col gap-2">
+        <input
+          className={[
+            "w-full bg-transparent text-foreground outline-none placeholder:text-muted/40",
+            compact ? "text-3xl font-semibold tracking-tight" : "text-4xl font-semibold tracking-tight",
+          ].join(" ")}
+          value={title}
+          placeholder={copy.placeholder}
+          aria-label={copy.titleLabel}
+          autoFocus
+          disabled={busy}
+          onChange={(ev) => onTitleChange(ev.target.value)}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter") {
+              ev.preventDefault();
+              if (!blocked) {
+                onSubmit();
+              }
+            }
+          }}
+        />
+        <CreateFilePreview
+          path={filePath}
+          ariaLabel={t("home.create.filePreviewAria", { path: filePath })}
+        />
+      </div>
       <div>
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">{copy.pickerHeading}</p>
         <TemplatePickGrid

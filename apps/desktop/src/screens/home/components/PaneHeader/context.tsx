@@ -1,4 +1,4 @@
-import { createContext, use, type ReactNode } from "react";
+import { createContext, type ReactNode } from "react";
 
 type PaneChromeValue = {
   onClose: () => void;

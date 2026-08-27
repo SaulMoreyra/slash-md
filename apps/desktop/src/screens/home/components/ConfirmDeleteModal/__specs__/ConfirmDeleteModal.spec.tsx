@@ -24,7 +24,9 @@ describe("ConfirmDeleteModal", () => {
   it("confirms deletion", async () => {
     const user = userEvent.setup();
     renderComponent();
-    expect(screen.getByText(t("home.modals.delete.bodyFile", { title: "Alpha" }))).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: t("home.modals.delete.titleFile") })).toBeInTheDocument();
+    expect(screen.getByText(t("home.modals.delete.ledeFile"))).toBeInTheDocument();
+    expect(screen.getByText("Alpha")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: t("common.delete") }));
     expect(onConfirm).toHaveBeenCalled();
   });

@@ -4,7 +4,7 @@ import type { ConflictFileKind, WikiSyncStatus } from "./conflictModel";
 
 export type { ConflictFileKind, WikiSyncStatus } from "./conflictModel";
 
-export type LocalDraftBadge = "draft" | "modificado" | "in review";
+export type LocalDraftBadge = "draft" | "modificado" | "in review" | "eliminado";
 
 export type LocalDraft = {
   path: string;
@@ -41,12 +41,19 @@ export type HomeTreeNode = {
   children?: HomeTreeNode[];
 };
 
+export type PublicationCommenter = {
+  login: string;
+  avatarUrl?: string;
+};
+
 export type LoteReviewSummary = {
   prNumber: number;
   prUrl: string;
   title: string;
   branch: string;
   reviewers: string[];
+  /** Requested reviewers and people who already left a review, with avatars when known. */
+  reviewerPeople?: PublicationCommenter[];
   checksOk: boolean | null;
   approvals: number;
   state: "open" | "merged" | "closed";
@@ -72,6 +79,18 @@ export type PublicationSummary = {
   kind: PublicationKind;
   /** True when this branch is currently checked out. */
   mounted: boolean;
+  /** Open PR author, when known. */
+  author?: string;
+  /** In review: latest reviews include an approval (and no changes requested). */
+  approved?: boolean;
+  /** In review: unique people who left a comment on the pull. */
+  commenters?: PublicationCommenter[];
+  /** Draft: files changed vs the wiki default branch. */
+  changedFiles?: number;
+  /** Draft: lines added vs the wiki default branch. */
+  additions?: number;
+  /** Draft: lines removed vs the wiki default branch. */
+  deletions?: number;
 };
 
 export type HomeTreePayload = {

@@ -38,6 +38,7 @@ export enum ModalKind {
   SignIn = "signin",
   Review = "review",
   Publication = "publication",
+  DiscardPublication = "discardPublication",
 }
 
 /** What Home creates in the current folder: a wiki page or a reusable template. */
@@ -77,6 +78,14 @@ export enum PublicationKind {
   Draft = "draft",
   InReview = "in_review",
   Published = "published",
+}
+
+/** Tint for the mounted publication status well. */
+export enum PublicationStatusTone {
+  Default = "default",
+  Warning = "warning",
+  Success = "success",
+  Danger = "danger",
 }
 
 /** GitHub check rollup on the lote PR. */
@@ -135,14 +144,11 @@ export enum TreeEntryKind {
   Folder = "folder",
 }
 
-/** Portada files opened when selecting a folder. Detection is case-insensitive. */
-export const FolderCoverBasename = {
-  Readme: "readme.md",
-  Index: "index.md",
-} as const;
-
-/** Filename written by "Write cover". */
-export const FolderCoverFileName = "README.md";
+/** Next action for the library-tree expand/collapse-all control. */
+export enum TreeExpandMode {
+  Expand = "expand",
+  Collapse = "collapse",
+}
 
 /** Account menu / workspace-switch dropdown action ids. */
 export enum AccountMenuAction {
@@ -154,4 +160,20 @@ export enum AccountMenuAction {
   CloseWorkspace = "close-workspace",
   SignOut = "sign-out",
   SignIn = "sign-in",
+}
+
+/** Primary button on the mounted publication card. */
+export enum PublicationCta {
+  None = "none",
+  Send = "send",
+  Publish = "publish",
+  Land = "land",
+}
+
+/** Overflow actions on the mounted publication card. */
+export enum PublicationMenuAction {
+  Leave = "leave",
+  OpenGithub = "openGithub",
+  CopyBranch = "copyBranch",
+  Discard = "discard",
 }

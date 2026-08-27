@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import type { CreateIntent } from "../../../../../../enums";
 import { EditorBlank } from "../../../../../EditorBlank";
 import { Empty } from "../../../../../Empty";
-import { SectionCanvas } from "../../../../../SectionCanvas";
 import { useHome } from "../../../../context";
 import { Conflict } from "../Conflict";
 import { Loading } from "../Loading";
@@ -12,16 +11,13 @@ type Props = {
   needsInit: boolean;
   loading: boolean;
   hasPage: boolean;
-  openingCover: boolean;
-  showSectionCanvas: boolean;
-  folderTitle: string | undefined;
   section: string | undefined;
   createIntent: CreateIntent;
   busy: boolean;
+  showProcessGuide?: boolean;
   onInit: () => void;
   onCreatePage: (input: { title: string; templateId: string; section?: string }) => void;
-  onWriteCover: () => void;
-  onNewPage: () => void;
+  onRequestPublication?: () => void;
   children: ReactNode;
 };
 
@@ -37,16 +33,13 @@ function BodyInner({
   needsInit,
   loading,
   hasPage,
-  openingCover,
-  showSectionCanvas,
-  folderTitle,
   section,
   createIntent,
   busy,
+  showProcessGuide = false,
   onInit,
   onCreatePage,
-  onWriteCover,
-  onNewPage,
+  onRequestPublication,
   children,
 }: Props) {
   const { t } = useTranslation();
@@ -63,7 +56,7 @@ function BodyInner({
     );
   }
 
-  if (loading || openingCover) {
+  if (loading) {
     return <Loading />;
   }
 
@@ -75,18 +68,14 @@ function BodyInner({
     return children;
   }
 
-  if (showSectionCanvas) {
-    return (
-      <SectionCanvas
-        title={folderTitle ?? section ?? ""}
-        createIntent={createIntent}
-        onWriteCover={onWriteCover}
-        onNewPage={onNewPage}
-      />
-    );
-  }
-
   return (
-    <EditorBlank section={section} createIntent={createIntent} busy={busy} onCreate={onCreatePage} />
+    <EditorBlank
+      section={section}
+      createIntent={createIntent}
+      busy={busy}
+      showProcessGuide={showProcessGuide}
+      onCreate={onCreatePage}
+      onNewPublication={onRequestPublication}
+    />
   );
 }

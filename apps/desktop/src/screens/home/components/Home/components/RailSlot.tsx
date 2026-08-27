@@ -33,6 +33,7 @@ function ConnectedRail({ home }: { home: HomeControllerApi }) {
   return (
     <Rail
       {...chrome}
+      branch={home.git.branch}
       roots={home.library.roots}
       treeSelected={home.nav.treeSelected}
       expanded={home.nav.expanded}
@@ -45,8 +46,15 @@ function ConnectedRail({ home }: { home: HomeControllerApi }) {
       }}
       onFolder={home.nav.onOpenFolder}
       onToggle={home.nav.onToggleFolder}
+      canToggleAllFolders={home.nav.canToggleAllFolders}
+      treeExpandMode={home.nav.treeExpandMode}
+      onToggleAllFolders={home.nav.onToggleAllFolders}
       onRename={home.library.canWrite ? home.treeActions.onRequestRename : undefined}
       onDelete={home.library.canWrite ? home.treeActions.onRequestDelete : undefined}
+      onNewFileInFolder={home.library.canWrite ? home.nav.onNewFileInFolder : undefined}
+      onNewFolderInFolder={
+        home.library.canWrite ? (node) => home.actions.onRequestNewFolderIn(node.path) : undefined
+      }
     />
   );
 }

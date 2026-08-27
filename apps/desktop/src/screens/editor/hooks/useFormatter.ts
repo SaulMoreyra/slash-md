@@ -4,6 +4,8 @@ import { normalizePageIcon } from "@slash-md/core/pageIcon";
 import { normalizeMarkdown } from "@slash-md/core/markdown";
 import { useTranslation } from "react-i18next";
 import type { FrontmatterFields, PagePayload } from "../../../../shared/api";
+import { AppOperation } from "../../../App/enums";
+import type { RunOp } from "../../home/types";
 import { BodyClass, FrontmatterStatus, PageKind, RepoMode, SaveStatus } from "../enums";
 import { crumbParts, pageLifecycle } from "../utils";
 
@@ -15,10 +17,10 @@ type Params = {
   canWrite: boolean;
   onError: (message: string | null) => void;
   onPage: (page: PagePayload) => void;
-  run: <T>(fn: () => Promise<T>) => Promise<T | undefined>;
+  runOp: RunOp;
 };
 
-export function useFormatter({ page, trail, canWrite, onError, onPage, run }: Params) {
+export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: Params) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(page.frontmatter.title);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -106,7 +108,7 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, run }: Pa
 
   async function onFrontmatterPatch(patch: Partial<FrontmatterFields>) {
     if (!canWrite) return;
-    const result = await run(() => api().patchFrontmatter(page.path, patch));
+    const result = await runOp(AppOperation.SavePage, () => api().patchFrontmatter(page.path, patch));
     if (!result) {
       return;
     }

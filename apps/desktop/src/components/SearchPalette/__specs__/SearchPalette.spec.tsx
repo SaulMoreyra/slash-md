@@ -32,10 +32,17 @@ describe("SearchPalette", () => {
   const renderComponent = (props: Partial<SearchPaletteProps> = {}) =>
     renderWithProviders(<SearchPalette {...defaultProps} {...props} />);
 
+  it("anchors at the top so results grow downward", () => {
+    renderComponent();
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-placement", "top");
+  });
+
   it("renders result hits", () => {
     renderComponent();
     expect(screen.getByRole("option", { name: /^Alpha/i })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /^Docs$/i })).toBeInTheDocument();
+    expect(screen.getByText(t("search.hint"))).toBeInTheDocument();
+    expect(screen.getByText(t("search.footOpen"))).toBeInTheDocument();
   });
 
   it("opens a file when a hit is clicked", async () => {
@@ -48,6 +55,13 @@ describe("SearchPalette", () => {
   it("shows empty state when query has no hits", () => {
     renderComponent({ query: "zzz", hits: [] });
     expect(screen.getByRole("status")).toHaveTextContent(t("search.empty", { query: "zzz" }));
+    expect(screen.queryByText(t("search.footOpen"))).not.toBeInTheDocument();
+  });
+
+  it("hides the results panel while idle", () => {
+    renderComponent({ query: "", hits: [] });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("closes on Escape", async () => {

@@ -22,7 +22,7 @@ export function AlertBanner({ error, merging, wikiSyncStatus, busy, onSync, onOp
       <Alert status="warning" className="m-3" role="alert">
         <Alert.Content>
           <Alert.Description>{t("home.conflicts.publishBlocked")}</Alert.Description>
-          <Button size="sm" variant="primary" onPress={merging ? onOpenConflicts : onSync}>
+          <Button size="sm" variant="primary" isDisabled={busy} onPress={merging ? onOpenConflicts : onSync}>
             {merging ? t("home.conflicts.resolvePages") : t("home.conflicts.sync")}
           </Button>
         </Alert.Content>

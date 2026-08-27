@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { labeledTitle } from "@slash-md/core/messaging";
 import { splitFrontmatter } from "@slash-md/core/frontmatter";
-import type { HomeTreeNode, LocalDraft, LocalDraftBadge, InReviewPage } from "@slash-md/core/homeTypes";
+import type { ContentConfig, SlashmdFile } from "@slash-md/core/configTypes";
 import { groupHomeLevel } from "@slash-md/core/homeTree";
+import type { HomeTreeNode, InReviewPage, LocalDraft, PublicationState } from "@slash-md/core/homeTypes";
+import { draftBadge, hasGitChanges, isLocalDraft } from "@slash-md/core/localDrafts";
+import { labeledTitle } from "@slash-md/core/messaging";
 import { contentPathPrefix, posixBasename, posixJoin, posixNormalize } from "@slash-md/core/paths";
 import { collectPendingReviewMarkdown } from "@slash-md/core/reviewPaths";
 import { parsePrNumber } from "@slash-md/core/threadGate";
-import type { ContentConfig, SlashmdFile } from "@slash-md/core/configTypes";
-import type { PublicationState } from "@slash-md/core/homeTypes";
 import { parsePorcelain, refExists, runGit, type GitPathState } from "./git";
 import { configuredSections, fileExists, readSlashmd, readText, repoFile } from "./config";
 
@@ -45,15 +45,37 @@ export async function listLocalDrafts(
   root: string,
   contentPath: string,
   candidates: string[],
-  opts?: { requireGitChanges?: boolean },
 ): Promise<LocalDraft[]> {
   const git = await readContentGitStatus(root, contentPath);
+  const deletedPaths = [...git.entries()]
+    .filter(([, state]) => state.deleted)
+    .map(([filePath]) => filePath);
+  const allPaths = [...new Set([...candidates, ...deletedPaths])];
   const drafts: LocalDraft[] = [];
-  for (const rawPath of candidates) {
+
+  for (const rawPath of allPaths) {
     const filePath = posixNormalize(rawPath);
     if (!isContentMarkdown(filePath, contentPath)) {
       continue;
     }
+    const state = git.get(filePath) ?? { untracked: false, dirty: false, deleted: false };
+    if (!hasGitChanges(state)) {
+      continue;
+    }
+
+    if (state.deleted) {
+      const status = await statusFromHead(root, filePath);
+      if (!isLocalDraft(status, state)) {
+        continue;
+      }
+      drafts.push({
+        path: filePath,
+        title: await titleForDeleted(root, filePath),
+        badge: draftBadge(status, state),
+      });
+      continue;
+    }
+
     let text: string;
     try {
       text = await readText(repoFile(root, filePath));
@@ -61,8 +83,7 @@ export async function listLocalDrafts(
       continue;
     }
     const status = splitFrontmatter(text).fields.status.trim();
-    const state = git.get(filePath) ?? { untracked: false, dirty: false };
-    if (!isLocalDraft(status, state, opts?.requireGitChanges === true)) {
+    if (!isLocalDraft(status, state)) {
       continue;
     }
     drafts.push({
@@ -74,6 +95,24 @@ export async function listLocalDrafts(
   return drafts.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+async function statusFromHead(root: string, filePath: string): Promise<string> {
+  try {
+    const text = await runGit(["show", `HEAD:${filePath}`], { cwd: root });
+    return splitFrontmatter(text).fields.status.trim();
+  } catch {
+    return "";
+  }
+}
+
+async function titleForDeleted(root: string, filePath: string): Promise<string> {
+  try {
+    const text = await runGit(["show", `HEAD:${filePath}`], { cwd: root });
+    return labeledTitle(text, posixBasename(filePath));
+  } catch {
+    return posixBasename(filePath);
+  }
+}
+
 export async function listPendingReviewMarkdown(
   root: string,
   contentPath: string,
@@ -81,12 +120,9 @@ export async function listPendingReviewMarkdown(
   pubBranch: string,
 ): Promise<string[]> {
   const scope = posixNormalize(contentPath) || ".";
-  let porcelainOutput = "";
-  try {
-    porcelainOutput = await runGit(["status", "--porcelain", "--", scope], { cwd: root });
-  } catch {
-    porcelainOutput = "";
-  }
+  const porcelainOutput = await runGit(["status", "--porcelain", "--", scope], { cwd: root }).catch(
+    () => "",
+  );
 
   let diffOutput = "";
   const base = await pendingReviewDiffBase(root, pubBranch, defaultBranch);
@@ -184,31 +220,6 @@ export async function listInReviewPages(
     });
   }
   return pages.sort((a, b) => a.path.localeCompare(b.path));
-}
-
-function isLocalDraft(status: string, git: GitPathState, requireGitChanges: boolean): boolean {
-  const kind = status.trim().toLowerCase();
-  if (kind === "published") {
-    return false;
-  }
-  if (requireGitChanges) {
-    return git.untracked || git.dirty;
-  }
-  if (kind === "draft") {
-    return true;
-  }
-  return git.untracked || git.dirty;
-}
-
-function draftBadge(status: string, git: GitPathState): LocalDraftBadge {
-  const kind = status.trim().toLowerCase();
-  if (kind === "in_review") {
-    return git.dirty ? "modificado" : "in review";
-  }
-  if (kind === "draft" || (!kind && git.untracked)) {
-    return "draft";
-  }
-  return "modificado";
 }
 
 function isContentMarkdown(filePath: string, contentPath: string): boolean {

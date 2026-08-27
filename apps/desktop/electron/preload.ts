@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { AppTheme, DesktopApi } from "../shared/api";
+import type { MenuAction } from "../shared/menu";
 
 function invoke<K extends keyof DesktopApi>(channel: K) {
   return ((...args: unknown[]) => ipcRenderer.invoke(channel, ...args)) as DesktopApi[K];
@@ -15,6 +16,7 @@ const api: DesktopApi = {
   },
   assertDirectory: invoke("assertDirectory"),
   getWorkspace: invoke("getWorkspace"),
+  gitStatus: invoke("gitStatus"),
   homeTree: invoke("homeTree"),
   openPage: invoke("openPage"),
   savePage: invoke("savePage"),
@@ -34,6 +36,8 @@ const api: DesktopApi = {
   createPublication: invoke("createPublication"),
   resumePublication: invoke("resumePublication"),
   leavePublication: invoke("leavePublication"),
+  landPublication: invoke("landPublication"),
+  discardPublication: invoke("discardPublication"),
   listPublications: invoke("listPublications"),
   getConflictState: invoke("getConflictState"),
   syncWithWiki: invoke("syncWithWiki"),
@@ -67,6 +71,13 @@ const api: DesktopApi = {
     ipcRenderer.on("folder-opened", wrapped);
     return () => {
       ipcRenderer.removeListener("folder-opened", wrapped);
+    };
+  },
+  onMenuAction: (listener) => {
+    const wrapped = (_event: unknown, action: MenuAction) => listener(action);
+    ipcRenderer.on("menu-action", wrapped);
+    return () => {
+      ipcRenderer.removeListener("menu-action", wrapped);
     };
   },
 };

@@ -1,17 +1,43 @@
 import { app, BrowserWindow, dialog, nativeTheme } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { APP_COPYRIGHT, APP_ID, APP_NAME } from "../shared/brand";
 import { parseFolderArg } from "../shared/cliArg";
+import { notifyFolderOpened } from "./folders";
+import { appIconImage, resolveAppIcon } from "./icon";
 import { registerIpc } from "./ipc";
+import { registerAppMenu } from "./menu";
 import { resolveExistingFolder } from "./openFolder";
 import { setWorkspaceRoot } from "./session";
 import { applyWindowChrome, getTheme, resolveWindowTheme, themeColors } from "./themeStore";
+
+app.setName(APP_NAME);
+if (process.platform === "win32") {
+  app.setAppUserModelId(APP_ID);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RENDERER_DIST = path.join(__dirname, "../dist");
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 
 let mainWindow: BrowserWindow | null = null;
+
+function applyNativeIdentity(): void {
+  const icon = resolveAppIcon();
+  app.setAboutPanelOptions({
+    applicationName: APP_NAME,
+    applicationVersion: app.getVersion(),
+    copyright: APP_COPYRIGHT,
+    version: app.getVersion(),
+    ...(icon ? { iconPath: icon } : {}),
+  });
+  if (process.platform === "darwin" && !app.isPackaged) {
+    const image = appIconImage();
+    if (image) {
+      app.dock?.setIcon(image);
+    }
+  }
+}
 
 function applyCliFolder(argv: string[], cwd = process.cwd()): void {
   const raw = parseFolderArg(argv);
@@ -21,26 +47,28 @@ function applyCliFolder(argv: string[], cwd = process.cwd()): void {
   try {
     const folder = resolveExistingFolder(raw, cwd);
     setWorkspaceRoot(folder);
-    mainWindow?.webContents.send("folder-opened", folder);
+    notifyFolderOpened(mainWindow, folder);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    dialog.showErrorBox("Slash MD", message);
+    dialog.showErrorBox(APP_NAME, message);
   }
 }
 
 function createWindow(): void {
   const windowTheme = resolveWindowTheme();
   const chrome = themeColors(windowTheme);
+  const icon = resolveAppIcon();
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 840,
     minWidth: 900,
     minHeight: 640,
-    title: "Slash MD",
+    title: APP_NAME,
     show: false,
     backgroundColor: chrome.background,
     titleBarStyle: "hidden",
     trafficLightPosition: { x: 14, y: 14 },
+    ...(icon ? { icon } : {}),
     ...(process.platform !== "darwin"
       ? {
           titleBarOverlay: {
@@ -102,6 +130,8 @@ if (!app.requestSingleInstanceLock()) {
   registerIpc(() => mainWindow);
 
   app.whenReady().then(() => {
+    applyNativeIdentity();
+    registerAppMenu(() => mainWindow);
     applyCliFolder(process.argv);
     createWindow();
     app.on("activate", () => {

@@ -1,12 +1,12 @@
 import { ReviewModal } from "../../../../../components/ReviewModal";
 import { SearchPalette } from "../../../../../components/SearchPalette";
 import { InitModalVariant, ConflictConfirmKind, ModalKind, TreeEntryKind } from "../../../enums";
-import { isPublishReady } from "../../../utils";
 import { FolderModal } from "../../FolderModal";
 import { InitModal } from "../../InitModal";
 import { NewPageModal } from "../../NewPageModal";
 import { NewPublicationModal } from "../../NewPublicationModal";
 import { RenameModal } from "../../RenameModal";
+import { ConfirmDiscardPublicationModal } from "../../ConfirmDiscardPublicationModal";
 import { ConfirmDeleteModal } from "../../ConfirmDeleteModal";
 import { ConflictConfirmModal } from "../../ConflictConfirmModal";
 import { SignInModal } from "../../SignInModal";
@@ -15,26 +15,6 @@ import { useHome } from "../context";
 export function Overlays() {
   const home = useHome();
   const { modals, nav, search, library, workspace, actions, treeActions, conflicts, onOpenPage, busy } = home;
-  const payload = library.payload;
-  const wikiSyncStatus = payload?.wikiSyncStatus ?? conflicts.status ?? "idle";
-  const blocked = wikiSyncStatus === "conflicting" || wikiSyncStatus === "merging";
-  const publishReady = isPublishReady(payload?.loteReview);
-  const showPublish = Boolean(payload?.canPublishBatch) && !blocked && publishReady;
-  const reviewHub = payload?.publication
-    ? {
-        showPublish,
-        showLeave: wikiSyncStatus !== "merging",
-        busy,
-        onPublish: () => {
-          modals.onClose();
-          void actions.onPublishBatch();
-        },
-        onLeave: () => {
-          modals.onClose();
-          void actions.onLeavePublication();
-        },
-      }
-    : undefined;
 
   return (
     <>
@@ -49,10 +29,10 @@ export function Overlays() {
       ) : null}
       {modals.kind === ModalKind.Folder ? (
         <FolderModal
-          parent={nav.section}
+          parent={modals.folderParent ?? nav.section}
           busy={busy}
           onClose={modals.onClose}
-          onCreate={(name) => void actions.onCreateFolder(name)}
+          onCreate={(name) => void actions.onCreateFolder(name, modals.folderParent)}
         />
       ) : null}
       {modals.kind === ModalKind.Rename && modals.target ? (
@@ -69,6 +49,14 @@ export function Overlays() {
           busy={busy}
           onClose={modals.onClose}
           onConfirm={() => void treeActions.onDelete()}
+        />
+      ) : null}
+      {modals.kind === ModalKind.DiscardPublication && modals.discardTarget ? (
+        <ConfirmDiscardPublicationModal
+          target={modals.discardTarget}
+          busy={busy}
+          onClose={modals.onClose}
+          onConfirm={() => void actions.onDiscardPublication()}
         />
       ) : null}
       {modals.kind === ModalKind.Init ? (
@@ -97,7 +85,7 @@ export function Overlays() {
         <ReviewModal
           onClose={modals.onClose}
           onSend={(reviewers, excludePaths) => void actions.onSendReview(reviewers, excludePaths)}
-          hub={reviewHub}
+          hub={{ busy }}
         />
       ) : null}
       {modals.kind === ModalKind.Publication ? (

@@ -3,12 +3,13 @@ import { useHome } from "../context";
 
 export function PublicationFabSlot() {
   const home = useHome();
-  const publication = home.library.payload?.publication;
+  const canSendReview = Boolean(home.library.payload?.canSendReview);
 
   return (
     <PublicationFab
-      visible={Boolean(publication)}
-      pending={Boolean(home.library.payload?.canSendReview)}
+      visible={canSendReview}
+      pending={canSendReview}
+      busy={home.busy}
       onOpen={home.actions.onRequestReview}
     />
   );

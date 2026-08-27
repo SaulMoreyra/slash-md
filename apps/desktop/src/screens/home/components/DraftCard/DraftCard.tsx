@@ -30,12 +30,13 @@ export function DraftCard({
 }: Props) {
   const { t } = useTranslation();
   const { isChecked, chip, onOptimisticToggle } = useDraftCardController({ draft, checked });
+  const isDeleted = draft.badge === "eliminado";
 
   return (
     <div
       className={[
         "flex items-center gap-1 rounded-2xl px-2 py-1.5",
-        open ? "bg-default/60" : "hover:bg-default/40",
+        open ? "bg-default/60" : isDeleted ? "opacity-90" : "hover:bg-default/40",
       ].join(" ")}
     >
       {selectable ? (
@@ -63,14 +64,22 @@ export function DraftCard({
       ) : null}
       <button
         type="button"
-        className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg px-1 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-        onClick={onOpen}
+        disabled={isDeleted}
+        aria-disabled={isDeleted}
+        aria-label={
+          isDeleted ? t("home.drafts.deletedAria", { title: draft.title }) : undefined
+        }
+        className={[
+          "flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg px-1 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+          isDeleted ? "cursor-default opacity-80" : "",
+        ].join(" ")}
+        onClick={isDeleted ? undefined : onOpen}
       >
         <span className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">
             {fileLabel(draft.title, draft.path)}
           </span>
-          <Chip size="sm" variant="soft">
+          <Chip size="sm" variant="soft" color={isDeleted ? "danger" : "default"}>
             <Chip.Label>{chip.letter}</Chip.Label>
           </Chip>
         </span>

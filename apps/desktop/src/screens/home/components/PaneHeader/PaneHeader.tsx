@@ -14,13 +14,15 @@ type Props = {
 
 export function PaneHeader({ title, children }: Props) {
   return (
-    <Card.Header className="flex flex-row items-center justify-between gap-2 px-4 pt-2">
-      <Card.Title className="min-w-0 flex-1 truncate">{title}</Card.Title>
-      <div className="flex shrink-0 items-center gap-1">
-        {children}
-        <PaneCollapse />
-      </div>
-    </Card.Header>
+    <div className="px-4 pt-2">
+      <Card.Header className="flex flex-row items-center justify-between">
+        <Card.Title className="min-w-0 flex-1 truncate">{title}</Card.Title>
+        <div className="flex shrink-0 items-center gap-1">
+          <PaneCollapse />
+        </div>
+      </Card.Header>
+      {children}
+    </div>
   );
 }
 

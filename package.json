@@ -19,6 +19,7 @@
     "lint": "eslint apps/desktop packages test && tsc --noEmit",
     "desktop:dev": "npm run dev -w @slash-md/desktop",
     "desktop:build": "npm run build -w @slash-md/desktop",
+    "desktop:pack": "npm run pack -w @slash-md/desktop",
     "desktop:lint": "npm run lint -w @slash-md/desktop",
     "desktop:typecheck": "npm run typecheck -w @slash-md/desktop",
     "slash": "node apps/desktop/bin/slash"

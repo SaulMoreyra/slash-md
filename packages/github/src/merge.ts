@@ -12,6 +12,7 @@ import {
   listCheckRuns,
   listPullReviews,
   mergePull,
+  pullIsApproved,
 } from "./api";
 
 export { wikiSyncStatusFromPull };
@@ -128,7 +129,7 @@ function publishBlockers(pr: GithubPull, reviews: GithubReview[]): string[] {
   if (pr.mergeable === false || state === "dirty") {
     reasons.push("conflict");
   }
-  if (!isApproved(pr, reviews)) {
+  if (!pullIsApproved(pr, reviews)) {
     reasons.push("needs approval");
   }
   return reasons;
@@ -156,23 +157,6 @@ function uniqueReasons(reasons: string[]): string[] {
     }
   }
   return out;
-}
-
-function isApproved(pr: GithubPull, reviews: GithubReview[]): boolean {
-  const author = pr.user?.login;
-  const latestByUser = new Map<string, string>();
-  for (const review of reviews) {
-    const login = review.user?.login;
-    if (!login || login === author || review.state === "PENDING" || review.state === "COMMENTED") {
-      continue;
-    }
-    latestByUser.set(login, review.state);
-  }
-  const states = [...latestByUser.values()];
-  if (states.includes("CHANGES_REQUESTED")) {
-    return false;
-  }
-  return states.includes("APPROVED");
 }
 
 async function mergeWithFallback(

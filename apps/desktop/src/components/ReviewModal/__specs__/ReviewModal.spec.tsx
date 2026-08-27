@@ -59,44 +59,24 @@ describe("ReviewModal", () => {
     expect(screen.queryByRole("button", { name: t("modal.review.send") })).not.toBeInTheDocument();
   });
 
-  it("hides send and publish when the hub has nothing to do", async () => {
+  it("keeps cancel only when the preview is empty", async () => {
     previewReview.mockResolvedValue([]);
-    renderComponent({
-      hub: {
-        showPublish: false,
-        showLeave: true,
-        busy: false,
-        onPublish: vi.fn(),
-        onLeave: vi.fn(),
-      },
-    });
+    renderComponent({ hub: { busy: false } });
     await waitFor(() => {
       expect(screen.getByText(t("modal.review.empty"))).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: t("modal.review.send") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("home.publication.publish") })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: t("home.publication.leave") })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("home.publication.leave") })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("common.cancel") })).toBeInTheDocument();
   });
 
-  it("shows leave and publish when the publication hub allows them", async () => {
-    const user = userEvent.setup();
-    const onPublish = vi.fn();
-    const onLeave = vi.fn();
-    renderComponent({
-      hub: {
-        showPublish: true,
-        showLeave: true,
-        busy: false,
-        onPublish,
-        onLeave,
-      },
-    });
+  it("disables send while the hub is busy", async () => {
+    renderComponent({ hub: { busy: true } });
     await waitFor(() => {
-      expect(screen.getByText(/Page A/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: t("modal.review.send") })).toBeDisabled();
     });
-    await user.click(screen.getByRole("button", { name: t("home.publication.leave") }));
-    expect(onLeave).toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: t("home.publication.publish") }));
-    expect(onPublish).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: t("home.publication.leave") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("home.publication.publish") })).not.toBeInTheDocument();
   });
 });

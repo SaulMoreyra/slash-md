@@ -5,10 +5,11 @@ import { loadMergeBlockers, mergeOpenPull, PublishBlocked } from "@slash-md/gith
 import { labeledTitle } from "@slash-md/core/messaging";
 import { posixBasename, posixNormalize } from "@slash-md/core/paths";
 import { currentAuth, resolveToken } from "./auth";
-import { getContentConfig, readText, repoFile, writeText } from "./config";
-import { currentBranch, isGitWorkspace, refExists, runGit, switchToBranch } from "./git";
+import { assertSafeRepoPath, fileExists, getContentConfig, readText, repoFile, writeText } from "./config";
+import { isGitWorkspace, runGit, switchToBranch } from "./git";
 import { getWorkspaceRoot, readStaging, writeStaging } from "./session";
 import { getPublicationState } from "./publication";
+import { landOnWiki } from "./pubBranch";
 
 function requireRoot(): string {
   const root = getWorkspaceRoot();
@@ -66,9 +67,7 @@ export async function publishBatch(preferredPr?: number): Promise<{
 
   const pubBranch = publication.branch;
 
-  await syncDefaultBranch(root, token, config.defaultBranch, pubBranch);
-
-  await deleteLocalPubBranch(root, pubBranch);
+  await landOnWiki(root, token, config.defaultBranch, pubBranch);
 
   let prFiles: string[];
   try {
@@ -90,54 +89,17 @@ export async function publishBatch(preferredPr?: number): Promise<{
   return { prNumber, prUrl: pr.html_url, paths, alreadyMerged };
 }
 
-async function deleteLocalPubBranch(cwd: string, branch: string): Promise<void> {
-  if (!(await refExists(cwd, `refs/heads/${branch}`))) {
-    return;
+function personalCommitMessage(titles: string[], survivingCount: number): string {
+  if (titles.length === 1 && survivingCount === 0) {
+    return `docs: remove ${titles[0]}`;
   }
-  try {
-    await runGit(["branch", "-d", branch], { cwd });
-  } catch {
-    try {
-      await runGit(["branch", "-D", branch], { cwd });
-    } catch {
-      // branch may already be gone
-    }
+  if (titles.length === 1) {
+    return `docs: ${titles[0]}`;
   }
+  return `docs: publish ${titles.length} pages`;
 }
 
-async function syncDefaultBranch(
-  cwd: string,
-  token: string,
-  defaultBranch: string,
-  reviewBranch: string | undefined,
-): Promise<void> {
-  try {
-    await runGit(["fetch", "origin", defaultBranch], { cwd, token });
-  } catch {
-    // still try pull
-  }
-  const current = await currentBranch(cwd);
-  if (current !== defaultBranch) {
-    try {
-      if (await refExists(cwd, `refs/heads/${defaultBranch}`)) {
-        await switchToBranch(cwd, defaultBranch);
-      } else if (await refExists(cwd, `refs/remotes/origin/${defaultBranch}`)) {
-        await switchToBranch(cwd, defaultBranch);
-      } else {
-        throw new Error(`Branch ${defaultBranch} was not found.`);
-      }
-    } catch (err) {
-      const from = reviewBranch && current === reviewBranch ? `review branch ${current}` : current;
-      const detail = err instanceof Error ? err.message : String(err);
-      throw new Error(
-        `PR merged, but could not switch from ${from} to ${defaultBranch} without overwriting local work. ${detail}`,
-      );
-    }
-  }
-  await runGit(["pull", "--ff-only", "origin", defaultBranch], { cwd, token });
-}
-
-export async function publishPersonal(repoPath: string): Promise<{ url: string }> {
+export async function publishPersonal(pathsInput: string | string[]): Promise<{ url: string }> {
   const root = requireRoot();
   const config = await getContentConfig(root);
   if (!config) {
@@ -153,15 +115,38 @@ export async function publishPersonal(repoPath: string): Promise<{ url: string }
   if (!token) {
     throw new Error("Sign in to GitHub to publish.");
   }
+
+  const rawPaths = Array.isArray(pathsInput) ? pathsInput : [pathsInput];
+  const repoPaths = [...new Set(rawPaths.map(posixNormalize).filter(Boolean))].map((repoPath) =>
+    assertSafeRepoPath(config, repoPath),
+  );
+  if (repoPaths.length === 0) {
+    throw new Error("No pages to publish.");
+  }
+
   const author = (await currentAuth())?.login || "slash-md";
   await switchToBranch(root, config.defaultBranch);
-  const text = await readText(repoFile(root, repoPath));
-  const stamped = dropReviewFields(stampDocMeta(text, { status: "published" }));
-  if (stamped !== text) {
-    await writeText(repoFile(root, repoPath), stamped);
+
+  const titles: string[] = [];
+  const surviving: string[] = [];
+  for (const repoPath of repoPaths) {
+    const abs = repoFile(root, repoPath);
+    const basename = posixBasename(repoPath);
+    if (!(await fileExists(abs))) {
+      titles.push(basename);
+      continue;
+    }
+    const text = await readText(abs);
+    const stamped = dropReviewFields(stampDocMeta(text, { status: "published" }));
+    if (stamped !== text) {
+      await writeText(abs, stamped);
+    }
+    titles.push(labeledTitle(stamped, basename));
+    surviving.push(repoPath);
   }
-  await runGit(["add", "--", repoPath], { cwd: root });
-  const dirty = (await runGit(["status", "--porcelain", "--", repoPath], { cwd: root })).trim();
+
+  await runGit(["add", "--", ...repoPaths], { cwd: root });
+  const dirty = (await runGit(["status", "--porcelain", "--", ...repoPaths], { cwd: root })).trim();
   if (dirty) {
     await runGit(
       [
@@ -173,13 +158,14 @@ export async function publishPersonal(repoPath: string): Promise<{ url: string }
         "commit.gpgsign=false",
         "commit",
         "-m",
-        `docs: ${labeledTitle(stamped, posixBasename(repoPath))}`,
+        personalCommitMessage(titles, surviving.length),
         "--",
-        repoPath,
+        ...repoPaths,
       ],
       { cwd: root },
     );
   }
   await runGit(["push", "origin", `HEAD:${config.defaultBranch}`], { cwd: root, token });
-  return { url: `https://github.com/${config.owner}/${config.name}/blob/${config.defaultBranch}/${repoPath}` };
+  const blobPath = surviving[0] ?? repoPaths[0];
+  return { url: `https://github.com/${config.owner}/${config.name}/blob/${config.defaultBranch}/${blobPath}` };
 }

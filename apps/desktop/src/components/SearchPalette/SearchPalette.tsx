@@ -1,8 +1,7 @@
 import { Modal as HeroModal } from "@heroui/react";
 import type { LibraryHit } from "@slash-md/ui/home/utils/tree";
 import { useTranslation } from "react-i18next";
-import { IconSearch } from "../icons";
-import { ShortcutKbd } from "../ShortcutKbd";
+import { SearchFooter } from "./components/SearchFooter";
 import { SearchResults } from "./components/SearchResults";
 import { useSearchPaletteController } from "./hooks/useSearchPaletteController";
 
@@ -26,6 +25,7 @@ export function SearchPalette({
   const { t } = useTranslation();
   const { listId, inputRef, activeRef, active, q, empty, activeHit, onActivate, onChoose } =
     useSearchPaletteController({ query, hits, onClose, onOpenFile, onOpenFolder });
+  const hasHits = hits.length > 0;
 
   return (
     <HeroModal.Backdrop
@@ -37,17 +37,14 @@ export function SearchPalette({
         }
       }}
     >
-      <HeroModal.Container size="lg">
+      <HeroModal.Container size="lg" placement="top">
         <HeroModal.Dialog className="bg-surface">
           <HeroModal.CloseTrigger />
           <HeroModal.Header className="sr-only">
             <HeroModal.Heading>{t("search.label")}</HeroModal.Heading>
           </HeroModal.Header>
-          <HeroModal.Body className="flex max-h-[min(36rem,80vh)] flex-col gap-6 px-8 py-10">
-            <div className="flex items-start gap-3">
-              <span className="mt-1 text-muted">
-                <IconSearch size={28} />
-              </span>
+          <HeroModal.Body className="flex max-h-[min(36rem,80vh)] flex-col gap-8 px-8 py-10">
+            <div>
               <input
                 ref={inputRef}
                 className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted/40"
@@ -58,11 +55,12 @@ export function SearchPalette({
                 spellCheck={false}
                 autoFocus
                 aria-controls={listId}
-                aria-expanded={hits.length > 0}
+                aria-expanded={hasHits}
                 aria-activedescendant={activeHit ? `${listId}-${active}` : undefined}
                 role="combobox"
                 onChange={(ev) => onQuery(ev.target.value)}
               />
+              <p className="mt-2 text-sm text-muted">{t("search.hint")}</p>
             </div>
             <SearchResults
               empty={empty}
@@ -74,10 +72,7 @@ export function SearchPalette({
               onActivate={onActivate}
               onChoose={onChoose}
             />
-            <p className="text-xs text-muted">
-              <ShortcutKbd keys="↑↓" /> {t("search.footMove")} · <ShortcutKbd keys="↵" />{" "}
-              {t("search.footOpen")} · <ShortcutKbd keys="esc" /> {t("search.footClose")}
-            </p>
+            {hasHits ? <SearchFooter /> : null}
           </HeroModal.Body>
         </HeroModal.Dialog>
       </HeroModal.Container>

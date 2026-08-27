@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
-import { cleanup, renderWithProviders, screen } from "../../../../../test/render";
+import { cleanup, renderWithProviders, screen, userEvent } from "../../../../../test/render";
 import { shortcutLabel } from "../../../../../components/ShortcutKbd";
 import { mockPayload } from "../../../__fixtures__/home";
-import { NavKind, CreateIntent } from "../../../enums";
-import type { Run } from "../../../types";
+import { NavKind } from "../../../enums";
+import type { RunOp } from "../../../types";
 import { WorkPane } from "../WorkPane";
 
 describe("WorkPane", () => {
@@ -12,11 +12,13 @@ describe("WorkPane", () => {
   const onOpenPage = vi.fn();
   const onClosePage = vi.fn();
   const onReview = vi.fn();
+  const onLeave = vi.fn();
+  const onPublish = vi.fn();
+  const onRequestDiscard = vi.fn();
   const onSignIn = vi.fn();
   const onNewPage = vi.fn();
-  const onWriteCover = vi.fn();
   const onClosePane = vi.fn();
-  const run = vi.fn(async <T,>(fn: () => Promise<T>) => fn()) as unknown as Run;
+  const runOp = vi.fn(async <T,>(_op: string, fn: () => Promise<T>) => fn()) as unknown as RunOp;
 
   beforeEach(() => {
     cleanup();
@@ -28,14 +30,18 @@ describe("WorkPane", () => {
     busy: false,
     pagePath: null as string | null,
     trails: new Map<string, string>(),
-    run,
+    runOp,
     onRefresh,
     onOpenPage,
     onClosePage,
     onReview,
+    onLeave,
+    onPublish,
+    onLand: vi.fn(),
+    onLandOther: vi.fn(),
+    onRequestDiscard,
     onSignIn,
     onNewPage,
-    onWriteCover,
     onClosePane,
   };
 
@@ -53,38 +59,16 @@ describe("WorkPane", () => {
     expect(screen.getByRole("button", { name: `${t("home.drafts.close")} (${shortcutLabel.togglePane()})` })).toBeInTheDocument();
   });
 
-  it("shows section empty instead of child files", () => {
-    renderWithProviders(
-      <WorkPane
-        nav={{ kind: NavKind.Folder, path: "docs", title: "docs" }}
-        payload={mockPayload()}
-        folder={{
-          kind: "folder",
-          path: "docs",
-          title: "docs",
-          children: [{ kind: "file", path: "docs/guide.md", title: "Guía de ejemplo" }],
-        }}
-        {...base}
-      />,
-    );
-    expect(screen.queryByText("Guía de ejemplo")).not.toBeInTheDocument();
-    expect(screen.getByText(t("home.section.emptyTitle"))).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: t("home.section.writeCover") })).toBeInTheDocument();
-  });
-
-  it("labels empty template folder create as new template", () => {
-    renderWithProviders(
-      <WorkPane
-        nav={{ kind: NavKind.Folder, path: "templates", title: "templates" }}
-        payload={mockPayload({
-          roots: [{ kind: "folder", path: "templates", title: "templates", children: [] }],
-        })}
-        folder={{ kind: "folder", path: "templates", title: "templates", children: [] }}
-        createIntent={CreateIntent.Template}
-        {...base}
-      />,
-    );
-    expect(screen.getByRole("button", { name: t("home.nav.newTemplate") })).toBeInTheDocument();
+  it("closes an empty drafts pane only from the header collapse", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WorkPane nav={{ kind: NavKind.Drafts }} payload={mockPayload()} {...base} />);
+    expect(screen.getByText(t("home.drafts.emptyNeedsTitle"))).toBeInTheDocument();
+    const close = screen.getByRole("button", {
+      name: `${t("home.drafts.close")} (${shortcutLabel.togglePane()})`,
+    });
+    expect(screen.getAllByRole("button", { name: new RegExp(t("home.drafts.close")) })).toHaveLength(1);
+    await user.click(close);
+    expect(onClosePane).toHaveBeenCalled();
   });
 
   it("shows the current publication without duplicate actions", () => {
@@ -114,10 +98,12 @@ describe("WorkPane", () => {
     expect(screen.getByText(t("home.publication.current"))).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("home.publication.sendReview") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("home.publication.publish") })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("home.publication.leave") })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: t("home.publication.menuAria", { title: "Onboarding" }) }),
+    ).toBeInTheDocument();
   });
 
-  it("shows the PR under the current publication", () => {
+  it("shows next-step copy under the current publication", () => {
     renderWithProviders(
       <WorkPane
         nav={{ kind: NavKind.Publications }}
@@ -127,6 +113,7 @@ describe("WorkPane", () => {
             branch: "pub/onboarding",
             kind: "in_review",
           },
+          canPublishBatch: true,
           loteReview: {
             prNumber: 12,
             prUrl: "https://example.com/pull/12",
@@ -143,6 +130,61 @@ describe("WorkPane", () => {
       />,
     );
     expect(screen.getByText(t("home.publication.current"))).toBeInTheDocument();
-    expect(screen.getByText(t("home.pr.number", { number: 12 }))).toBeInTheDocument();
+    expect(screen.getByText(t("home.publication.statusReadyToPublish"))).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("home.publication.publish") })).toBeInTheDocument();
+    expect(screen.queryByText(t("home.pr.number", { number: 12 }))).not.toBeInTheDocument();
+  });
+
+  const publicationPayload = mockPayload({
+    publication: {
+      title: "Onboarding",
+      branch: "pub/onboarding",
+      kind: "draft",
+    },
+    publications: [
+      {
+        title: "Onboarding",
+        branch: "pub/onboarding",
+        kind: "draft",
+        mounted: true,
+      },
+    ],
+  });
+
+  it("shows leave wiki footer when a publication is active", () => {
+    renderWithProviders(
+      <WorkPane nav={{ kind: NavKind.Publications }} payload={publicationPayload} {...base} />,
+    );
+    expect(screen.getByRole("button", { name: t("home.publication.leave") })).toBeInTheDocument();
+  });
+
+  it("shows leave wiki footer in drafts pane when a publication is active", () => {
+    renderWithProviders(
+      <WorkPane nav={{ kind: NavKind.Drafts }} payload={publicationPayload} {...base} />,
+    );
+    expect(screen.getByRole("button", { name: t("home.publication.leave") })).toBeInTheDocument();
+  });
+
+  it("hides leave wiki footer without an active publication", () => {
+    renderWithProviders(
+      <WorkPane nav={{ kind: NavKind.Publications }} payload={mockPayload()} {...base} />,
+    );
+    expect(screen.queryByRole("button", { name: t("home.publication.leave") })).not.toBeInTheDocument();
+  });
+
+  it("calls onLeave from the footer", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <WorkPane nav={{ kind: NavKind.Drafts }} payload={publicationPayload} {...base} />,
+    );
+    await user.click(screen.getByRole("button", { name: t("home.publication.leave") }));
+    expect(onLeave).toHaveBeenCalled();
+  });
+
+  it("disables leave wiki footer while busy", () => {
+    renderWithProviders(
+      <WorkPane nav={{ kind: NavKind.Drafts }} payload={publicationPayload} {...base} busy />,
+    );
+    expect(screen.getByRole("button", { name: t("home.publication.leave") })).toBeDisabled();
   });
 });

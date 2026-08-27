@@ -1,15 +1,15 @@
 import { Card, Skeleton } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import type { HomeTreeNode, HomeTreePayload } from "../../../../../shared/api";
-import { CreateIntent, NavKind } from "../../enums";
+import type { HomeTreePayload } from "../../../../../shared/api";
+import { NavKind } from "../../enums";
 import type { ConflictsApi } from "../../hooks/useConflicts";
-import type { NavView, Run } from "../../types";
+import type { DiscardPublicationTarget, NavView, RunOp } from "../../types";
 import { ConflictPane } from "../ConflictPane";
 import { DraftPane } from "../DraftPane";
 import { InboxPane } from "../InboxPane";
 import { PaneChrome, PaneHeader } from "../PaneHeader";
 import { PublicationsPane } from "../PublicationsPane";
-import { SectionPane } from "../SectionPane";
+import { LeaveWikiFooter } from "./components/LeaveWikiFooter";
 
 type Props = {
   nav: NavView;
@@ -18,23 +18,26 @@ type Props = {
   busy: boolean;
   pagePath: string | null;
   trails: Map<string, string>;
-  folder?: HomeTreeNode;
-  hasCover?: boolean;
-  run: Run;
+  runOp: RunOp;
   onRefresh: () => Promise<void>;
   onOpenPage: (path: string, threadId?: string) => void;
   onClosePage: () => void;
   onReview: () => void;
+  onLeave: () => void;
+  onPublish: () => void;
+  onLand: () => void;
+  onLandOther: (branch: string) => void;
+  onRequestDiscard: (target: DiscardPublicationTarget) => void;
   onSignIn: () => void;
   onNewPage: () => void;
-  onWriteCover: () => void;
-  createIntent?: CreateIntent;
   onClosePane: () => void;
   onNewPublication?: () => void;
   conflicts?: ConflictsApi;
 };
 
 export function WorkPane(props: Props) {
+  const showLeaveFooter = shouldShowLeaveFooter(props.nav, props.payload);
+
   return (
     <PaneChrome onClose={props.onClosePane}>
       <div
@@ -42,15 +45,27 @@ export function WorkPane(props: Props) {
         className="flex min-h-0 flex-1 flex-col animate-fade-in motion-reduce:animate-none"
       >
         <WorkPaneBody {...props} />
+        {showLeaveFooter ? (
+          <LeaveWikiFooter busy={props.busy} onLeave={props.onLeave} />
+        ) : null}
       </div>
     </PaneChrome>
   );
 }
 
+function shouldShowLeaveFooter(nav: NavView, payload: HomeTreePayload | null) {
+  if (!payload || payload.needsInit) {
+    return false;
+  }
+  if (nav.kind === NavKind.Conflicts) {
+    return false;
+  }
+  return Boolean(payload.publication);
+}
+
 function workPaneKey(nav: NavView, payload: HomeTreePayload | null) {
   if (!payload) return "loading";
   if (payload.needsInit) return "init";
-  if (nav.kind === NavKind.Folder) return `folder:${nav.path}`;
   return nav.kind;
 }
 
@@ -61,18 +76,18 @@ function WorkPaneBody({
   busy,
   pagePath,
   trails,
-  folder,
-  hasCover = false,
-  run,
+  runOp,
   onRefresh,
   onOpenPage,
   onClosePage,
   onReview,
+  onLeave,
+  onPublish,
+  onLand,
+  onLandOther,
+  onRequestDiscard,
   onSignIn,
   onNewPage,
-  onWriteCover,
-  createIntent = CreateIntent.Page,
-  onClosePane,
   onNewPublication,
   conflicts,
 }: Props) {
@@ -128,22 +143,17 @@ function WorkPaneBody({
         busy={busy}
         pagePath={pagePath}
         trails={trails}
-        run={run}
+        runOp={runOp}
         onRefresh={onRefresh}
         onOpenPage={onOpenPage}
         onSignIn={onSignIn}
         onNewPublication={() => onNewPublication?.()}
-      />
-    );
-  }
-  if (nav.kind === NavKind.Folder) {
-    return (
-      <SectionPane
-        title={folder?.title ?? nav.title}
-        hasCover={hasCover}
-        createIntent={createIntent}
-        onWriteCover={onWriteCover}
-        onNewPage={onNewPage}
+        onReview={onReview}
+        onLeave={onLeave}
+        onPublish={onPublish}
+        onLand={onLand}
+        onLandOther={onLandOther}
+        onRequestDiscard={onRequestDiscard}
       />
     );
   }
@@ -155,11 +165,10 @@ function WorkPaneBody({
       busy={busy}
       pagePath={pagePath}
       trails={trails}
-      run={run}
+      runOp={runOp}
       onRefresh={onRefresh}
       onOpenPage={onOpenPage}
       onClosePage={onClosePage}
-      onClose={onClosePane}
       onNewPage={onNewPage}
       onReview={onReview}
       onNewPublication={onNewPublication}

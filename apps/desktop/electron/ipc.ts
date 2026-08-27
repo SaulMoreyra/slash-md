@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
+import { BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import fs from "node:fs/promises";
 import type { AppTheme, DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
 import { currentAuth, signInWithToken, signOut } from "./auth";
@@ -21,10 +21,12 @@ import {
 } from "./pages";
 import { publishBatch, publishPersonal } from "./publish";
 import { abortSyncWithWiki, finishSyncWithWiki, getConflictState, resolveConflict, syncWithWiki } from "./conflicts";
-import { createPublication, leavePublication, listPublications, resumePublication } from "./publication";
+import { createPublication, discardPublication, landPublication, leavePublication, listPublications, resumePublication } from "./publication";
 import { previewReview, sendBatchToReview } from "./review";
+import { currentBranchName, isGitWorkspace } from "./git";
 import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
 import { applyWindowChrome, getTheme, setTheme as persistTheme } from "./themeStore";
+import { pickFolder } from "./folders";
 
 function theme(): AppTheme {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light";
@@ -59,12 +61,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     );
   };
 
-  handle("pickFolder", async () => {
-    const options = { title: "Open docs folder", properties: ["openDirectory" as const] };
-    const win = getWindow();
-    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options);
-    return result.canceled ? undefined : result.filePaths[0];
-  });
+  handle("pickFolder", () => pickFolder(getWindow()));
 
   handle("openFolder", async (folderPath: string) => {
     setWorkspaceRoot(folderPath);
@@ -94,6 +91,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   handle("getWorkspace", () => workspaceInfo());
+
+  handle("gitStatus", async () => {
+    const root = getWorkspaceRoot();
+    if (!root || !(await isGitWorkspace(root))) {
+      return { branch: null };
+    }
+    return { branch: (await currentBranchName(root)) ?? null };
+  });
 
   handle("homeTree", () => buildHomeTree());
 
@@ -130,11 +135,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("publishBatch", (preferredPr?: number) => publishBatch(preferredPr));
 
-  handle("publishPersonal", (pagePath: string) => publishPersonal(pagePath));
+  handle("publishPersonal", (paths: string | string[]) => publishPersonal(paths));
 
   handle("createPublication", (title: string) => createPublication(title));
   handle("resumePublication", (branch: string) => resumePublication(branch));
   handle("leavePublication", () => leavePublication());
+  handle("landPublication", (branch?: string) => landPublication(branch));
+  handle("discardPublication", (branch: string) => discardPublication(branch));
   handle("listPublications", () => listPublications());
 
   handle("getConflictState", () => getConflictState());

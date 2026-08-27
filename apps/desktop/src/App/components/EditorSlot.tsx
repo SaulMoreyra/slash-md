@@ -2,7 +2,7 @@ import { EditorScreen } from "../../screens/editor";
 import { useApp } from "../context";
 
 export function EditorSlot() {
-  const { session, chrome, actions, run } = useApp();
+  const { session, chrome, actions, operations } = useApp();
   if (!session.page || !session.workspace) {
     return null;
   }
@@ -16,8 +16,9 @@ export function EditorSlot() {
       auth={session.workspace.auth}
       onError={actions.onError}
       onPage={actions.onPage}
+      onRefresh={actions.onRefresh}
       onClose={actions.onClosePage}
-      run={run}
+      runOp={operations.runOp}
     />
   );
 }

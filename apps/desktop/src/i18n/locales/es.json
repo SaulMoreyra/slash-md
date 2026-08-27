@@ -19,7 +19,8 @@
     "loading": "Cargando…"
   },
   "app": {
-    "loading": "Cargando Slash MD…",
+    "brand": "SlashMD",
+    "loading": "Cargando SlashMD…",
     "loadingHint": "Abriendo tu espacio de trabajo",
     "retry": "Reintentar"
   },
@@ -53,12 +54,9 @@
     "selectPage": "Selecciona una página para editarla.",
     "selectPageOrCreate": "Elige una página a la izquierda, o crea una nueva aquí.",
     "selectTemplateOrCreate": "Abre una plantilla a la izquierda, o crea una nueva aquí.",
-    "section": {
-      "emptyTitle": "Sin portada",
-      "emptyBody": "Escribe una portada para que esta carpeta tenga una página de entrada. El árbol ya muestra los archivos.",
-      "writeCover": "Escribir portada",
-      "hasCoverTitle": "Portada abierta",
-      "hasCoverBody": "Crea una página nueva en esta sección, o sigue editando la portada."
+    "create": {
+      "targetAria": "Creando en {{path}}",
+      "filePreviewAria": "Se guardará como {{path}}"
     },
     "nav": {
       "myWork": "Mi trabajo",
@@ -74,7 +72,16 @@
     "tree": {
       "menuAria": "Acciones de {{title}}",
       "rename": "Renombrar",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "newFile": "Nuevo archivo",
+      "newFolder": "Nueva carpeta",
+      "newFileAria": "Nuevo archivo en {{title}}",
+      "newFolderAria": "Nueva carpeta en {{title}}",
+      "loading": "Cargando páginas",
+      "emptyTitle": "Sin páginas",
+      "emptyBody": "Crea una página o una carpeta para empezar.",
+      "expandAll": "Abrir todo",
+      "collapseAll": "Colapsar todo"
     },
     "account": {
       "aria": "Cuenta",
@@ -106,13 +113,30 @@
       "emptyNeedsTitle": "Empieza por una publicación",
       "emptyNeedsPublication": "La wiki es de solo lectura. Crea una publicación para escribir.",
       "close": "Cerrar panel",
-      "publishHint": "Publish vive en el editor de cada página.",
+      "publish": "Publicar",
+      "publishCount_one": "Publicar {{count}} página",
+      "publishCount_other": "Publicar {{count}} páginas",
+      "published": "Cambios publicados.",
       "sendCount_one": "Mandar {{count}} seleccionada a revisión",
       "sendCount_other": "Mandar {{count}} seleccionadas a revisión",
       "sendReview": "Enviar a revisión",
       "includeAria": "Incluir {{title}} en el lote",
       "discardAria": "Descartar cambios de {{title}}",
-      "discardConfirm": "¿Descartar los cambios locales de \"{{title}}\"? Esta acción no se puede deshacer."
+      "discardConfirm": "¿Descartar los cambios locales de \"{{title}}\"? Esta acción no se puede deshacer.",
+      "deletedAria": "Página eliminada {{title}}. Descarta para restaurar.",
+      "badgeDeleted": "Eliminada"
+    },
+    "process": {
+      "title": "Cómo funciona publicar",
+      "lede": "La wiki publicada es de solo lectura. Escribes en una publicación, la envías a revisión y luego se publica.",
+      "wikiTitle": "Wiki en vivo",
+      "wikiBody": "Lo que ya está publicado sigue igual para todos.",
+      "draftTitle": "Tu publicación",
+      "draftBody": "Crea y edita páginas con calma en un borrador privado.",
+      "reviewTitle": "Revisión",
+      "reviewBody": "Cuando esté listo, envíala para que el equipo revise y apruebe.",
+      "publishTitle": "Publicar",
+      "publishBody": "Tras la aprobación, publica para que la wiki se actualice para todos."
     },
     "publication": {
       "new": "Nueva publicación",
@@ -124,6 +148,18 @@
       "mountedBanner": "Publicación: {{title}}",
       "branchLabel": "Rama",
       "copyBranch": "Copiar rama",
+      "copyFailed": "No se pudo copiar el nombre de la rama.",
+      "viewOnGithub": "Ver en GitHub",
+      "menuAria": "Acciones de {{title}}",
+      "discard": "Descartar",
+      "discarding": "Descartando…",
+      "discardTitle": "¿Descartar «{{title}}»?",
+      "discardLede": "No entra a la wiki. No se puede deshacer.",
+      "discardDirty_one": "{{count}} página con cambios en este dispositivo.",
+      "discardDirty_other": "{{count}} páginas con cambios en este dispositivo.",
+      "discardCancelsReview": "Se cancela la revisión en curso.",
+      "discardOtherReview": "Si había una revisión abierta, se cancela.",
+      "discarded": "Publicación descartada.",
       "listTitle": "Publicaciones",
       "listEmpty": "No hay publicaciones abiertas.",
       "emptyTitle": "Sin publicaciones",
@@ -136,10 +172,41 @@
       "modalTitle": "Nueva publicación",
       "modalTitleLabel": "Título",
       "modalTitlePlaceholder": "Onboarding Q3",
-      "modalHint": "Crea un borrador que puedes editar y enviar a revisión.",
+      "modalLede": "La wiki publicada no se toca. Trabajas en un borrador propio.",
+      "modalPointWikiTitle": "Wiki intacta",
+      "modalPointWiki": "Lo que ya está en vivo sigue igual para todos.",
+      "modalPointEditTitle": "Tu borrador",
+      "modalPointEdit": "Aquí puedes crear y cambiar páginas con calma.",
+      "modalPointReviewTitle": "Revisión",
+      "modalPointReview": "Cuando esté listo, lo envías y luego se publica.",
+      "modalHint": "Un nombre corto ayuda a encontrarla después.",
       "readOnlyHint": "La wiki está en solo lectura. Crea una publicación para editar.",
       "needsPublicationForNewPage": "Crea una publicación antes de añadir páginas.",
-      "fabAria": "Acciones de la publicación"
+      "fabAria": "Acciones de la publicación",
+      "statusWikiBehind": "La wiki cambió",
+      "statusWikiConflict": "Páginas chocan con la wiki",
+      "statusWikiMerging": "Elige qué conservar",
+      "statusUnsent": "Sin enviar",
+      "statusWaitingApproval": "Pendiente de revisión",
+      "statusChecksFail": "Hay que corregir",
+      "statusChecking": "Comprobando…",
+      "statusReadyToPublish": "Lista para publicar",
+      "statusOnWiki": "Ya está en la wiki",
+      "landWiki": "Actualizar wiki",
+      "landed": "Wiki actualizada.",
+      "changesCount_one": "{{count}} página con cambios",
+      "changesCount_other": "{{count}} páginas con cambios",
+      "rowApproved": "Aprobada",
+      "rowAwaitingApproval": "Sin aprobar",
+      "filesChanged_one": "{{count}} archivo",
+      "filesChanged_other": "{{count}} archivos",
+      "commentersAria": "Comentarios de {{names}}",
+      "moreCommenters": "+{{count}}",
+      "reviewersLabel": "Revisores",
+      "reviewersEmpty": "Nadie asignado",
+      "reviewersAria": "Revisores: {{names}}",
+      "commentsLabel": "Comentarios",
+      "commentsEmpty": "Ninguno aún"
     },
     "conflicts": {
       "title": "Páginas que chocan",
@@ -247,9 +314,9 @@
         "title": "Nueva carpeta",
         "name": "Nombre",
         "namePlaceholder": "Nombre de la carpeta",
-        "placeholder": "product",
-        "hint": "Se creará en la raíz del workspace.",
-        "inside": "Dentro de {{parent}}"
+        "lede": "Elige un nombre corto.",
+        "rootLabel": "Raíz del workspace",
+        "destination": "La carpeta se crea aquí."
       },
       "rename": {
         "titleFile": "Renombrar página",
@@ -263,22 +330,22 @@
       "delete": {
         "titleFile": "Eliminar página",
         "titleFolder": "Eliminar carpeta",
-        "bodyFile": "¿Eliminar \"{{title}}\"? Esta acción no se puede deshacer.",
-        "bodyFolder": "¿Eliminar \"{{title}}\" y todo su contenido? Esta acción no se puede deshacer."
+        "ledeFile": "Esta acción no se puede deshacer.",
+        "ledeFolder": "Se borra la carpeta y todo su contenido. No se puede deshacer.",
+        "targetFile": "Página",
+        "targetFolder": "Carpeta"
       },
       "page": {
         "title": "Nueva página",
         "titleLabel": "Título",
         "titlePlaceholder": "Sin título",
-        "template": "Plantilla",
-        "folder": "Carpeta: {{section}}"
+        "template": "Plantilla"
       },
       "template": {
         "title": "Nueva plantilla",
         "titleLabel": "Nombre",
         "titlePlaceholder": "Nombre de la plantilla",
-        "startFrom": "Partir de",
-        "folder": "Carpeta: {{section}}"
+        "startFrom": "Partir de"
       },
       "templates": {
         "workspace": "Tus plantillas",
@@ -413,6 +480,45 @@
     "resolve": "Resolver",
     "unresolve": "Reabrir",
     "openGithub": "Abrir en GitHub"
+  },
+  "operations": {
+    "names": {
+      "refresh": "Actualizando biblioteca",
+      "reviewBatch": "Enviando a review",
+      "publishBatch": "Publicando",
+      "publishPersonal": "Publicando",
+      "syncWithWiki": "Sincronizando con la wiki",
+      "finishSyncWithWiki": "Actualizando la wiki",
+      "abortSyncWithWiki": "Cancelando sincronización",
+      "resolveConflict": "Resolviendo conflicto",
+      "createPublication": "Creando publicación",
+      "resumePublication": "Cambiando de publicación",
+      "leavePublication": "Saliendo de la publicación",
+      "landPublication": "Actualizando la wiki",
+      "discardPublication": "Descartando la publicación",
+      "discardDraft": "Descartando borrador",
+      "openFolder": "Abriendo carpeta",
+      "changeFolder": "Cambiando carpeta",
+      "closeWorkspace": "Cerrando workspace",
+      "createPage": "Creando página",
+      "createFolder": "Creando carpeta",
+      "savePage": "Guardando",
+      "openPage": "Abriendo página",
+      "signOut": "Cerrando sesión",
+      "signIn": "Iniciando sesión",
+      "initWorkspace": "Iniciando workspace",
+      "saveConfig": "Guardando configuración",
+      "renamePage": "Renombrando",
+      "renameFolder": "Renombrando carpeta",
+      "deletePage": "Eliminando",
+      "deleteFolder": "Eliminando carpeta",
+      "setDraftSelection": "Actualizando selección",
+      "threadReply": "Enviando respuesta",
+      "threadResolve": "Actualizando hilo",
+      "threadCreate": "Creando hilo"
+    },
+    "queued": "{{operation}} — se ejecutará al terminar la actual",
+    "alreadyRunning": "{{operation}} ya está en curso"
   },
   "hero": {
     "change": "Cambiar",

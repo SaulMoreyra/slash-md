@@ -1,0 +1,1 @@
+export { LeaveWikiFooter } from "./LeaveWikiFooter";

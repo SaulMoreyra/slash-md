@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "../../../../test/render";
 import { ModalKind, NavKind, RailMode } from "../../enums";
+import type { NavView } from "../../types";
 import { useKeyboardShortcuts } from "../useKeyboardShortcuts";
 
 describe("useKeyboardShortcuts", () => {
@@ -19,7 +20,9 @@ describe("useKeyboardShortcuts", () => {
     workPaneOpen: true,
     railOpen: false,
     railMode: RailMode.Docked,
+    view: { kind: NavKind.Drafts } as NavView,
     onNavigate: vi.fn(),
+    onToggleWorkDest: vi.fn(),
     onCloseWorkPane: vi.fn(),
     onToggleWorkPane: vi.fn(),
     onCloseRail: vi.fn(),
@@ -47,6 +50,7 @@ describe("useKeyboardShortcuts", () => {
         nav: { ...nav, ...overrides.nav },
         onClosePage,
         onRefresh,
+        runOp: vi.fn(async (_op, fn) => fn()),
       }),
     );
 
@@ -68,6 +72,14 @@ describe("useKeyboardShortcuts", () => {
     expect(nav.onToggleWorkPane).not.toHaveBeenCalled();
   });
 
+  it("does not toggle the work pane while a folder is selected", () => {
+    runHook({
+      nav: { view: { kind: NavKind.Folder, path: "docs", title: "docs" } },
+    });
+    press({ key: "\\", code: "Backslash", metaKey: true });
+    expect(nav.onToggleWorkPane).not.toHaveBeenCalled();
+  });
+
   it("closes an overlay rail on escape before the work pane", () => {
     runHook({
       nav: { railOpen: true, railMode: RailMode.Overlay },
@@ -75,5 +87,17 @@ describe("useKeyboardShortcuts", () => {
     press({ key: "Escape" });
     expect(nav.onCloseRail).toHaveBeenCalled();
     expect(nav.onCloseWorkPane).not.toHaveBeenCalled();
+  });
+
+  it("toggles drafts with mod+1", () => {
+    runHook();
+    press({ key: "1", metaKey: true });
+    expect(nav.onToggleWorkDest).toHaveBeenCalledWith({ kind: NavKind.Drafts });
+  });
+
+  it("switches to inbox with mod+3", () => {
+    runHook();
+    press({ key: "3", metaKey: true });
+    expect(nav.onToggleWorkDest).toHaveBeenCalledWith({ kind: NavKind.Inbox });
   });
 });

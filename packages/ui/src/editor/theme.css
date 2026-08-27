@@ -261,15 +261,14 @@ body.repo-personal #review {
 
 .cover-btn {
   font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
+  padding: 6px;
+  min-width: 28px;
+  min-height: 28px;
   border: none;
   border-radius: var(--slash-radius-sm);
   background: var(--slash-secondary);
   color: var(--slash-secondary-fg);
   cursor: pointer;
-  white-space: nowrap;
 }
 
 .cover-btn:hover {

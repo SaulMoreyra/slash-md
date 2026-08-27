@@ -86,4 +86,21 @@ describe("Tree", () => {
     expect(onRename).toHaveBeenCalledWith(fileNode);
     expect(onFile).not.toHaveBeenCalled();
   });
+
+  it("creates a file in the folder from the overflow menu", async () => {
+    const user = userEvent.setup();
+    const onNewFileInFolder = vi.fn();
+    const onNewFolderInFolder = vi.fn();
+    renderComponent({
+      canWrite: true,
+      onRename,
+      onDelete,
+      onNewFileInFolder,
+      onNewFolderInFolder,
+    });
+    await user.click(screen.getByRole("button", { name: t("home.tree.menuAria", { title: "Docs" }) }));
+    await user.click(screen.getByRole("menuitem", { name: t("home.tree.newFile") }));
+    expect(onNewFileInFolder).toHaveBeenCalledWith(folderNode);
+    expect(onFolder).not.toHaveBeenCalled();
+  });
 });

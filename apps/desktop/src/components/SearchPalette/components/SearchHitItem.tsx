@@ -37,20 +37,20 @@ export function SearchHitItem({
         role="option"
         aria-selected={selected}
         className={[
-          "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left",
-          selected ? "bg-default/60" : "hover:bg-default/40",
+          "flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left",
+          selected ? "bg-default/60" : "hover:bg-default/60",
         ].join(" ")}
         onMouseEnter={() => onActivate(index)}
         onClick={() => onChoose(hit)}
       >
-        <span className="shrink-0 text-muted">
-          {hit.kind === "folder" ? <IconFolder /> : <IconPage />}
+        <span className="mt-0.5 shrink-0 text-muted">
+          {hit.kind === "folder" ? <IconFolder size={20} /> : <IconPage size={20} />}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate">
+          <span className="truncate text-sm font-medium text-foreground">
             <Highlight text={hit.title} query={query} />
           </span>
-          {hit.trail ? <span className="truncate text-xs text-muted">{hit.trail}</span> : null}
+          {hit.trail ? <span className="truncate text-xs leading-relaxed text-muted">{hit.trail}</span> : null}
         </span>
       </button>
     </li>

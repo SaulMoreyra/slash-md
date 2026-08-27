@@ -7,8 +7,9 @@ export class GithubApiError extends Error {
   }
 }
 
-export type GithubUser = { login: string };
+export type GithubUser = { login: string; avatar_url?: string };
 export type GithubTeam = { name: string; slug: string };
+export type GithubComment = { user?: GithubUser | null; body?: string | null };
 
 export type GithubPull = {
   number: number;
@@ -27,6 +28,7 @@ export type GithubPull = {
 
 export type GithubReview = {
   state: string;
+  body?: string | null;
   user: GithubUser | null;
 };
 
@@ -122,6 +124,46 @@ export async function findOpenPull(
   return pulls[0];
 }
 
+export async function findPullsForHead(
+  token: string,
+  repo: { owner: string; name: string },
+  branch: string,
+): Promise<GithubPull[]> {
+  const params = new URLSearchParams({
+    head: `${repo.owner}:${branch}`,
+    state: "all",
+    per_page: "20",
+    sort: "updated",
+    direction: "desc",
+  });
+  const pulls = await githubRequest<GithubPull[]>(
+    token,
+    "GET",
+    `/repos/${repo.owner}/${repo.name}/pulls?${params.toString()}`,
+  );
+  return pulls ?? [];
+}
+
+export async function listOpenPulls(
+  token: string,
+  repo: { owner: string; name: string },
+): Promise<GithubPull[]> {
+  const out: GithubPull[] = [];
+  for (let page = 1; page <= 10; page += 1) {
+    const params = new URLSearchParams({ state: "open", per_page: "100", page: String(page) });
+    const batch = await githubRequest<GithubPull[]>(
+      token,
+      "GET",
+      `/repos/${repo.owner}/${repo.name}/pulls?${params.toString()}`,
+    );
+    out.push(...(batch ?? []));
+    if (!batch || batch.length < 100) {
+      break;
+    }
+  }
+  return out;
+}
+
 export async function getPull(
   token: string,
   repo: { owner: string; name: string },
@@ -202,6 +244,59 @@ export async function listPullReviews(
   number: number,
 ): Promise<GithubReview[]> {
   return githubRequest<GithubReview[]>(token, "GET", `/repos/${repo.owner}/${repo.name}/pulls/${number}/reviews`);
+}
+
+export async function listIssueComments(
+  token: string,
+  repo: { owner: string; name: string },
+  number: number,
+): Promise<GithubComment[]> {
+  return githubPaged<GithubComment>(
+    token,
+    `/repos/${repo.owner}/${repo.name}/issues/${number}/comments`,
+  );
+}
+
+/** Inline review comments on the pull diff. */
+export async function listPullDiffComments(
+  token: string,
+  repo: { owner: string; name: string },
+  number: number,
+): Promise<GithubComment[]> {
+  return githubPaged<GithubComment>(
+    token,
+    `/repos/${repo.owner}/${repo.name}/pulls/${number}/comments`,
+  );
+}
+
+async function githubPaged<T>(token: string, path: string): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; page <= 5; page += 1) {
+    const batch = await githubRequest<T[]>(token, "GET", `${path}?per_page=100&page=${page}`);
+    out.push(...(batch ?? []));
+    if (!batch || batch.length < 100) {
+      break;
+    }
+  }
+  return out;
+}
+
+/** Latest review per person is APPROVED, and nobody requested changes. */
+export function pullIsApproved(pr: Pick<GithubPull, "user">, reviews: GithubReview[]): boolean {
+  const author = pr.user?.login;
+  const latestByUser = new Map<string, string>();
+  for (const review of reviews) {
+    const login = review.user?.login;
+    if (!login || login === author || review.state === "PENDING" || review.state === "COMMENTED") {
+      continue;
+    }
+    latestByUser.set(login, review.state);
+  }
+  const states = [...latestByUser.values()];
+  if (states.includes("CHANGES_REQUESTED")) {
+    return false;
+  }
+  return states.includes("APPROVED");
 }
 
 export type GithubPullFile = {

@@ -16,6 +16,16 @@ describe("NewPublicationModal", () => {
   const renderComponent = (props: Partial<typeof defaultProps> = {}) =>
     renderWithProviders(<NewPublicationModal {...defaultProps} {...props} />);
 
+  it("explains what a publication is", () => {
+    renderComponent();
+    expect(screen.getByText(t("home.publication.modalLede"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.process.wikiTitle"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.process.wikiBody"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.process.draftTitle"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.process.reviewTitle"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.process.publishTitle"))).toBeInTheDocument();
+  });
+
   it("creates with trimmed title", async () => {
     const user = userEvent.setup();
     renderComponent();

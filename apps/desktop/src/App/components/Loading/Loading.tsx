@@ -6,13 +6,13 @@ import { Frame } from "./components/Frame";
 import { Status } from "./components/Status";
 
 function Body() {
-  const { chrome, actions, run } = useApp();
+  const { chrome, operations } = useApp();
   if (chrome.error) {
     return (
       <Failure
         message={chrome.error}
         onRetry={() => {
-          void run(() => actions.onRefresh());
+          void operations.refresh();
         }}
       />
     );

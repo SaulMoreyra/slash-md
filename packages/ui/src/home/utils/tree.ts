@@ -129,6 +129,23 @@ function scoreHit(hit: LibraryHit, q: string): number {
   return 0;
 }
 
+/** Folder paths that actually nest children (can expand in the tree). */
+export function expandableFolderPaths(nodes: HomeTreeNode[]): string[] {
+  const out: string[] = [];
+  for (const node of nodes) {
+    if (node.kind !== "folder") {
+      continue;
+    }
+    const children = node.children ?? [];
+    if (children.length === 0) {
+      continue;
+    }
+    out.push(node.path);
+    out.push(...expandableFolderPaths(children));
+  }
+  return out;
+}
+
 /** Folder paths to expand so `path` is visible in a collapsed tree. */
 export function revealTrail(path: string, kind: "file" | "folder"): string[] {
   const parts = path.split("/").filter(Boolean);

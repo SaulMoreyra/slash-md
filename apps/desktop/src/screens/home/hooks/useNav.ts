@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { posixBasename, rewritePosixPrefix, isPosixUnder } from "@slash-md/core/paths";
-import { findFolder, flattenLibrary, revealTrail } from "@slash-md/ui/home/utils/tree";
+import { expandableFolderPaths, findFolder, flattenLibrary, revealTrail } from "@slash-md/ui/home/utils/tree";
 import type { HomeTreeNode, HomeTreePayload, WorkspaceInfo } from "../../../../shared/api";
-import { isWorkspaceOnlyNav, NavKind, RAIL_OVERLAY_MAX_WIDTH, RailMode, RepoMode, TreeEntryKind } from "../enums";
+import { isWorkspaceOnlyNav, NavKind, RAIL_OVERLAY_MAX_WIDTH, RailMode, RepoMode, TreeEntryKind, TreeExpandMode } from "../enums";
 import type { NavView } from "../types";
-import { createIntentForSection, findFolderCover, workspaceTitle } from "../utils";
+import { createIntentForSection, workspaceTitle } from "../utils";
 import { useRailMode } from "./useRailMode";
 
 type Params = {
@@ -12,15 +12,14 @@ type Params = {
   tree: HomeTreePayload | null;
   pagePath: string | null;
   libraryLabel: string;
-  onOpenPage: (path: string) => void;
   onClosePage: () => void;
 };
 
 export type NavApi = ReturnType<typeof useNav>;
 
-export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, onClosePage }: Params) {
+export function useNav({ workspace, tree, pagePath, libraryLabel, onClosePage }: Params) {
   const [view, setViewState] = useState<NavView>({ kind: NavKind.Drafts });
-  const [workPaneOpen, setWorkPaneOpen] = useState(true);
+  const [workPaneOpen, setWorkPaneOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(
     () => !window.matchMedia(`(max-width: ${RAIL_OVERLAY_MAX_WIDTH - 1}px)`).matches,
   );
@@ -32,7 +31,6 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
   const personal = !isWorkspace;
   const roots = payload?.roots ?? [];
   const folder = view.kind === NavKind.Folder && payload ? findFolder(payload.roots, view.path) : undefined;
-  const cover = folder ? findFolderCover(folder) : undefined;
   const section = view.kind === NavKind.Folder ? view.path : undefined;
   const createIntent = createIntentForSection(
     section,
@@ -47,7 +45,12 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     return map;
   }, [roots]);
   const title = workspaceTitle(payload, workspace.root, libraryLabel);
-  const treeSelected = treeSelection(view, cover, pagePath);
+  const treeSelected = treeSelection(view, pagePath);
+  const expandableFolders = useMemo(() => expandableFolderPaths(roots), [roots]);
+  const canToggleAllFolders = !payload?.needsInit && expandableFolders.length > 0;
+  const allFoldersExpanded =
+    expandableFolders.length > 0 && expandableFolders.every((path) => expanded.has(path));
+  const treeExpandMode = allFoldersExpanded ? TreeExpandMode.Collapse : TreeExpandMode.Expand;
 
   function onNavigate(next: NavView) {
     if (!isWorkspace && isWorkspaceOnlyNav(next.kind)) {
@@ -60,15 +63,32 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     }
   }
 
+  function onToggleWorkDest(next: NavView) {
+    if (!isWorkspace && isWorkspaceOnlyNav(next.kind)) {
+      return;
+    }
+    if (workPaneOpen && view.kind === next.kind) {
+      setWorkPaneOpen(false);
+      return;
+    }
+    onNavigate(next);
+  }
+
   function onCloseWorkPane() {
     setWorkPaneOpen(false);
   }
 
   function onOpenWorkPane() {
+    if (view.kind === NavKind.Folder) {
+      return;
+    }
     setWorkPaneOpen(true);
   }
 
   function onToggleWorkPane() {
+    if (view.kind === NavKind.Folder) {
+      return;
+    }
     if (workPaneOpen) {
       onCloseWorkPane();
     } else {
@@ -120,16 +140,25 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     });
   }
 
+  function onToggleAllFolders() {
+    setExpanded((prev) => {
+      if (expandableFolders.length > 0 && expandableFolders.every((path) => prev.has(path))) {
+        return new Set();
+      }
+      return new Set(expandableFolders);
+    });
+  }
+
   function onOpenFolder(node: HomeTreeNode) {
     const full = findFolder(roots, node.path) ?? node;
     onReveal(full.path, TreeEntryKind.Folder);
     onNavigate({ kind: NavKind.Folder, path: full.path, title: full.title });
-    const nextCover = findFolderCover(full);
-    if (nextCover) {
-      onOpenPage(nextCover.path);
-    } else {
-      onClosePage();
-    }
+    setWorkPaneOpen(false);
+    onClosePage();
+  }
+
+  function onNewFileInFolder(node: HomeTreeNode) {
+    onOpenFolder(node);
   }
 
   function onRewritePath(from: string, to: string) {
@@ -152,6 +181,7 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
   useEffect(() => {
     if (!isWorkspace && isWorkspaceOnlyNav(view.kind)) {
       setViewState({ kind: NavKind.Drafts });
+      setWorkPaneOpen(true);
     }
   }, [isWorkspace, view.kind]);
 
@@ -161,6 +191,7 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     }
     if (!findFolder(payload.roots, view.path)) {
       setViewState({ kind: NavKind.Drafts });
+      setWorkPaneOpen(true);
     }
   }, [payload, view]);
 
@@ -179,13 +210,15 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     personal,
     roots,
     folder,
-    cover,
     section,
     createIntent,
     trails,
     title,
     treeSelected,
+    canToggleAllFolders,
+    treeExpandMode,
     onNavigate,
+    onToggleWorkDest,
     onCloseWorkPane,
     onOpenWorkPane,
     onToggleWorkPane,
@@ -195,21 +228,16 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onOpenPage, on
     onDismissOverlay,
     onReveal,
     onToggleFolder,
+    onToggleAllFolders,
     onOpenFolder,
+    onNewFileInFolder,
     onRewritePath,
   };
 }
 
-function treeSelection(
-  view: NavView,
-  cover: HomeTreeNode | undefined,
-  pagePath: string | null,
-): string | undefined {
+function treeSelection(view: NavView, pagePath: string | null): string | undefined {
   if (view.kind !== NavKind.Folder) {
     return pagePath ?? undefined;
-  }
-  if (cover && pagePath === cover.path) {
-    return view.path;
   }
   return pagePath ?? view.path;
 }

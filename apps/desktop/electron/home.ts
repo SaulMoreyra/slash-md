@@ -3,6 +3,7 @@ import { getCombinedStatus, getPull, listCheckRuns, listPullReviews, type Github
 import { loadInboxRest } from "@slash-md/github/comments";
 import { isWorkspaceMode } from "@slash-md/core/configTypes";
 import type { HomeTreePayload, InReviewPage, LoteReviewSummary } from "@slash-md/core/homeTypes";
+import { commenterFromGithubUser, uniqueCommenters } from "@slash-md/core/publicationMeta";
 import { contentPathPrefix, posixJoin, posixNormalize } from "@slash-md/core/paths";
 import { templateDirCandidates } from "@slash-md/core/templates";
 import { configuredSections, dirExists, getContentConfig, readSlashmd, readText, repoFile } from "./config";
@@ -52,9 +53,8 @@ export async function buildHomeTree(): Promise<HomeTreePayload> {
     ? await listPublications()
     : undefined;
 
-  const drafts = publication
-    ? await listLocalDrafts(root, config.contentPath, files, { requireGitChanges: true })
-    : workspaceMode
+  const drafts =
+    workspaceMode && !publication
       ? []
       : await listLocalDrafts(root, config.contentPath, files);
 
@@ -154,10 +154,14 @@ async function loadLoteReviewByPr(
     const reviews = await listPullReviews(token, config, prNumber);
     const checksOk = await loadChecksOk(token, config, pr);
     const approvals = countApprovals(pr, reviews);
-    const reviewers = [
-      ...(pr.requested_reviewers ?? []).map((user) => user.login),
-      ...(pr.requested_teams ?? []).map((team) => team.slug),
-    ];
+    const reviewerPeople = uniqueCommenters([
+      ...(pr.requested_reviewers ?? []).map((user) => commenterFromGithubUser(user)),
+      ...(pr.requested_teams ?? []).map((team) => ({ login: team.slug })),
+      ...reviews
+        .filter((review) => review.state === "APPROVED" || review.state === "CHANGES_REQUESTED")
+        .map((review) => commenterFromGithubUser(review.user)),
+    ]);
+    const reviewers = reviewerPeople.map((person) => person.login);
     const state: LoteReviewSummary["state"] =
       pr.merged || pr.merged_at ? "merged" : pr.state === "closed" ? "closed" : "open";
     return {
@@ -166,6 +170,7 @@ async function loadLoteReviewByPr(
       title: pr.title,
       branch: pr.head.ref,
       reviewers,
+      reviewerPeople,
       checksOk,
       approvals,
       state,

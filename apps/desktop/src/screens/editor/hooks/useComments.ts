@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { reviewThreadTarget } from "@slash-md/core/threadGate";
 import type { PagePayload } from "../../../../shared/api";
+import { AppOperation } from "../../../App/enums";
+import type { RunOp } from "../../home/types";
 
 const api = () => window.slashmd;
 
 type Params = {
   page: PagePayload;
-  run: <T>(fn: () => Promise<T>) => Promise<T | undefined>;
+  runOp: RunOp;
   onThreadsRefresh: () => Promise<unknown>;
 };
 
-export function useComments({ page, run, onThreadsRefresh }: Params) {
+export function useComments({ page, runOp, onThreadsRefresh }: Params) {
   const commentsOn = Boolean(reviewThreadTarget({ markdown: page.markdown, fileRemotePath: page.path }));
   const [commentDraft, setCommentDraft] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState("");
@@ -31,10 +33,16 @@ export function useComments({ page, run, onThreadsRefresh }: Params) {
     if (!commentDraft) {
       return;
     }
-    await run(() => api().threadCreate(page.path, commentDraft, commentBody));
+    const created = await runOp(AppOperation.ThreadCreate, async () => {
+      await api().threadCreate(page.path, commentDraft, commentBody);
+      await onThreadsRefresh();
+      return true;
+    });
+    if (!created) {
+      return;
+    }
     setCommentDraft(null);
     setCommentBody("");
-    await onThreadsRefresh();
   }
 
   return {

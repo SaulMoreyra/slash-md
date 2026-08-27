@@ -1,15 +1,16 @@
 import { Card } from "@heroui/react";
 import { useTranslation } from "react-i18next";
+import { NavKind } from "../../../enums";
 import { WorkPane } from "../../WorkPane";
 import { useHome } from "../context";
 
 export function WorkColumn() {
   const { t } = useTranslation();
   const home = useHome();
-  const { nav, library, pagePath, busy, run, actions, conflicts, onRefresh, onOpenPage, onClosePage } =
+  const { nav, library, pagePath, busy, runOp, actions, conflicts, onRefresh, onOpenPage, onClosePage } =
     home;
 
-  if (!nav.workPaneOpen) {
+  if (!nav.workPaneOpen || nav.view.kind === NavKind.Folder) {
     return null;
   }
 
@@ -25,17 +26,18 @@ export function WorkColumn() {
         busy={busy}
         pagePath={pagePath}
         trails={library.trails}
-        folder={nav.folder}
-        hasCover={Boolean(nav.cover)}
-        run={run}
+        runOp={runOp}
         onRefresh={onRefresh}
         onOpenPage={onOpenPage}
         onClosePage={onClosePage}
         onReview={actions.onRequestReview}
+        onLeave={() => void actions.onLeavePublication()}
+        onPublish={() => void actions.onPublishBatch()}
+        onLand={() => void actions.onLandPublication()}
+        onLandOther={(branch) => void actions.onLandPublication(branch)}
+        onRequestDiscard={actions.onRequestDiscard}
         onSignIn={actions.onRequestSignIn}
         onNewPage={actions.onRequestNewPage}
-        onWriteCover={actions.onRequestWriteCover}
-        createIntent={nav.createIntent}
         onClosePane={nav.onCloseWorkPane}
         onNewPublication={actions.onRequestPublication}
         conflicts={conflicts}

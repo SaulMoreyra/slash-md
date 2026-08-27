@@ -12,6 +12,8 @@ export type TreeProps = {
   onToggle: (path: string) => void;
   onRename?: (node: HomeTreeNode) => void;
   onDelete?: (node: HomeTreeNode) => void;
+  onNewFileInFolder?: (node: HomeTreeNode) => void;
+  onNewFolderInFolder?: (node: HomeTreeNode) => void;
 };
 
 export function Tree({
@@ -25,6 +27,8 @@ export function Tree({
   onToggle,
   onRename,
   onDelete,
+  onNewFileInFolder,
+  onNewFolderInFolder,
 }: TreeProps) {
   return (
     <ul className={depth > 0 ? "flex flex-col gap-0.5 pl-5" : "flex flex-col gap-0.5"}>
@@ -41,6 +45,8 @@ export function Tree({
           onToggle={onToggle}
           onRename={onRename}
           onDelete={onDelete}
+          onNewFileInFolder={onNewFileInFolder}
+          onNewFolderInFolder={onNewFolderInFolder}
         />
       ))}
     </ul>

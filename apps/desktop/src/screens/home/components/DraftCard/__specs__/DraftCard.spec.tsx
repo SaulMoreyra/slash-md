@@ -43,4 +43,17 @@ describe("DraftCard", () => {
     await user.click(screen.getByRole("checkbox", { name: t("home.drafts.includeAria", { title: "Alpha" }) }));
     expect(onToggle).toHaveBeenCalled();
   });
+
+  it("does not open deleted drafts", async () => {
+    const user = userEvent.setup();
+    renderComponent({
+      draft: { ...mockDraft(), badge: "eliminado" },
+    });
+    const row = screen.getByRole("button", {
+      name: t("home.drafts.deletedAria", { title: "Alpha" }),
+    });
+    expect(row).toBeDisabled();
+    await user.click(row);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
 });

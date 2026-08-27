@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Modal as HeroModal, Spinner } from "@heroui/react";
-import { GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { PublicationIntro } from "./components/PublicationIntro";
 
 type Props = {
   busy?: boolean;
@@ -38,29 +38,33 @@ export function NewPublicationModal({ busy = false, onClose, onCreate }: Props) 
           <HeroModal.Header className="sr-only">
             <HeroModal.Heading>{t("home.publication.modalTitle")}</HeroModal.Heading>
           </HeroModal.Header>
-          <HeroModal.Body className="flex flex-col gap-6 px-8 py-10">
-            <div className="flex items-start gap-3">
-              <span className="mt-1 text-muted">
-                <GitBranch size={28} strokeWidth={1.75} aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <input
-                  className="w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted/40"
-                  value={title}
-                  placeholder={t("home.publication.modalTitlePlaceholder")}
-                  aria-label={t("home.publication.modalTitleLabel")}
-                  autoFocus
-                  disabled={busy}
-                  onChange={(ev) => setTitle(ev.target.value)}
-                  onKeyDown={(ev) => {
-                    if (ev.key === "Enter") {
-                      ev.preventDefault();
-                      submit();
-                    }
-                  }}
-                />
-                <p className="mt-2 text-sm text-muted">{t("home.publication.modalHint")}</p>
-              </div>
+          <HeroModal.Body className="flex flex-col gap-8 px-8 py-10">
+            <div>
+              <p className="text-3xl font-semibold tracking-tight text-foreground">
+                {t("home.publication.modalTitle")}
+              </p>
+              <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+                {t("home.publication.modalLede")}
+              </p>
+            </div>
+            <PublicationIntro />
+            <div>
+              <input
+                className="w-full bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted/40"
+                value={title}
+                placeholder={t("home.publication.modalTitlePlaceholder")}
+                aria-label={t("home.publication.modalTitleLabel")}
+                autoFocus
+                disabled={busy}
+                onChange={(ev) => setTitle(ev.target.value)}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter") {
+                    ev.preventDefault();
+                    submit();
+                  }
+                }}
+              />
+              <p className="mt-2 text-sm text-muted">{t("home.publication.modalHint")}</p>
             </div>
             <div className="flex items-center justify-end gap-2">
               <Button variant="ghost" isDisabled={busy} onPress={onClose}>

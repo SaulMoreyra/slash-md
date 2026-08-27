@@ -3,7 +3,7 @@ import { useApp } from "../context";
 import { EditorSlot } from "./EditorSlot";
 
 export function Workspace() {
-  const { session, chrome, actions, run } = useApp();
+  const { session, chrome, actions, operations } = useApp();
   if (!session.workspace?.root) {
     return null;
   }
@@ -12,6 +12,7 @@ export function Workspace() {
     <HomeScreen
       workspace={session.workspace}
       tree={session.tree}
+      git={session.git}
       pagePath={session.page?.path ?? null}
       busy={chrome.busy}
       error={chrome.error}
@@ -21,7 +22,7 @@ export function Workspace() {
       onClosePage={actions.onClosePage}
       onChangeFolder={actions.onChangeFolder}
       onCloseWorkspace={actions.onCloseWorkspace}
-      run={run}
+      runOp={operations.runOp}
     >
       <EditorSlot />
     </HomeScreen>

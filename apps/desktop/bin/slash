@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Open a folder in Slash MD from the terminal, like `code .` / `cursor .`.
+ * Open a folder in SlashMD from the terminal, like `code .` / `cursor .`.
  *
  *   slash .
  *   slash ~/Repositorios/Personal
@@ -15,7 +15,7 @@ const desktopRoot = path.resolve(__dirname, "..");
 function printHelp() {
   process.stdout.write(`Usage: slash [folder]
 
-Open a docs folder in Slash MD (same idea as \`code .\` or \`cursor .\`).
+Open a docs folder in SlashMD (same idea as \`code .\` or \`cursor .\`).
 
   slash .
   slash ~/Repositorios/Personal
@@ -81,7 +81,7 @@ async function main() {
   if (devUrl) {
     env.VITE_DEV_SERVER_URL = env.VITE_DEV_SERVER_URL || devUrl;
   } else if (!hasMain || !hasRenderer) {
-    fail("Slash MD is not running. Start it with: npm run desktop:dev");
+    fail("SlashMD is not running. Start it with: npm run desktop:dev");
   }
 
   const child = spawn(electron, [".", "--", abs], {

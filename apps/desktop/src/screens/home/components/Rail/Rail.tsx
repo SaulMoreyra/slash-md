@@ -1,24 +1,24 @@
-import { Avatar, Button, ScrollShadow } from "@heroui/react";
+import { Button, ScrollShadow } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconPanel, IconPlus, IconSearch } from "../../../../components/icons";
+import { IconPlus, IconSearch } from "../../../../components/icons";
 import { ShortcutKbd, shortcutLabel } from "../../../../components/ShortcutKbd";
-import { Tree } from "../../../../components/Tree";
 import type {
   HomeTreeNode,
   HomeTreePayload,
   WorkspaceInfo,
 } from "../../../../../shared/api";
-import { CreateIntent } from "../../enums";
+import { CreateIntent, TreeExpandMode } from "../../enums";
 import type { NavView } from "../../types";
 import { AccountMenu } from "../AccountMenu";
-import { PaneCloseButton } from "../PaneCloseButton";
-import { WorkspaceSwitch } from "../WorkspaceSwitch";
+import { RailHeader } from "./components/RailHeader";
 import { RailNav } from "./components/RailNav";
+import { RailTree } from "./components/RailTree";
 
 type Props = {
   title: string;
   nav: NavView;
   payload: HomeTreePayload | null;
+  branch: string | null;
   personal: boolean;
   busy: boolean;
   workspace: WorkspaceInfo;
@@ -35,6 +35,9 @@ type Props = {
   onFile: (path: string) => void;
   onFolder: (node: HomeTreeNode) => void;
   onToggle: (path: string) => void;
+  canToggleAllFolders?: boolean;
+  treeExpandMode?: TreeExpandMode;
+  onToggleAllFolders?: () => void;
   onRename?: (node: HomeTreeNode) => void;
   onDelete?: (node: HomeTreeNode) => void;
   onInit: () => void;
@@ -43,6 +46,8 @@ type Props = {
   onSignIn: () => void;
   onSignOut: () => void;
   onFolderModal: () => void;
+  onNewFileInFolder?: (node: HomeTreeNode) => void;
+  onNewFolderInFolder?: (node: HomeTreeNode) => void;
   onRefresh: () => void;
   onNewPublication?: () => void;
 };
@@ -51,6 +56,7 @@ export function Rail({
   title,
   nav,
   payload,
+  branch,
   personal,
   busy,
   workspace,
@@ -67,6 +73,9 @@ export function Rail({
   onFile,
   onFolder,
   onToggle,
+  canToggleAllFolders,
+  treeExpandMode,
+  onToggleAllFolders,
   onRename,
   onDelete,
   onInit,
@@ -75,11 +84,12 @@ export function Rail({
   onSignIn,
   onSignOut,
   onFolderModal,
+  onNewFileInFolder,
+  onNewFolderInFolder,
   onRefresh,
   onNewPublication,
 }: Props) {
   const { t } = useTranslation();
-  const login = workspace.auth?.login;
   const needsInit = Boolean(payload?.needsInit);
   const isWorkspace = !personal;
   const canWrite = payload?.canWrite ?? true;
@@ -109,29 +119,14 @@ export function Rail({
       className="flex h-full min-h-0 w-full shrink-0 flex-col gap-3"
       aria-label={t("home.rail.aria")}
     >
-      <div className="flex items-center gap-2 px-1 pt-1">
-        <Avatar size="sm" color="accent">
-          <Avatar.Fallback>
-            {(login ?? title).slice(0, 1).toUpperCase()}
-          </Avatar.Fallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <WorkspaceSwitch
-            title={title}
-            subtitle={payload?.publication?.branch}
-            onChangeFolder={onChangeFolder}
-            onCloseWorkspace={onCloseWorkspace}
-            onConfig={onConfig}
-          />
-        </div>
-        <PaneCloseButton
-          label={t("home.rail.close")}
-          keys={shortcutLabel.toggleRail()}
-          onPress={onCloseRail}
-        >
-          <IconPanel />
-        </PaneCloseButton>
-      </div>
+      <RailHeader
+        title={title}
+        subtitle={branch ?? undefined}
+        onChangeFolder={onChangeFolder}
+        onCloseWorkspace={onCloseWorkspace}
+        onConfig={onConfig}
+        onCloseRail={onCloseRail}
+      />
 
       <Button
         variant="ghost"
@@ -152,23 +147,25 @@ export function Rail({
           nav={nav}
           payload={payload}
           isWorkspace={isWorkspace}
+          canToggleAllFolders={canToggleAllFolders}
+          treeExpandMode={treeExpandMode}
           onNav={onNav}
+          onToggleAllFolders={onToggleAllFolders}
         />
-        {!needsInit ? (
-          <div className="mt-1 px-1">
-            <Tree
-              nodes={roots}
-              selected={treeSelected}
-              expanded={expanded}
-              canWrite={canWrite}
-              onFile={onFile}
-              onFolder={onFolder}
-              onToggle={onToggle}
-              onRename={onRename}
-              onDelete={onDelete}
-            />
-          </div>
-        ) : null}
+        <RailTree
+          payload={payload}
+          roots={roots}
+          selected={treeSelected}
+          expanded={expanded}
+          canWrite={canWrite}
+          onFile={onFile}
+          onFolder={onFolder}
+          onToggle={onToggle}
+          onRename={onRename}
+          onDelete={onDelete}
+          onNewFileInFolder={onNewFileInFolder}
+          onNewFolderInFolder={onNewFolderInFolder}
+        />
       </ScrollShadow>
 
       <div className="flex flex-col gap-2">

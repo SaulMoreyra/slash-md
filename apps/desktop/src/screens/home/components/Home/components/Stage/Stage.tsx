@@ -24,8 +24,6 @@ function Root() {
           needsInit: stage.needsInit,
           loading: stage.loading,
           hasPage: stage.hasPage,
-          openingCover: stage.openingCover,
-          showSectionCanvas: stage.showSectionCanvas,
           section: stage.section,
           merging: stage.merging,
           editing: stage.editing,
@@ -34,16 +32,13 @@ function Root() {
         needsInit={stage.needsInit}
         loading={stage.loading}
         hasPage={stage.hasPage}
-        openingCover={stage.openingCover}
-        showSectionCanvas={stage.showSectionCanvas}
-        folderTitle={stage.folderTitle}
         section={stage.section}
         createIntent={stage.createIntent}
         busy={stage.busy}
+        showProcessGuide={stage.showProcessGuide}
         onInit={stage.onInit}
         onCreatePage={stage.onCreatePage}
-        onWriteCover={stage.onWriteCover}
-        onNewPage={stage.onNewPage}
+        onRequestPublication={stage.onRequestPublication}
       >
         {stage.children}
       </Body>

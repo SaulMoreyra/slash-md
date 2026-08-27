@@ -67,6 +67,7 @@ describe("RailCollapsed", () => {
   it("renders a full-height collapsed library chrome", () => {
     renderComponent();
     expect(screen.getByRole("complementary", { name: t("home.rail.aria") })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: t("app.brand") })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: `${t("home.rail.open")} (${shortcutLabel.toggleRail()})` }),
     ).toBeInTheDocument();

@@ -1,11 +1,12 @@
 import type { HomeTreeNode } from "@slash-md/core/homeTypes";
 import {
-  collectIndex,
-  filterTreeNodes,
-  findFile,
-  findFolder,
-  flattenLibrary,
-  parentSection,
+    collectIndex,
+    filterTreeNodes,
+    findFile,
+    findFolder,
+    flattenLibrary,
+    expandableFolderPaths,
+    parentSection,
   rankLibraryHits,
   revealTrail,
 } from "../../packages/ui/src/home/utils/tree";
@@ -40,6 +41,31 @@ export function runHomeUtilsSuite(ctx: SuiteCtx): void {
     const hits = flattenLibrary(roots);
     assert(hits.some((hit) => hit.kind === "folder" && hit.path === "docs/guides"), "flattenLibrary includes folders");
     assert(hits.find((hit) => hit.path === "docs/guides/intro.md")?.trail === "Guides", "flattenLibrary trail is parent titles");
+    assert(
+      JSON.stringify(expandableFolderPaths(roots)) === JSON.stringify(["docs/guides"]),
+      "expandableFolderPaths keeps folders with children",
+    );
+    assert(
+      JSON.stringify(
+        expandableFolderPaths([
+          {
+            kind: "folder",
+            path: "docs",
+            title: "docs",
+            children: [
+              {
+                kind: "folder",
+                path: "docs/guides",
+                title: "guides",
+                children: [{ kind: "file", path: "docs/guides/intro.md", title: "Intro" }],
+              },
+              { kind: "folder", path: "docs/empty", title: "empty", children: [] },
+            ],
+          },
+        ]),
+      ) === JSON.stringify(["docs", "docs/guides"]),
+      "expandableFolderPaths skips empty folders",
+    );
     const ranked = rankLibraryHits(hits, "setup");
     assert(ranked[0]?.title === "Setup Guide", "rankLibraryHits prefers title match");
     assert(rankLibraryHits(hits, "").length === 0, "rankLibraryHits empty query is empty");

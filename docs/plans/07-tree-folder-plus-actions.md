@@ -1,204 +1,69 @@
 # Plan 07 — Botón + en carpetas (New file / New folder)
 
-> **Auditado.** Ver [AUDIT-2026-08.md](./AUDIT-2026-08.md). Verificado: `TreeNodeAction` vive en `src/components/Tree/enums.ts` y `NewPageModal` existe.
-
-## Objetivo
-
-Añadir acciones **estilo VS Code** en filas de **carpeta** del árbol:
-
-- Botón **`+`** visible al **hover/focus** de la fila
-- Click en `+` → **Dropdown** con:
-  - **New file** → selecciona carpeta + muestra templates inline en Stage
-  - **New folder** → abre `FolderModal` con **parent = carpeta del menú** (no `nav.section` genérico)
-
-Solo carpetas — **no** archivos. Menú **⋯** existente conserva Rename / Delete.
-
-**Depende de:** [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md), [06-collapse-workpane-on-folder.md](./06-collapse-workpane-on-folder.md)
+> **Hecho.** En carpetas, el menú `⋯` incluye New file / New folder (además de Rename / Delete). New file selecciona esa carpeta (Stage + templates). New folder abre el modal con **parent = carpeta del menú**.
+>
+> **Depende de:** [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md), [06-collapse-workpane-on-folder.md](./06-collapse-workpane-on-folder.md)
 
 ---
 
-## Implementación
+## Objetivo (entregado)
 
-### 1. Enum de acciones
+Acciones estilo VS Code en **carpetas** del árbol:
 
-**Archivo:** `apps/desktop/src/components/Tree/enums.ts`
+- `+` visible al hover/focus
+- **New file** → `onOpenFolder` (picker en Stage, WorkPane colapsada)
+- **New folder** → `FolderModal` con parent explícito (aunque nav esté en Drafts)
+- Archivos: sin `+`. El menú `⋯` sigue siendo Rename / Delete
+- Read-only (`!canWrite`): sin `+` ni `⋯`
 
-```ts
-enum TreeNodeAction {
-  Rename = "rename",
-  Delete = "delete",
-  NewFile = "new-file",
-  NewFolder = "new-folder",
-}
-```
-
-O enum separado `TreeFolderAction` si se prefiere no mezclar con acciones del menú ⋯.
-
-### 2. Componente TreeFolderActions (nuevo)
-
-**Archivo nuevo:** `apps/desktop/src/components/Tree/components/TreeFolderActions.tsx`
-
-- Botón icono `+` (usar icono existente del design system o `IconPlus`).
-- Misma visibilidad que `TreeNodeMenu`: `opacity-0 group-hover/row:opacity-100 focus-within:opacity-100`.
-- `Dropdown` con `New file` / `New folder`.
-- `onPointerDown` stopPropagation (igual que menú ⋯).
-- Props:
-  - `node: HomeTreeNode`
-  - `onNewFile: (node: HomeTreeNode) => void`
-  - `onNewFolder: (node: HomeTreeNode) => void`
-
-### 3. TreeNode
-
-**Archivo:** `apps/desktop/src/components/Tree/components/TreeNode.tsx`
-
-- En filas **folder**, renderizar `<TreeFolderActions />` **antes** de `TreeNodeMenu` (orden VS Code: acciones creación, luego ⋯).
-- Nuevas props opcionales:
-  - `onNewFileInFolder?: (node: HomeTreeNode) => void`
-  - `onNewFolderInFolder?: (node: HomeTreeNode) => void`
-- Mostrar `TreeFolderActions` solo si `canWrite && onNewFileInFolder && onNewFolderInFolder`.
-
-### 4. Tree (prop drilling)
-
-**Archivo:** `apps/desktop/src/components/Tree/Tree.tsx`
-
-- Pasar callbacks a cada `TreeNode`.
-
-### 5. Nav — handlers
-
-**Archivo:** `apps/desktop/src/screens/home/hooks/useNav.ts`
-
-```ts
-function onNewFileInFolder(node: HomeTreeNode) {
-  onOpenFolder(node); // selecciona carpeta, cierra página, colapsa WorkPane
-  // Stage ya muestra EditorBlank vía plan 04
-}
-
-function onNewFolderInFolder(node: HomeTreeNode) {
-  // NO navegar obligatoriamente; abrir modal con parent = node.path
-}
-```
-
-Exportar handlers en el return del hook.
-
-### 6. Modals — parent explícito
-
-**Archivo:** `apps/desktop/src/screens/home/hooks/useModals.ts`
-
-- Extender estado de folder modal:
-  - `folderModalParent?: string` (path POSIX de la carpeta destino)
-- `onOpenFolderModal(parent?: string)` — guardar parent en state.
-
-**Archivo:** `apps/desktop/src/screens/home/hooks/useHomeActions.ts`
-
-```ts
-async function onCreateFolder(name: string, parent?: string) {
-  await api().newFolder({ name, parent: parent ?? section });
-  …
-}
-
-function onRequestNewFolderIn(parent: string) {
-  modals.onOpenFolderModal(parent);
-}
-```
-
-**Archivo:** `apps/desktop/src/screens/home/components/FolderModal/`
-
-- Recibir `parent?: string` explícito del modal state (mostrar "inside {parent}" en UI).
-
-**Archivo:** `apps/desktop/src/screens/home/components/Home/components/Overlays.tsx`
-
-- Pasar `parent` del modal state a `FolderModal`.
-
-### 7. Wiring Rail → Home
-
-**Archivos:**
-
-- `apps/desktop/src/screens/home/components/Home/components/RailSlot.tsx`
-- `apps/desktop/src/screens/home/components/Rail/Rail.tsx`
-
-Conectar:
-
-- `onNewFileInFolder={nav.onNewFileInFolder}` → llama nav + opcional focus título
-- `onNewFolderInFolder={(node) => actions.onRequestNewFolderIn(node.path)}`
-
-**Archivo:** `apps/desktop/src/screens/home/hooks/useHomeController.ts`
-
-- Exponer handlers namespaced en `nav` / `actions`.
-
-### 8. i18n
-
-**Archivos:** `es.json`, `en.json`
-
-```json
-"home": {
-  "tree": {
-    "newFile": "New file",
-    "newFolder": "New folder",
-    "newFileAria": "New file in {{title}}",
-    "newFolderAria": "New folder in {{title}}",
-    "createActionsAria": "Create in {{title}}"
-  }
-}
-```
-
-ES: "Nuevo archivo", "Nueva carpeta".
-
-### 9. Atajos (sin cambios)
-
-- `Cmd+Shift+N` sigue usando `section` activa del nav — documentar en validación manual que difiere del `+` contextual.
+`Cmd+Shift+N` no cambia: usa `nav.section` activa.
 
 ---
 
-## Testing
+## Archivos
 
-### Specs nuevos / extendidos
+| Área | Qué |
+|------|-----|
+| `Tree/enums.ts` | `TreeNodeAction.NewFile` / `NewFolder` |
+| `Tree/components/TreeFolderActions.tsx` | Dropdown `+` |
+| `TreeNode` / `Tree` | Props `onNewFileInFolder` / `onNewFolderInFolder`; `+` antes de `⋯` |
+| `useNav.ts` | `onNewFileInFolder` → `onOpenFolder` |
+| `useModals.ts` | `folderParent` + `onOpenFolderModal(parent?)` |
+| `useHomeActions.ts` | `onRequestNewFolderIn`; `onCreateFolder(name, parent?)` |
+| `Rail.tsx` / `RailSlot.tsx` | Cableado canWrite |
+| `Overlays.tsx` | `parent={folderParent ?? nav.section}` |
+| i18n `home.tree.*` | newFile / newFolder / createActionsAria |
+
+---
+
+## Testing (hecho)
 
 | Archivo | Casos |
 |---------|-------|
-| `apps/desktop/src/components/Tree/__specs__/Tree.spec.tsx` | Folder row renderiza botón +; file row no |
-| Nuevo: `TreeFolderActions.spec.tsx` | Dropdown abre; New file llama callback con node; New folder idem |
-| `apps/desktop/src/screens/home/hooks/__specs__/useNav.spec.ts` | `onNewFileInFolder` equivale a seleccionar carpeta |
-| Spec de `useHomeActions` o integration | `onCreateFolder(name, "docs/a")` pasa parent al IPC |
-| `FolderModal` spec (si existe o crear mínimo) | Muestra parent explícito |
-
-### Comando
+| `Tree/__specs__/Tree.spec.tsx` | `+` en folder, no en file; New file no dispara `onFolder` |
+| `TreeFolderActions.spec.tsx` | Dropdown → New file / New folder con el node |
+| `useNav.spec.ts` | `onNewFileInFolder` selecciona carpeta y cierra página |
+| `useHomeActions.spec.ts` | parent explícito al IPC; fallback a `section` |
+| `FolderModal.spec.tsx` | Muestra `inside {{parent}}` |
 
 ```bash
-npm run test -- --run apps/desktop/src/components/Tree
-npm run test -- --run apps/desktop/src/screens/home
+npm run test -w @slash-md/desktop -- src/components/Tree src/screens/home --run
 npm run desktop:typecheck
-npm run desktop:lint
 ```
-
-### Mock IPC
-
-Verificar en tests que `api().newFolder({ name, parent })` recibe el path de la carpeta del menú, no el de otra sección activa.
 
 ---
 
 ## Validación manual
 
-Precondición: workspace con permisos de escritura (`canWrite`).
-
 | # | Paso | Resultado esperado |
 |---|------|-------------------|
-| 1 | Hover fila de **archivo** | No aparece botón `+` |
-| 2 | Hover fila de **carpeta** | Aparece `+` (y ⋯ si canWrite) |
-| 3 | Click `+` → New file | Carpeta seleccionada; Stage templates; chip con path de **esa** carpeta |
-| 4 | Estar en carpeta A, `+` en carpeta B → New file | Chip muestra path de **B**, no A |
-| 5 | `+` → New folder en carpeta `docs/guides` | Modal abre; indica parent `docs/guides` |
-| 6 | Crear carpeta `experiments` desde modal | Carpeta aparece bajo `docs/guides` en árbol |
-| 7 | `+` en carpeta sin seleccionarla antes | New folder crea en carpeta del menú aunque nav estuviera en Drafts |
-| 8 | Menú ⋯ | Rename / Delete siguen funcionando |
-| 9 | Workspace read-only | Sin `+` ni ⋯ (o deshabilitados) |
-| 10 | `Cmd+Shift+N` con carpeta X seleccionada | Nueva carpeta en X (comportamiento previo) |
-
-**Regresión:** Expand/collapse de carpetas, click en carpeta para seleccionar, y drag-free rename/delete intactos.
-
----
-
-## Notas de implementación
-
-- El dropdown del `+` debe cerrarse al elegir acción.
-- Evitar que click en `+` dispare `onPressFolder` (stopPropagation en contenedor de acciones).
-- Si `onNewFileInFolder` reutiliza `onOpenFolder`, WorkPane se colapsa automáticamente (plan 06).
+| 1 | Hover archivo | Sin `+` |
+| 2 | Hover carpeta (`canWrite`) | `+` y `⋯` |
+| 3 | `+` → New file | Esa carpeta seleccionada; Stage templates + path |
+| 4 | En carpeta A, `+` New file en B | Path de **B** |
+| 5 | `+` → New folder en `docs/guides` | Modal “Dentro de docs/guides” |
+| 6 | Crear `experiments` | Aparece bajo `docs/guides` |
+| 7 | Drafts + New folder en una carpeta | Crea **ahí**, no en raíz |
+| 8 | `⋯` | Rename / Delete intactos |
+| 9 | Read-only | Sin `+` ni `⋯` |
+| 10 | `Cmd+Shift+N` | Sigue usando la sección del nav |

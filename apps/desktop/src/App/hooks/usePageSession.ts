@@ -1,25 +1,26 @@
 import { useCallback, useState } from "react";
 import type { PagePayload } from "../../../shared/api";
-import type { Run } from "../../screens/home/types";
+import { AppOperation } from "../enums";
+import type { RunOp } from "./useOperationsController";
 
 const api = () => window.slashmd;
 
 type Params = {
-  run: Run;
+  runOp: RunOp;
 };
 
-export function usePageSession({ run }: Params) {
+export function usePageSession({ runOp }: Params) {
   const [page, setPage] = useState<PagePayload | null>(null);
   const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
 
   const onOpenPage = useCallback(
     async (path: string, threadId?: string) => {
-      await run(async () => {
+      await runOp(AppOperation.OpenPage, async () => {
         setFocusThreadId(threadId ?? null);
         setPage(await api().openPage(path));
       });
     },
-    [run],
+    [runOp],
   );
 
   const onClosePage = useCallback(() => {

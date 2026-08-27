@@ -1,4 +1,4 @@
-import { Button, Dropdown } from "@heroui/react";
+import { Dropdown } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import type { HomeTreeNode } from "../../../../shared/api";
 import { IconMore } from "../../icons";
@@ -8,10 +8,14 @@ export type TreeNodeMenuProps = {
   node: HomeTreeNode;
   onRename: (node: HomeTreeNode) => void;
   onDelete: (node: HomeTreeNode) => void;
+  onNewFile?: (node: HomeTreeNode) => void;
+  onNewFolder?: (node: HomeTreeNode) => void;
 };
 
-export function TreeNodeMenu({ node, onRename, onDelete }: TreeNodeMenuProps) {
+export function TreeNodeMenu({ node, onRename, onDelete, onNewFile, onNewFolder }: TreeNodeMenuProps) {
   const { t } = useTranslation();
+  const menuLabel = t("home.tree.menuAria", { title: node.title });
+  const showCreate = node.kind === "folder" && onNewFile && onNewFolder;
 
   return (
     <div
@@ -19,21 +23,22 @@ export function TreeNodeMenu({ node, onRename, onDelete }: TreeNodeMenuProps) {
       onPointerDown={(ev) => ev.stopPropagation()}
     >
       <Dropdown>
-        <Dropdown.Trigger>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            aria-label={t("home.tree.menuAria", { title: node.title })}
-            className="text-muted"
-          >
-            <IconMore />
-          </Button>
+        <Dropdown.Trigger
+          aria-label={menuLabel}
+          className="flex size-7 items-center justify-center rounded-md text-muted hover:bg-default/60 hover:text-foreground"
+        >
+          <IconMore />
         </Dropdown.Trigger>
         <Dropdown.Popover placement="bottom end">
           <Dropdown.Menu
-            aria-label={t("home.tree.menuAria", { title: node.title })}
+            aria-label={menuLabel}
             onAction={(key) => {
+              if (key === TreeNodeAction.NewFile) {
+                onNewFile?.(node);
+              }
+              if (key === TreeNodeAction.NewFolder) {
+                onNewFolder?.(node);
+              }
               if (key === TreeNodeAction.Rename) {
                 onRename(node);
               }
@@ -42,6 +47,16 @@ export function TreeNodeMenu({ node, onRename, onDelete }: TreeNodeMenuProps) {
               }
             }}
           >
+            {showCreate ? (
+              <Dropdown.Item id={TreeNodeAction.NewFile} textValue={t("home.tree.newFile")}>
+                {t("home.tree.newFile")}
+              </Dropdown.Item>
+            ) : null}
+            {showCreate ? (
+              <Dropdown.Item id={TreeNodeAction.NewFolder} textValue={t("home.tree.newFolder")}>
+                {t("home.tree.newFolder")}
+              </Dropdown.Item>
+            ) : null}
             <Dropdown.Item id={TreeNodeAction.Rename} textValue={t("home.tree.rename")}>
               {t("home.tree.rename")}
             </Dropdown.Item>

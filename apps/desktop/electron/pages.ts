@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { app } from "electron";
 import { splitFrontmatter, setFrontmatterField, emptyFrontmatter, type FrontmatterFields } from "@slash-md/core/frontmatter";
+import { discardLocalChangeAction } from "@slash-md/core/localDrafts";
 import { labeledTitle } from "@slash-md/core/messaging";
 import {
   contentPathPrefix,
@@ -13,6 +14,7 @@ import {
   posixNormalize,
   rewritePosixPrefixList,
 } from "@slash-md/core/paths";
+import { resolveCreateTarget } from "@slash-md/core/createPath";
 import { slugify } from "@slash-md/core/slug";
 import {
   BUILTIN_TEMPLATE_PICKS,
@@ -251,11 +253,13 @@ export async function createPage(input: {
     defaultBranch: "main",
     mode: "workspace" as const,
   };
-  const title = input.title.trim() || "Untitled";
-  const dir = input.section?.trim() || config.contentPath;
+  const fallbackTitle = input.title.trim() || "Untitled";
+  const target = resolveCreateTarget(input.section, input.title, fallbackTitle);
+  const title = input.fileName ? fallbackTitle : target.title;
+  const dir = (input.fileName ? input.section?.trim() : target.section?.trim()) || config.contentPath;
   const repoPath = assertSafeRepoPath(
     config,
-    input.fileName ? coverMarkdownPath(dir, input.fileName) : await uniqueMarkdownPath(root, dir, slugify(title)),
+    input.fileName ? coverMarkdownPath(dir, input.fileName) : await uniqueMarkdownPath(root, dir, target.slug),
   );
   if (input.fileName && (await fileExists(repoFile(root, repoPath)))) {
     return { path: repoPath };
@@ -465,7 +469,7 @@ function patchStaging(root: string, from: string, to: string | null): void {
   writeStaging(root, rewritePosixPrefixList(readStaging(root), from, to));
 }
 
-/** Drop local edits: restore tracked files, delete untracked / clean drafts. */
+/** Drop local edits: restore tracked files, delete untracked ones. */
 export async function discardDraft(repoPath: string): Promise<{ deleted: boolean }> {
   const root = requireRoot();
   const filePath = posixNormalize(repoPath);
@@ -476,7 +480,7 @@ export async function discardDraft(repoPath: string): Promise<{ deleted: boolean
     throw new Error("Invalid document path.");
   }
 
-  let state: { untracked: boolean; dirty: boolean } | undefined;
+  let state: { untracked: boolean; dirty: boolean; deleted?: boolean } | undefined;
   try {
     const stdout = await runGit(["status", "--porcelain", "--", filePath], { cwd: root });
     state = parsePorcelain(stdout).get(filePath);
@@ -484,20 +488,17 @@ export async function discardDraft(repoPath: string): Promise<{ deleted: boolean
     state = undefined;
   }
 
+  const action = discardLocalChangeAction(state);
+  if (action === "none") {
+    throw new Error("No hay cambios locales que descartar.");
+  }
+
   let deleted = false;
-  if (state?.untracked) {
+  if (action === "delete") {
     await fs.unlink(repoFile(root, filePath));
     deleted = true;
-  } else if (state?.dirty) {
-    await runGit(["restore", "--source=HEAD", "--staged", "--worktree", "--", filePath], { cwd: root });
   } else {
-    const text = await readText(repoFile(root, filePath));
-    const status = splitFrontmatter(text).fields.status.trim().toLowerCase();
-    if (status !== "draft") {
-      throw new Error("No hay cambios locales que descartar.");
-    }
-    await fs.unlink(repoFile(root, filePath));
-    deleted = true;
+    await runGit(["restore", "--source=HEAD", "--staged", "--worktree", "--", filePath], { cwd: root });
   }
 
   writeStaging(

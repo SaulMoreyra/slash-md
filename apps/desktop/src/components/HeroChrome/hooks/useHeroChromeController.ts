@@ -6,11 +6,12 @@ import { coverColorHex, parsePosition } from "@slash-md/ui/editor/hero/coverMode
 type Params = {
   fields: FrontmatterFields;
   imageMap: Record<string, string>;
+  canWrite: boolean;
   onPatch: (patch: Partial<FrontmatterFields>) => Promise<void>;
   onUploadCover: (file: File) => Promise<string>;
 };
 
-export function useHeroChromeController({ fields, imageMap, onPatch, onUploadCover }: Params) {
+export function useHeroChromeController({ fields, imageMap, canWrite, onPatch, onUploadCover }: Params) {
   const icon = normalizePageIcon(fields.icon);
   const cover = fields.cover.trim();
   const color = coverColorHex(cover);
@@ -19,6 +20,8 @@ export function useHeroChromeController({ fields, imageMap, onPatch, onUploadCov
   const [coverMenu, setCoverMenu] = useState(false);
   const [picker, setPicker] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const hasIcon = Boolean(icon);
+  const hasCover = Boolean(cover);
 
   return {
     icon,
@@ -29,8 +32,12 @@ export function useHeroChromeController({ fields, imageMap, onPatch, onUploadCov
     coverMenu,
     picker,
     fileRef,
-    hasIcon: Boolean(icon),
-    hasCover: Boolean(cover),
+    hasIcon,
+    hasCover,
+    showCoverToolbar: canWrite && hasCover,
+    showAddIcon: canWrite && !hasIcon,
+    showAddCover: canWrite && !hasCover,
+    iconEditable: canWrite && hasIcon,
     onOpenCoverMenu: () => setCoverMenu((open) => !open),
     onCloseCoverMenu: () => setCoverMenu(false),
     onOpenPicker: () => setPicker(true),

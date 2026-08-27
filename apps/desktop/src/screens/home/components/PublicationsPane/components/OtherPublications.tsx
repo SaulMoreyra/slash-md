@@ -7,9 +7,11 @@ type Props = {
   pubs: PublicationSummary[];
   busy: boolean;
   onResume: (branch: string) => void;
+  onLand: (branch: string) => void;
+  onDiscard: (pub: PublicationSummary) => void;
 };
 
-export function OtherPublications({ current, pubs, busy, onResume }: Props) {
+export function OtherPublications({ current, pubs, busy, onResume, onLand, onDiscard }: Props) {
   const { t } = useTranslation();
 
   if (pubs.length === 0) {
@@ -21,7 +23,7 @@ export function OtherPublications({ current, pubs, busy, onResume }: Props) {
       {current ? (
         <p className="px-4 text-[11px] font-medium text-muted">{t("home.publication.others")}</p>
       ) : null}
-      <PublicationList pubs={pubs} busy={busy} onResume={onResume} />
+      <PublicationList pubs={pubs} busy={busy} onResume={onResume} onLand={onLand} onDiscard={onDiscard} />
     </div>
   );
 }

@@ -13,30 +13,13 @@ type Props = {
 export function ReviewModalActions({ canSend, hub, onClose, onSend }: Props) {
   const { t } = useTranslation();
   const busy = Boolean(hub?.busy);
-  const showLeave = Boolean(hub?.showLeave);
-  const showPublish = Boolean(hub?.showPublish);
-  const showSend = canSend;
 
   return (
     <div className="hang-actions">
       <Button variant="ghost" onPress={onClose}>
         {t("common.cancel")}
       </Button>
-      {showLeave ? (
-        <Button variant="ghost" isDisabled={busy} onPress={hub?.onLeave}>
-          {t("home.publication.leave")}
-        </Button>
-      ) : null}
-      {showPublish ? (
-        <Button
-          variant={showSend ? "ghost" : "primary"}
-          isDisabled={busy}
-          onPress={hub?.onPublish}
-        >
-          {t("home.publication.publish")}
-        </Button>
-      ) : null}
-      {showSend ? (
+      {canSend ? (
         <Button variant="primary" isDisabled={busy} onPress={onSend}>
           <IconMerge size={14} />
           {t("modal.review.send")}

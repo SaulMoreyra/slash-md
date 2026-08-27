@@ -101,6 +101,22 @@ export async function isMergeInProgress(cwd: string): Promise<boolean> {
   }
 }
 
+export async function forceSwitchToBranch(cwd: string, branch: string): Promise<void> {
+  const current = await currentBranch(cwd);
+  if (current === branch) {
+    return;
+  }
+  if (await refExists(cwd, `refs/heads/${branch}`)) {
+    await runGit(["switch", "-f", branch], { cwd });
+    return;
+  }
+  if (await refExists(cwd, `refs/remotes/origin/${branch}`)) {
+    await runGit(["switch", "-f", "--track", `origin/${branch}`], { cwd });
+    return;
+  }
+  throw new Error(`Branch ${branch} was not found.`);
+}
+
 export async function switchToBranch(cwd: string, branch: string): Promise<void> {
   const current = await currentBranch(cwd);
   if (current === branch) {
@@ -124,7 +140,20 @@ export async function switchToBranch(cwd: string, branch: string): Promise<void>
   }
 }
 
-export type GitPathState = { untracked: boolean; dirty: boolean };
+export async function commitsAheadOf(cwd: string, branch: string, sha: string): Promise<number> {
+  if (!sha) {
+    return 0;
+  }
+  try {
+    const out = (await runGit(["rev-list", "--count", `${sha}..refs/heads/${branch}`], { cwd })).trim();
+    const count = Number(out);
+    return Number.isFinite(count) ? count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export type GitPathState = { untracked: boolean; dirty: boolean; deleted: boolean };
 
 export function parsePorcelain(stdout: string): Map<string, GitPathState> {
   const map = new Map<string, GitPathState>();
@@ -136,7 +165,18 @@ export function parsePorcelain(stdout: string): Map<string, GitPathState> {
     if (!parsed || parsed.xy === "!!") {
       continue;
     }
-    map.set(parsed.path, { untracked: parsed.xy === "??", dirty: true });
+    if (parsed.xy === "??") {
+      map.set(parsed.path, { untracked: true, dirty: true, deleted: false });
+      continue;
+    }
+    const index = parsed.xy[0] ?? " ";
+    const worktree = parsed.xy[1] ?? " ";
+    const deleted = index === "D" || worktree === "D";
+    map.set(parsed.path, {
+      untracked: false,
+      dirty: !deleted && (index !== " " || worktree !== " "),
+      deleted,
+    });
   }
   return map;
 }

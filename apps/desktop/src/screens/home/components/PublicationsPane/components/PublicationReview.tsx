@@ -1,9 +1,8 @@
 import { shortDraftPath } from "@slash-md/ui/home/utils/format";
 import { useTranslation } from "react-i18next";
-import type { LocalDraft, LoteReviewSummary } from "@slash-md/core/homeTypes";
+import type { LocalDraft } from "@slash-md/core/homeTypes";
 import type { HomeTreePayload } from "../../../../../../shared/api";
-import { inReviewDrafts, loteReviewFromPayload } from "../../../utils";
-import { PrStrip } from "../../PrStrip";
+import { inReviewDrafts } from "../../../utils";
 import { PublicationAuth } from "./PublicationAuth";
 import { ReviewPageList } from "./ReviewPageList";
 
@@ -17,16 +16,14 @@ type Props = {
 
 export function PublicationReview({ payload, pagePath, trails, onOpenPage, onSignIn }: Props) {
   const reviewing = inReviewDrafts(payload);
-  const review = loteReviewFromPayload(payload);
 
-  if (!payload.needsAuth && !review && reviewing.length === 0) {
+  if (!payload.needsAuth && reviewing.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-3">
       {payload.needsAuth ? <PublicationAuth onSignIn={onSignIn} /> : null}
-      <PublicationPr review={review} />
       <PublicationPages
         drafts={reviewing}
         pagePath={pagePath}
@@ -34,17 +31,6 @@ export function PublicationReview({ payload, pagePath, trails, onOpenPage, onSig
         contentPath={payload.contentPath}
         onOpenPage={onOpenPage}
       />
-    </div>
-  );
-}
-
-function PublicationPr({ review }: { review: LoteReviewSummary | undefined }) {
-  if (!review) {
-    return null;
-  }
-  return (
-    <div className="px-3">
-      <PrStrip review={review} />
     </div>
   );
 }

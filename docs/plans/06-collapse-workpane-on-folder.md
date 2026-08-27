@@ -1,111 +1,88 @@
 # Plan 06 — Colapsar WorkPane al seleccionar carpeta
 
-> **Auditado.** Ver [AUDIT-2026-08.md](./AUDIT-2026-08.md).
-
-## Objetivo
-
-Cuando el usuario selecciona una **carpeta** en el árbol, la columna **WorkPane** debe **colapsarse** (no renderizarse) para que el Stage con templates ocupe más espacio.
-
-Al navegar a Drafts, Inbox, Publications u otras vistas, WorkPane vuelve a mostrarse según el comportamiento actual.
-
-**Depende de:** [03-remove-portada.md](./03-remove-portada.md), [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md)
+> **Hecho.** Al abrir una carpeta, WorkPane no se renderiza; Stage ocupa el ancho. Drafts / Inbox / Publications vuelven a mostrar el panel.
+>
+> **Depende de:** [03-remove-portada.md](./03-remove-portada.md), [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md)
 
 ---
 
-## Implementación
+## Objetivo (entregado)
 
-### 1. Nav — cerrar WorkPane al abrir carpeta
+Click en carpeta del árbol → columna WorkPane **desaparece**. El Stage (templates / editor) usa el espacio.
 
-**Archivo:** `apps/desktop/src/screens/home/hooks/useNav.ts`
+Salir a Drafts, Inbox o Publications → WorkPane **reaparece** (`onNavigate` abre el panel).
 
-En `onOpenFolder()`, **después** de `onNavigate`:
+---
+
+## Qué se hizo (vs el plan original)
+
+| Plan original | Entregado |
+|---------------|-----------|
+| `setWorkPaneOpen(false)` **después** de `onNavigate` | Así en `onOpenFolder` (el navigate reabre; luego se cierra) |
+| Toggle en Folder: ocultar / no-op | No-op: `onToggleWorkPane` / `onOpenWorkPane` return si `NavKind.Folder` |
+| WorkColumn opción A (doble guard) | `!workPaneOpen \|\| view.kind === Folder` → `null` |
+| Borrar `SectionPane` | Eliminado (componente + specs + rama en `WorkPane`) |
+| Toggle en Rail | No hay botón de WorkPane en rail; `⌘\` no dispara toggle en Folder |
+| Stage `flex-1` sin hueco de 320px | `Frame` ya es `flex min-w-0 flex-1`; `WorkColumn` no deja el `w-80` |
+
+También: `onOpenFolder` llama `onClosePage()` (plan 03/04) para que el Stage muestre el picker, no el editor.
+
+---
+
+## Archivos
+
+### Nav
+
+**`apps/desktop/src/screens/home/hooks/useNav.ts`**
 
 ```ts
-setWorkPaneOpen(false);
-```
-
-**El orden importa.** `onNavigate` hace `setWorkPaneOpen(true)` en su línea 57, así que cerrar antes de navegar no tendría efecto.
-
-**Alternativa:** derivar visibilidad sin mutar estado — menos recomendada porque el usuario podría haber abierto WorkPane manualmente antes.
-
-**Comportamiento al salir de carpeta:**
-
-- `onNavigate` a Drafts/Inbox/etc. ya hace `setWorkPaneOpen(true)` — verificar que sigue funcionando.
-- Si el usuario usa toggle manual de WorkPane estando en carpeta, definir si se respeta o se fuerza cerrado (recomendación: **forzar cerrado** mientras `NavKind.Folder`; toggle solo aplica en otras vistas).
-
-### 2. WorkColumn
-
-**Archivo:** `apps/desktop/src/screens/home/components/Home/components/WorkColumn.tsx`
-
-Opción A (preferida — doble guard):
-
-```tsx
-if (!nav.workPaneOpen || nav.view.kind === NavKind.Folder) {
-  return null;
+function onOpenFolder(node) {
+  onNavigate({ kind: Folder, ... }); // setWorkPaneOpen(true)
+  setWorkPaneOpen(false);            // gana
+  onClosePage();
 }
 ```
 
-Opción B: solo confiar en `workPaneOpen` actualizado por `useNav`.
+- `onOpenWorkPane` / `onToggleWorkPane`: return temprano si `view.kind === Folder`
+- Carpeta borrada del árbol → fallback Drafts + `setWorkPaneOpen(true)`
 
-Importar `NavKind` si se usa guard en WorkColumn.
+### WorkColumn
 
-### 3. SectionPane — eliminación
+**`apps/desktop/src/screens/home/components/Home/components/WorkColumn.tsx`**
 
-Este es el **único** plan que borra `SectionPane`; el plan 03 solo le quitó las props de portada.
+Doble guard: cerrado **o** vista Folder → no monta `WorkPane`.
 
-**Archivo:** `apps/desktop/src/screens/home/components/WorkPane/WorkPane.tsx`
+### SectionPane
 
-- Eliminar la rama `nav.kind === NavKind.Folder` → `SectionPane` (línea 139) y su import (línea 12).
-- Quitar la prop `folder` (línea 21) si queda huérfana.
+Eliminado:
 
-**Eliminar componente completo** (ya sin usos):
+- `apps/desktop/src/screens/home/components/SectionPane/` (tsx, index, spec)
+- Rama Folder / prop `folder` en `WorkPane.tsx`
 
-- `apps/desktop/src/screens/home/components/SectionPane/SectionPane.tsx`
-- `apps/desktop/src/screens/home/components/SectionPane/index.ts`
-- `apps/desktop/src/screens/home/components/SectionPane/__specs__/SectionPane.spec.tsx`
+### Atajo
 
-### 4. Rail — reabrir WorkPane
+**`apps/desktop/src/screens/home/hooks/useKeyboardShortcuts.ts`**
 
-Verificar si existe control para abrir WorkPane desde rail (toggle/list icon):
+`⌘\` (sin Shift) solo llama `onToggleWorkPane` si **no** es Folder.
 
-- En vista Folder, el toggle puede ocultarse o abrir WorkPane temporalmente — **decisión:** ocultar/deshabilitar toggle en Folder, ya que WorkPane no tiene contenido útil para carpetas en este release.
+### Layout
 
-**Archivo:** `apps/desktop/src/screens/home/components/Rail/Rail.tsx` o `RailNav`
-
-- Revisar botón de panel/work list; no mostrar o deshabilitar cuando `nav.view.kind === NavKind.Folder`.
-
-### 5. Layout / Shell
-
-**Archivo:** `apps/desktop/src/screens/home/components/Home/components/Shell.tsx` (o layout padre)
-
-- Confirmar que al quitar WorkColumn el Stage expande (`flex-1`) sin dejar gap vacío de 320px.
+**`Stage/components/Frame/Frame.tsx`** — `min-w-0 flex-1`. Con WorkColumn en `null`, no queda gap.
 
 ---
 
-## Testing
+## Testing (hecho)
 
-### Specs
-
-| Archivo | Acción |
-|---------|--------|
-| `apps/desktop/src/screens/home/hooks/__specs__/useNav.spec.ts` | `onOpenFolder` → `workPaneOpen === false` |
-| `apps/desktop/src/screens/home/components/WorkPane/__specs__/WorkPane.spec.tsx` | Eliminar tests de folder/SectionPane; añadir test vía WorkColumn mock: Folder nav → WorkPane no en documento |
-| `apps/desktop/src/screens/home/components/SectionPane/__specs__/SectionPane.spec.tsx` | **Eliminar** junto con el componente |
-
-### Comando
+| Archivo | Casos |
+|---------|-------|
+| `hooks/__specs__/useNav.spec.ts` | Open folder → `workPaneOpen false` + `onClosePage`; Inbox desde folder → `true`; toggle ignorado en folder; folder gone → Drafts + panel abierto |
+| `Home/components/__specs__/WorkColumn.spec.tsx` | Drafts muestra pane; Folder (aunque `workPaneOpen true`) no; cerrado no |
+| `hooks/__specs__/useKeyboardShortcuts.spec.ts` | `⌘\` en Folder no llama toggle |
 
 ```bash
-npm run test -- --run apps/desktop/src/screens/home
+npm run test -w @slash-md/desktop -- src/screens/home --run
 npm run desktop:typecheck
-npm run desktop:lint
 ```
-
-### Casos mínimos
-
-1. Navigate Drafts → `workPaneOpen true`.
-2. Open folder → `workPaneOpen false`.
-3. Navigate Inbox desde folder → `workPaneOpen true`.
-4. WorkColumn returns null when `NavKind.Folder`.
 
 ---
 
@@ -113,12 +90,11 @@ npm run desktop:lint
 
 | # | Paso | Resultado esperado |
 |---|------|-------------------|
-| 1 | Estar en Drafts | WorkPane visible (lista drafts) |
-| 2 | Click en carpeta del árbol | WorkPane **desaparece**; Stage más ancho |
-| 3 | Stage | Sigue mostrando templates + chip (planes 04–05) |
-| 4 | Click en Drafts en rail | WorkPane **reaparece** |
-| 5 | Carpeta → archivo en árbol | WorkPane sigue oculta; editor ocupa espacio |
-| 6 | Ventana estrecha (< 1100px) | Rail overlay + colapso WorkPane sin layout roto |
-| 7 | Toggle WorkPane (si existe) en vista Folder | Comportamiento acordado (oculto/deshabilitado) |
+| 1 | Drafts | WorkPane visible |
+| 2 | Click carpeta | WorkPane desaparece; Stage más ancho (templates / path plan 05) |
+| 3 | Drafts / Inbox / Publications en rail | WorkPane reaparece |
+| 4 | Carpeta → archivo del árbol | WorkPane sigue oculta; editor en Stage |
+| 5 | `⌘\` en Folder | Nada (no reabre el panel) |
+| 6 | Ventana estrecha (rail overlay) | Sin layout roto |
 
-**Regresión:** Inbox, Publications, Conflicts mantienen WorkPane con su contenido habitual.
+**Regresión:** Inbox, Publications y Conflicts siguen usando WorkPane con su contenido.

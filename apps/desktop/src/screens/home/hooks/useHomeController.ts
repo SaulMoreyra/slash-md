@@ -1,5 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { useMenuActions } from "../../../App/hooks/useMenuActions";
+import { AppOperation } from "../../../App/enums";
+import { MenuAction } from "../../../../shared/menu";
 import type { HomeScreenProps } from "../types";
+import { ModalKind, NavKind } from "../enums";
+import { newPageModalKind, settingsModalKind } from "../utils";
 import { useConflicts } from "./useConflicts";
 import { useHomeActions } from "./useHomeActions";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
@@ -11,6 +16,7 @@ import { useTreeMutations } from "./useTreeMutations";
 export function useHomeController({
   workspace,
   tree,
+  git,
   pagePath,
   busy,
   error,
@@ -21,7 +27,7 @@ export function useHomeController({
   onClosePage,
   onChangeFolder,
   onCloseWorkspace,
-  run,
+  runOp,
 }: HomeScreenProps) {
   const { t } = useTranslation();
   const modals = useModals();
@@ -30,7 +36,6 @@ export function useHomeController({
     tree,
     pagePath,
     libraryLabel: t("home.nav.workspace"),
-    onOpenPage,
     onClosePage,
   });
   const search = useSearch({ roots: nav.roots });
@@ -44,10 +49,11 @@ export function useHomeController({
     section: nav.section,
     publicationPr,
     modals,
-    run,
+    runOp,
     onRefresh,
     onError,
     onOpenPage,
+    onClosePage,
   });
 
   const treeActions = useTreeMutations({
@@ -55,7 +61,7 @@ export function useHomeController({
     pagePath,
     modals,
     nav,
-    run,
+    runOp,
     onRefresh,
     onOpenPage,
     onClosePage,
@@ -63,7 +69,7 @@ export function useHomeController({
   const conflicts = useConflicts({
     tree,
     nav,
-    run,
+    runOp,
     onRefresh,
     onOpenPage,
     onClosePage,
@@ -78,10 +84,43 @@ export function useHomeController({
     nav,
     onClosePage,
     onRefresh,
+    runOp,
+  });
+
+  useMenuActions({
+    [MenuAction.NewPage]: () => {
+      modals.onOpen(newPageModalKind(Boolean(nav.payload?.needsInit), nav.isWorkspace, canWrite));
+    },
+    [MenuAction.NewFolder]: () => {
+      modals.onOpen(ModalKind.Folder);
+    },
+    [MenuAction.Search]: () => {
+      search.onToggle();
+    },
+    [MenuAction.Settings]: () => {
+      modals.onOpen(settingsModalKind(Boolean(nav.payload?.needsInit)));
+    },
+    [MenuAction.ToggleWorkPane]: () => {
+      if (nav.view.kind !== NavKind.Folder) {
+        nav.onToggleWorkPane();
+      }
+    },
+    [MenuAction.ToggleRail]: () => {
+      nav.onToggleRail();
+    },
+    [MenuAction.ClosePage]: () => {
+      if (pagePath) {
+        onClosePage();
+      }
+    },
+    [MenuAction.Refresh]: () => {
+      void runOp(AppOperation.Refresh, onRefresh);
+    },
   });
 
   return {
     workspace,
+    git,
     pagePath,
     busy,
     error,
@@ -92,7 +131,7 @@ export function useHomeController({
     onClosePage,
     onChangeFolder,
     onCloseWorkspace,
-    run,
+    runOp,
     search,
     modals,
     nav,

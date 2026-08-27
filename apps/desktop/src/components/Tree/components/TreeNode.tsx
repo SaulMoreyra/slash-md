@@ -15,6 +15,8 @@ export type TreeNodeProps = {
   onToggle: (path: string) => void;
   onRename?: (node: HomeTreeNode) => void;
   onDelete?: (node: HomeTreeNode) => void;
+  onNewFileInFolder?: (node: HomeTreeNode) => void;
+  onNewFolderInFolder?: (node: HomeTreeNode) => void;
 };
 
 export function TreeNode({
@@ -28,11 +30,19 @@ export function TreeNode({
   onToggle,
   onRename,
   onDelete,
+  onNewFileInFolder,
+  onNewFolderInFolder,
 }: TreeNodeProps) {
   const active = selected === node.path;
   const menu =
     canWrite && onRename && onDelete ? (
-      <TreeNodeMenu node={node} onRename={onRename} onDelete={onDelete} />
+      <TreeNodeMenu
+        node={node}
+        onRename={onRename}
+        onDelete={onDelete}
+        onNewFile={onNewFileInFolder}
+        onNewFolder={onNewFolderInFolder}
+      />
     ) : null;
 
   if (node.kind === "file") {
@@ -42,12 +52,12 @@ export function TreeNode({
           <Button
             variant={active ? "secondary" : "ghost"}
             size="sm"
-            className="min-w-0 flex-1 justify-start gap-2"
+            className="min-w-0 flex-1 overflow-hidden justify-start gap-2"
             aria-current={active ? "page" : undefined}
             onPress={() => onFile(node.path)}
           >
             <IconPage />
-            <span className="truncate">{node.title}</span>
+            <span className="min-w-0 truncate">{node.title}</span>
           </Button>
           {menu}
         </div>
@@ -72,13 +82,13 @@ export function TreeNode({
         <Button
           variant={active ? "secondary" : "ghost"}
           size="sm"
-          className="min-w-0 flex-1 justify-start gap-2"
+          className="min-w-0 flex-1 overflow-hidden justify-start gap-2"
           aria-current={active ? "true" : undefined}
           aria-expanded={children.length > 0 ? open : undefined}
           onPress={onPressFolder}
         >
           <IconFolder />
-          <span className="truncate">{node.title}</span>
+          <span className="min-w-0 truncate">{node.title}</span>
         </Button>
         {menu}
       </div>
@@ -95,6 +105,8 @@ export function TreeNode({
             onToggle={onToggle}
             onRename={onRename}
             onDelete={onDelete}
+            onNewFileInFolder={onNewFileInFolder}
+            onNewFolderInFolder={onNewFolderInFolder}
           />
         </div>
       ) : null}

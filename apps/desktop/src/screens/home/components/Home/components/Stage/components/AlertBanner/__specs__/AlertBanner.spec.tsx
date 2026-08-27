@@ -42,4 +42,9 @@ describe("AlertBanner", () => {
     expect(screen.getByText(t("home.conflicts.bannerBehindTitle"))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t("home.conflicts.sync") })).toBeInTheDocument();
   });
+
+  it("disables the conflict sync action while busy", () => {
+    renderComponent({ error: "needs approval · conflict", busy: true });
+    expect(screen.getByRole("button", { name: t("home.conflicts.sync") })).toBeDisabled();
+  });
 });

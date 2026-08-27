@@ -1,8 +1,10 @@
+import { toast } from "@heroui/react";
 import type { SlashmdFile } from "@slash-md/core/configTypes";
-import { posixBasename } from "@slash-md/core/paths";
+import { useTranslation } from "react-i18next";
+import { AppOperation } from "../../../App/enums";
 import type { ModalsApi } from "./useModals";
-import type { HomeScreenProps } from "../types";
-import { FolderCoverFileName, ModalKind } from "../enums";
+import type { DiscardPublicationTarget, HomeScreenProps } from "../types";
+import { ModalKind } from "../enums";
 
 type CreatePageInput = {
   title: string;
@@ -19,10 +21,11 @@ type Args = {
   section: string | undefined;
   publicationPr: number | undefined;
   modals: ModalsApi;
-  run: HomeScreenProps["run"];
+  runOp: HomeScreenProps["runOp"];
   onRefresh: HomeScreenProps["onRefresh"];
   onError: HomeScreenProps["onError"];
   onOpenPage: HomeScreenProps["onOpenPage"];
+  onClosePage: HomeScreenProps["onClosePage"];
 };
 
 export type HomeActionsApi = ReturnType<typeof useHomeActions>;
@@ -33,11 +36,14 @@ export function useHomeActions({
   section,
   publicationPr,
   modals,
-  run,
+  runOp,
   onRefresh,
   onError,
   onOpenPage,
+  onClosePage,
 }: Args) {
+  const { t } = useTranslation();
+
   function onRequestPublication() {
     modals.onOpen(ModalKind.Publication);
   }
@@ -66,24 +72,76 @@ export function useHomeActions({
     modals.onOpen(ModalKind.Review);
   }
 
+  function onRequestDiscard(target: DiscardPublicationTarget) {
+    modals.onOpenDiscard(target);
+  }
+
   function onRequestFolder() {
     modals.onOpen(ModalKind.Folder);
   }
 
+  function onRequestNewFolderIn(parent: string) {
+    modals.onOpenFolderModal(parent);
+  }
+
   async function onSignOut() {
-    await run(() => api().signOut());
-    await onRefresh();
+    await runOp(AppOperation.SignOut, async () => {
+      await api().signOut();
+      await onRefresh();
+    });
   }
 
   async function onLeavePublication() {
-    await run(() => api().leavePublication());
-    await onRefresh();
+    const left = await runOp(AppOperation.LeavePublication, async () => {
+      await api().leavePublication();
+      await onRefresh();
+      return true;
+    });
+    if (left) {
+      onClosePage();
+    }
+  }
+
+  async function onDiscardPublication() {
+    const target = modals.discardTarget;
+    if (!target) {
+      return;
+    }
+    const discarded = await runOp(AppOperation.DiscardPublication, async () => {
+      await api().discardPublication(target.branch);
+      await onRefresh();
+      return true;
+    });
+    if (discarded) {
+      toast.info(t("home.publication.discarded"));
+      modals.onClose();
+      if (target.mounted) {
+        onClosePage();
+      }
+    }
   }
 
   async function onPublishBatch() {
     onError(null);
-    await run(() => api().publishBatch(publicationPr));
-    await onRefresh();
+    await runOp(AppOperation.PublishBatch, async () => {
+      await api().publishBatch(publicationPr);
+      await onRefresh();
+    });
+  }
+
+  async function onLandPublication(branch?: string) {
+    onError(null);
+    const landed = await runOp(AppOperation.LandPublication, async () => {
+      await api().landPublication(branch);
+      await onRefresh();
+      return true;
+    });
+    if (landed) {
+      toast.info(t("home.publication.landed"));
+      if (!branch) {
+        onClosePage();
+      }
+    }
   }
 
   async function onCreatePage(input: CreatePageInput) {
@@ -91,7 +149,7 @@ export function useHomeActions({
       onRequestPublication();
       return;
     }
-    const created = await run(async () => {
+    const created = await runOp(AppOperation.CreatePage, async () => {
       const page = await api().newPage(input);
       if (page) {
         await onRefresh();
@@ -104,25 +162,9 @@ export function useHomeActions({
     }
   }
 
-  async function onCreateCover(input: { title: string; section: string }) {
-    await onCreatePage({
-      title: input.title,
-      templateId: "blank",
-      section: input.section,
-      fileName: FolderCoverFileName,
-    });
-  }
-
-  function onRequestWriteCover() {
-    if (!section) {
-      return;
-    }
-    void onCreateCover({ title: posixBasename(section) || section, section });
-  }
-
-  async function onCreateFolder(name: string) {
-    const created = await run(async () => {
-      await api().newFolder({ name, parent: section });
+  async function onCreateFolder(name: string, parent?: string) {
+    const created = await runOp(AppOperation.CreateFolder, async () => {
+      await api().newFolder({ name, parent: parent ?? section });
       await onRefresh();
       return true;
     });
@@ -132,25 +174,31 @@ export function useHomeActions({
   }
 
   async function onInitWorkspace(config: SlashmdFile) {
-    await run(() => api().initWorkspace(config));
+    await runOp(AppOperation.InitWorkspace, async () => {
+      await api().initWorkspace(config);
+      await onRefresh();
+    });
     modals.onClose();
-    await onRefresh();
   }
 
   async function onSaveConfig(config: SlashmdFile) {
-    await run(() => api().saveConfig(config));
+    await runOp(AppOperation.SaveConfig, async () => {
+      await api().saveConfig(config);
+      await onRefresh();
+    });
     modals.onClose();
-    await onRefresh();
   }
 
   async function onSignIn(token: string) {
-    await run(() => api().signIn(token));
+    await runOp(AppOperation.SignIn, async () => {
+      await api().signIn(token);
+      await onRefresh();
+    });
     modals.onClose();
-    await onRefresh();
   }
 
   async function onCreatePublication(title: string) {
-    const created = await run(async () => {
+    const created = await runOp(AppOperation.CreatePublication, async () => {
       await api().createPublication(title);
       await onRefresh();
       return true;
@@ -161,10 +209,15 @@ export function useHomeActions({
   }
 
   async function onSendReview(reviewers: string, excludePaths?: string[]) {
-    const result = await run(() => api().reviewBatch(reviewers, excludePaths));
+    const result = await runOp(AppOperation.ReviewBatch, async () => {
+      const next = await api().reviewBatch(reviewers, excludePaths);
+      if (next) {
+        await onRefresh();
+      }
+      return next;
+    });
     if (result) {
       modals.onClose();
-      await onRefresh();
       if (result.created) {
         await api().openUrl(result.prUrl);
       }
@@ -178,13 +231,15 @@ export function useHomeActions({
     onRequestConfig,
     onRequestSignIn,
     onRequestReview,
+    onRequestDiscard,
     onRequestFolder,
+    onRequestNewFolderIn,
     onSignOut,
     onLeavePublication,
+    onDiscardPublication,
     onPublishBatch,
+    onLandPublication,
     onCreatePage,
-    onCreateCover,
-    onRequestWriteCover,
     onCreateFolder,
     onInitWorkspace,
     onSaveConfig,

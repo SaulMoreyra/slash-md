@@ -8,10 +8,9 @@ type Props = {
   needsPublication?: boolean;
   onNewPage: () => void;
   onNewPublication?: () => void;
-  onClose: () => void;
 };
 
-export function DraftEmpty({ needsPublication, onNewPage, onNewPublication, onClose }: Props) {
+export function DraftEmpty({ needsPublication, onNewPage, onNewPublication }: Props) {
   const { t } = useTranslation();
 
   if (needsPublication) {
@@ -24,10 +23,6 @@ export function DraftEmpty({ needsPublication, onNewPage, onNewPublication, onCl
         <Button variant="primary" size="sm" className="gap-2" onPress={onNewPublication}>
           {t("home.publication.new")}
           <ShortcutKbd keys={shortcutLabel.newPage()} />
-        </Button>
-        <Button variant="ghost" size="sm" className="gap-2" onPress={onClose}>
-          {t("home.drafts.close")}
-          <ShortcutKbd keys={shortcutLabel.togglePane()} />
         </Button>
       </PaneEmpty>
     );
@@ -45,10 +40,6 @@ export function DraftEmpty({ needsPublication, onNewPage, onNewPublication, onCl
     >
       <Button variant="primary" size="sm" onPress={onNewPage}>
         {t("home.nav.newPage")}
-      </Button>
-      <Button variant="ghost" size="sm" className="gap-2" onPress={onClose}>
-        {t("home.drafts.close")}
-        <ShortcutKbd keys={shortcutLabel.togglePane()} />
       </Button>
     </PaneEmpty>
   );

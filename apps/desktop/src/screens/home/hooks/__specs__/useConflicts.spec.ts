@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act, renderHook, waitFor } from "../../../../test/render";
 import { mockConflictFile, mockPayload } from "../../__fixtures__/home";
 import { NavKind } from "../../enums";
-import type { Run } from "../../types";
+import type { RunOp } from "../../types";
 import { useConflicts } from "../useConflicts";
 
 describe("useConflicts", () => {
@@ -15,7 +15,7 @@ describe("useConflicts", () => {
   const resolveConflict = vi.fn();
   const abortSyncWithWiki = vi.fn();
   const finishSyncWithWiki = vi.fn();
-  const run = vi.fn(async <T,>(fn: () => Promise<T>) => fn()) as unknown as Run;
+  const runOp = vi.fn(async <T,>(_op: string, fn: () => Promise<T>) => fn()) as unknown as RunOp;
   let queued: ReturnType<typeof mockConflictFile>[] = [];
 
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe("useConflicts", () => {
         useConflicts({
           tree: mockPayload({ wikiSyncStatus: status }),
           nav: { view: { kind: NavKind.Drafts }, onNavigate },
-          run,
+          runOp,
           onRefresh,
           onOpenPage,
           onClosePage,

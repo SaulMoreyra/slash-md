@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import type { PagePayload } from "../../../../shared/api";
+import { AppOperation } from "../../../App/enums";
+import type { RunOp } from "../../home/types";
 
 const api = () => window.slashmd;
 
 type Params = {
   page: PagePayload;
   onPage: (page: PagePayload) => void;
-  run: <T>(fn: () => Promise<T>) => Promise<T | undefined>;
+  onRefresh: () => Promise<void>;
+  runOp: RunOp;
   onFlushSave: () => Promise<void>;
 };
 
-export function useEditorChrome({ page, onPage, run, onFlushSave }: Params) {
+export function useEditorChrome({ page, onPage, onRefresh, runOp, onFlushSave }: Params) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -55,7 +58,7 @@ export function useEditorChrome({ page, onPage, run, onFlushSave }: Params) {
   }
 
   async function onReviewSend(reviewers: string, excludePaths?: string[]) {
-    const result = await run(() => api().reviewBatch(reviewers, excludePaths));
+    const result = await runOp(AppOperation.ReviewBatch, () => api().reviewBatch(reviewers, excludePaths));
     if (!result) {
       return;
     }
@@ -67,10 +70,13 @@ export function useEditorChrome({ page, onPage, run, onFlushSave }: Params) {
   }
 
   async function onPublishPersonal() {
-    const result = await run(() => api().publishPersonal(page.path));
-    if (result) {
-      await api().openUrl(result.url);
-      onPage(await api().openPage(page.path));
+    const next = await runOp(AppOperation.PublishPersonal, async () => {
+      await api().publishPersonal(page.path);
+      await onRefresh();
+      return api().openPage(page.path);
+    });
+    if (next) {
+      onPage(next);
     }
   }
 

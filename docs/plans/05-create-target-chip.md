@@ -1,106 +1,106 @@
-# Plan 05 — Chip de carpeta destino en creación
+# Plan 05 — Destino de creación (path + preview)
 
-> **Auditado.** Ver [AUDIT-2026-08.md](./AUDIT-2026-08.md). Verificado: `CreatePageForm.spec.tsx` **no** asserta sobre `home.modals.page.folder`, así que esa línea puede reemplazarse por el chip sin romper tests.
+> **Hecho.** Reemplazó `Carpeta: {{section}}` por un path grande, preview live del archivo, y paths con `/` que crean subcarpetas.
+>
+> El nombre del archivo (`05-create-target-chip.md`) es histórico: **no se usó HeroUI Chip**.
 
-## Objetivo
-
-Mostrar un **distintivo visible** sobre el formulario de creación indicando dónde se creará el archivo:
-
-- Con carpeta seleccionada: `Creando en: docs/prds`
-- Sin carpeta (raíz): `Creando en: /` o equivalente i18n ("Raíz del repositorio")
-
-Formato acordado: **solo carpeta**, sin preview dinámico del filename.
-
-**Depende de:** [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md) (el form se muestra al seleccionar carpeta)
+**Depende de:** [04-folder-select-shows-templates.md](./04-folder-select-shows-templates.md)
 
 ---
 
-## Implementación
+## Objetivo (entregado)
 
-### 1. Componente de chip
+Mostrar **dónde** cae el archivo nuevo y permitir crear **subcarpetas** desde el título.
 
-**Opción recomendada:** subcomponente en `CreatePageForm/components/`
+Layout en `CreatePageForm`:
 
-**Archivo nuevo:** `apps/desktop/src/screens/home/components/CreatePageForm/components/CreateTargetChip.tsx`
+1. **Arriba, grande:** carpeta destino con slash — `/docs`, `/docs/prds`, o `/` en raíz. Si el título anida (`read/templates.md`), el heading pasa a `/docs/prds/read`.
+2. **Título** (input grande)
+3. **Justo debajo del título:** ruta completa live — `/docs/hello.md` o `/docs/prds/read/templates.md`
+4. Grid de plantillas + botón crear
 
-```tsx
-// Props: section?: string
-// section undefined → chip "Creando en: /" (raíz)
-// section "docs/prds" → chip "Creando en: docs/prds"
-```
+El preview y el host usan `resolveCreateTarget` (`@slash-md/core/createPath`) + `slugify`. Título vacío → `t("common.untitled")` → `sin-titulo.md` / `untitled.md`.
 
-- Usar HeroUI `Chip` (o `Alert` compacto si encaja mejor con el diseño).
-- Estilo: discreto, sobre el input de título, debajo del hint de `EditorBlank` o integrado en el form.
-- `aria-label` accesible con la ruta completa.
+`NewPageModal` no cambió: ya monta `CreatePageForm` (`compact` → heading `text-2xl`).
 
-### 2. Integrar en CreatePageForm
+---
 
-**Archivo:** `apps/desktop/src/screens/home/components/CreatePageForm/CreatePageForm.tsx`
+## Qué se hizo (vs el plan original)
 
-- Renderizar `<CreateTargetChip section={section} />` arriba del input de título (o justo debajo del hint si el chip vive en `EditorBlank`).
-- **Decisión:** reemplazar la línea existente `{section ? <p>…folder…</p> : null}` (clave `home.modals.page.folder`) por el chip unificado, para no duplicar copy.
-- El chip debe mostrarse **siempre** (incluso sin section → raíz).
+| Plan original | Entregado |
+|---------------|-----------|
+| Chip `Creando en: {path}` | Heading tipográfico `/docs` (`CreateTargetHeading`) |
+| Solo carpeta, sin filename | Preview live (`CreateFilePreview`) |
+| Copy visible “Creando en:” | Path visible; aria `targetAria` / `filePreviewAria` |
+| Hint de `EditorBlank` siempre | Hint oculto cuando hay `section` |
+| Reutilizar `home.modals.page.folder` | **Eliminado** (también `home.modals.template.folder`) |
+| *(añadido)* slashes en el título | Subcarpeta real: `/read/templates.md` → `…/read/templates.md` |
 
-### 3. NewPageModal
+---
 
-**Archivo:** `apps/desktop/src/screens/home/components/NewPageModal/NewPageModal.tsx` (o wrapper)
+## Archivos
 
-- Si usa `CreatePageForm`, el chip aparece automáticamente con la `section` pasada al modal.
-- Verificar modal abierto desde rail con carpeta activa muestra path correcto.
-- Modal sin section → chip de raíz.
+### Core
 
-### 4. i18n
+**`packages/core/src/createPath.ts`**
 
-**Archivos:** `apps/desktop/src/i18n/locales/es.json`, `en.json`
+- `resolveCreateTarget(section, title, untitled)` → `{ section, title, slug }`
+- `/` (y `\`) separan carpetas relativas a la sección actual
+- Leading `/` se ignora (no es absoluto de repo)
+- `..` y `.` se descartan
+- Último segmento: se quita `.md` y se slugifica (no `templates-md.md`)
+- Trailing `/` (`read/`) → archivo untitled dentro de esa carpeta
 
-Agregar claves, por ejemplo:
+**`apps/desktop/electron/pages.ts` — `createPage`**
+
+- Resuelve el target antes de escribir
+- `writeText` ya hace `mkdir` recursive → la subcarpeta existe al crear
+
+### Utils UI
+
+**`apps/desktop/src/screens/home/components/CreatePageForm/utils.ts`**
+
+- `formatFolderPath(section?)` → `"/"` | `"/docs"` | `"/docs/prds"`
+- `formatCreatePaths(section, title, untitled)` → `{ folderPath, filePath }` (heading sigue la carpeta destino, incluso anidada)
+- `formatCreateFilePath(...)` → solo `filePath`
+
+### UI
+
+| Archivo | Rol |
+|---------|-----|
+| `CreatePageForm/components/CreateTargetHeading.tsx` | Path de carpeta grande; slash en `text-muted/50` |
+| `CreatePageForm/components/CreateFilePreview.tsx` | Path completo en `font-mono text-sm` |
+| `CreatePageForm/CreatePageForm.tsx` | Heading → título + preview (`gap-2`) → templates → acciones |
+| `EditorBlank/EditorBlank.tsx` | Hint solo si **no** hay `section` |
+
+### i18n
+
+**`apps/desktop/src/i18n/locales/es.json`**, **`en.json`**
 
 ```json
 "home": {
   "create": {
-    "targetFolder": "Creando en: {{path}}",
-    "targetRoot": "Creando en: /",
-    "targetRootLabel": "Raíz del repositorio"
+    "targetAria": "Creando en {{path}}",
+    "filePreviewAria": "Se guardará como {{path}}"
   }
 }
 ```
 
-- ES: `Creando en: {{path}}` / `Creando en: /`
-- EN: `Creating in: {{path}}` / `Creating in: /`
-
-Evaluar si reutilizar o deprecar `home.modals.page.folder` ("inside {section}").
-
-### 5. EditorBlank (opcional)
-
-**Archivo:** `apps/desktop/src/screens/home/components/EditorBlank/EditorBlank.tsx`
-
-- Si el hint superior (`selectTemplateOrCreate`) compite visualmente con el chip, mantener hint + chip o fusionar copy en una sola jerarquía visual clara.
+EN: `"Creating in {{path}}"` / `"Will be saved as {{path}}"`.
 
 ---
 
-## Testing
+## Testing (hecho)
 
-### Specs
-
-**Archivo:** `apps/desktop/src/screens/home/components/CreatePageForm/__specs__/CreatePageForm.spec.tsx`
-
-| Caso | Assert |
-|------|--------|
-| `section="docs/prds"` | Texto/chip contiene `docs/prds` |
-| Sin `section` | Chip de raíz (`/` o string i18n de root) |
-| Modal compact mode | Chip visible en modo `compact` si aplica |
-
-**Archivo nuevo (opcional):** `CreateTargetChip.spec.tsx`
-
-- Render con section / sin section.
-- `aria-label` presente.
-
-### Comando
+| Archivo | Casos |
+|---------|-------|
+| `CreatePageForm/__specs__/utils.spec.ts` | Folder/file path; nested `/read/templates.md`; trailing `/`; `..` ignorado; `formatCreatePaths` actualiza heading |
+| `CreatePageForm/__specs__/CreatePageForm.spec.tsx` | Heading + preview; raíz `/`; preview al tipear; nested heading `/docs/prds/read`; compact `guides` |
+| `Stage/components/Body/__specs__/Body.spec.tsx` | Folder sin página → no hint, sí `targetAria` |
 
 ```bash
-npm run test -- --run apps/desktop/src/screens/home/components/CreatePageForm
+npm run test -w @slash-md/desktop -- src/screens/home --run
 npm run desktop:typecheck
-npm run desktop:lint
 ```
 
 ---
@@ -109,12 +109,13 @@ npm run desktop:lint
 
 | # | Paso | Resultado esperado |
 |---|------|-------------------|
-| 1 | Sin carpeta seleccionada, Stage en blank | Chip visible: "Creando en: /" (o raíz del repositorio) |
-| 2 | Click en carpeta `docs/prds` | Chip: "Creando en: docs/prds" |
-| 3 | Cambiar a otra carpeta en el árbol | Chip actualiza al nuevo path |
-| 4 | Crear archivo | Se crea en la carpeta indicada por el chip |
-| 5 | Abrir `Cmd+N` con carpeta `guides` activa | Modal muestra chip/path `guides` |
-| 6 | Cambiar idioma ES ↔ EN | Copy del chip traducido |
-| 7 | Lectura con lector de pantalla | Chip/ruta anunciada de forma clara |
+| 1 | Stage blank sin carpeta | Heading `/` + preview `/{untitled}.md`; hint “elige una página…” |
+| 2 | Click carpeta `docs` | Heading `/docs`; hint oculto; preview bajo el título |
+| 3 | Escribir título `Hello` | Preview `/docs/hello.md` |
+| 4 | Escribir `/read/templates.md` en `docs/prds` | Heading `/docs/prds/read`; preview `/docs/prds/read/templates.md` |
+| 5 | Crear | Archivo (y carpeta) en esa ruta; frontmatter title = último segmento |
+| 6 | `read/` (slash final) | Preview `…/read/{untitled}.md` |
+| 7 | `Cmd+N` con carpeta activa | Modal compacto con el mismo heading + preview |
+| 8 | ES ↔ EN | Slug de untitled según locale; aria-labels traducidos |
 
-**UX:** El chip debe ser visible sin scroll en viewport estándar (~1280px) con rail abierto.
+**UX:** Heading y preview visibles sin scroll en viewport ~1280px con rail abierto.

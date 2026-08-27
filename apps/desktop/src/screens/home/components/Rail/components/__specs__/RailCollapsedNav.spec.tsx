@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
 import { cleanup, renderWithProviders, screen, userEvent } from "../../../../../../test/render";
 import { shortcutLabel } from "../../../../../../components/ShortcutKbd";
-import { mockPayload } from "../../../../__fixtures__/home";
 import { NavKind } from "../../../../enums";
 import { RailCollapsedNav } from "../RailCollapsedNav";
 
@@ -45,7 +44,10 @@ describe("RailCollapsedNav", () => {
   it("calls onNav for drafts", async () => {
     const user = userEvent.setup();
     renderComponent();
-    await user.click(screen.getByRole("button", { name: `${t("home.nav.drafts")} (${shortcutLabel.drafts()})` }));
+    const drafts = screen.getByRole("button", { name: `${t("home.nav.drafts")} (${shortcutLabel.drafts()})` });
+    await user.click(drafts);
+    await user.click(drafts);
+    expect(onNav).toHaveBeenCalledTimes(2);
     expect(onNav).toHaveBeenCalledWith({ kind: NavKind.Drafts });
   });
 });

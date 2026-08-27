@@ -2,8 +2,6 @@ export function stageKey(flags: {
   needsInit: boolean;
   loading: boolean;
   hasPage: boolean;
-  openingCover: boolean;
-  showSectionCanvas: boolean;
   section: string | undefined;
   merging: boolean;
   editing: boolean;
@@ -24,11 +22,8 @@ export function stageKey(flags: {
   if (flags.merging) {
     return "conflict-empty";
   }
-  if (flags.hasPage || flags.openingCover) {
+  if (flags.hasPage) {
     return "page";
   }
-  if (flags.showSectionCanvas) {
-    return `section:${flags.section ?? ""}`;
-  }
-  return "blank";
+  return `blank:${flags.section ?? ""}`;
 }

@@ -24,6 +24,7 @@ export function Canvas() {
       <HeroChrome
         fields={page.frontmatter}
         imageMap={editor.imageMap}
+        canWrite={canWrite}
         onPatch={editor.onFrontmatterPatch}
         onUploadCover={canWrite ? editor.onCoverUpload : async () => ""}
       >

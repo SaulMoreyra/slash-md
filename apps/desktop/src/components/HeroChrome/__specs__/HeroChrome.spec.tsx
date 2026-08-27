@@ -59,4 +59,19 @@ describe("HeroChrome", () => {
     expect(screen.getByRole("button", { name: t("hero.change") })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: t("hero.remove") })[0]).toBeInTheDocument();
   });
+
+  it("hides cover edit controls on the wiki without a publication", () => {
+    renderComponent({
+      canWrite: false,
+      fields: { ...emptyFields, cover: "color:#111111" },
+    });
+    expect(screen.queryByRole("button", { name: t("hero.change") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("hero.remove") })).not.toBeInTheDocument();
+  });
+
+  it("hides add-icon and add-cover on the wiki without a publication", () => {
+    renderComponent({ canWrite: false });
+    expect(screen.queryByRole("button", { name: t("hero.addIcon") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("hero.addCover") })).not.toBeInTheDocument();
+  });
 });

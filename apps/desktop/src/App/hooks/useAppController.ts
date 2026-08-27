@@ -1,17 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { pageTrail, resolveAppPhase } from "../utils";
+import { useOperationsController } from "./useOperationsController";
 import { usePageSession } from "./usePageSession";
 import { useRun } from "./useRun";
 import { useWorkspace } from "./useWorkspace";
 
 export function useAppController() {
   const chrome = useRun();
-  const page = usePageSession({ run: chrome.run });
-  const workspace = useWorkspace({
+  const fetchWorkspace = useRef<() => Promise<void>>(async () => undefined);
+  const operations = useOperationsController({
     run: chrome.run,
+    onRefresh: () => fetchWorkspace.current(),
+    error: chrome.error,
+  });
+  const page = usePageSession({ runOp: operations.runOp });
+  const workspace = useWorkspace({
+    runOp: operations.runOp,
     onError: chrome.onError,
     onClearPage: page.onClosePage,
+    onSyncGit: operations.onSyncGit,
   });
+  fetchWorkspace.current = workspace.onRefresh;
 
   const trail = useMemo(
     () => pageTrail(page.page, workspace.tree),
@@ -23,14 +32,16 @@ export function useAppController() {
     session: {
       workspace: workspace.workspace,
       tree: workspace.tree,
+      git: operations.git,
       page: page.page,
       trail,
       focusThreadId: page.focusThreadId,
     },
     chrome: {
-      busy: chrome.busy,
+      busy: operations.busy,
       error: chrome.error,
     },
+    operations,
     actions: {
       onRefresh: workspace.onRefresh,
       onError: chrome.onError,
@@ -42,7 +53,6 @@ export function useAppController() {
       onChangeFolder: workspace.onChangeFolder,
       onCloseWorkspace: workspace.onCloseWorkspace,
     },
-    run: chrome.run,
   };
 }
 

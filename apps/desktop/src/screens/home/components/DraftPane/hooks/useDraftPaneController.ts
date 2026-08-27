@@ -1,7 +1,9 @@
+import { toast } from "@heroui/react";
 import { shortDraftPath } from "@slash-md/ui/home/utils/format";
 import { useTranslation } from "react-i18next";
 import type { HomeTreePayload } from "../../../../../../shared/api";
-import type { Run } from "../../../types";
+import { AppOperation } from "../../../../../App/enums";
+import type { RunOp } from "../../../types";
 
 const api = () => window.slashmd;
 
@@ -10,7 +12,7 @@ type Params = {
   personal: boolean;
   pagePath: string | null;
   trails: Map<string, string>;
-  run: Run;
+  runOp: RunOp;
   onRefresh: () => Promise<void>;
   onOpenPage: (path: string) => void;
   onClosePage: () => void;
@@ -21,7 +23,7 @@ export function useDraftPaneController({
   personal,
   pagePath,
   trails,
-  run,
+  runOp,
   onRefresh,
   onOpenPage,
   onClosePage,
@@ -40,19 +42,27 @@ export function useDraftPaneController({
     const next = selected.has(path)
       ? payload.selected.filter((item) => item !== path)
       : [...payload.selected, path];
-    await run(() => api().setDraftSelection(next));
-    await onRefresh();
+    await runOp(AppOperation.SetDraftSelection, async () => {
+      await api().setDraftSelection(next);
+      await onRefresh();
+    });
   }
 
   async function onDiscard(path: string, draftTitle: string) {
     if (!window.confirm(t("home.drafts.discardConfirm", { title: draftTitle }))) {
       return;
     }
-    const result = await run(() => api().discardDraft(path));
+    const result = await runOp(AppOperation.DiscardDraft, async () => {
+      const discarded = await api().discardDraft(path);
+      if (!discarded) {
+        return undefined;
+      }
+      await onRefresh();
+      return discarded;
+    });
     if (!result) {
       return;
     }
-    await onRefresh();
     if (pagePath !== path) {
       return;
     }
@@ -63,6 +73,34 @@ export function useDraftPaneController({
     }
   }
 
+  async function onPublish() {
+    const paths = payload.drafts.map((draft) => draft.path);
+    if (paths.length === 0) {
+      return;
+    }
+    const published = await runOp(AppOperation.PublishPersonal, async () => {
+      await api().publishPersonal(paths);
+      await onRefresh();
+      return true;
+    });
+    if (!published) {
+      return;
+    }
+    toast.info(t("home.drafts.published"));
+    if (!pagePath) {
+      return;
+    }
+    const current = payload.drafts.find((draft) => draft.path === pagePath);
+    if (!current) {
+      return;
+    }
+    if (current.badge === "eliminado") {
+      onClosePage();
+      return;
+    }
+    onOpenPage(pagePath);
+  }
+
   return {
     selected,
     count,
@@ -71,5 +109,6 @@ export function useDraftPaneController({
     trailFor,
     onToggle,
     onDiscard,
+    onPublish,
   };
 }

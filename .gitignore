@@ -11,4 +11,5 @@ out/
 .hallmark/
 apps/desktop/dist/
 apps/desktop/dist-electron/
+apps/desktop/release/
 apps/vscode/dist/

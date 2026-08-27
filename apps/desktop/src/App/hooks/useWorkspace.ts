@@ -1,29 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
 import type { HomeTreePayload, WorkspaceInfo } from "../../../shared/api";
-import type { Run } from "../../screens/home/types";
+import { AppOperation } from "../enums";
+import type { RunOp } from "./useOperationsController";
 import { toErrorMessage } from "../utils";
 
 const api = () => window.slashmd;
 
 type Params = {
-  run: Run;
+  runOp: RunOp;
   onError: (message: string | null) => void;
   onClearPage: () => void;
+  onSyncGit: () => Promise<void>;
 };
 
-export function useWorkspace({ run, onError, onClearPage }: Params) {
+export function useWorkspace({ runOp, onError, onClearPage, onSyncGit }: Params) {
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
   const [tree, setTree] = useState<HomeTreePayload | null>(null);
 
   const onRefresh = useCallback(async () => {
     const ws = await api().getWorkspace();
     setWorkspace(ws);
-    if (ws.root) {
-      setTree(await api().homeTree());
-    } else {
+    if (!ws.root) {
+      await onSyncGit();
       setTree(null);
+      return;
     }
-  }, []);
+    const [nextTree] = await Promise.all([api().homeTree(), onSyncGit()]);
+    setTree(nextTree);
+  }, [onSyncGit]);
 
   useEffect(() => {
     void onRefresh().catch((err: unknown) => {
@@ -45,7 +49,7 @@ export function useWorkspace({ run, onError, onClearPage }: Params) {
   }, [onClearPage, onRefresh, onError]);
 
   const onOpenFolder = useCallback(() => {
-    void run(async () => {
+    void runOp(AppOperation.OpenFolder, async () => {
       const folder = await api().pickFolder();
       if (!folder) {
         return;
@@ -53,20 +57,20 @@ export function useWorkspace({ run, onError, onClearPage }: Params) {
       await api().openFolder(folder);
       await onRefresh();
     });
-  }, [run, onRefresh]);
+  }, [runOp, onRefresh]);
 
   const onOpenPath = useCallback(
     (folderPath: string) => {
-      void run(async () => {
+      void runOp(AppOperation.OpenFolder, async () => {
         await api().openFolder(folderPath);
         await onRefresh();
       });
     },
-    [run, onRefresh],
+    [runOp, onRefresh],
   );
 
   const onChangeFolder = useCallback(() => {
-    void run(async () => {
+    void runOp(AppOperation.ChangeFolder, async () => {
       const folder = await api().pickFolder();
       if (!folder) {
         return;
@@ -75,16 +79,16 @@ export function useWorkspace({ run, onError, onClearPage }: Params) {
       onClearPage();
       await onRefresh();
     });
-  }, [run, onClearPage, onRefresh]);
+  }, [runOp, onClearPage, onRefresh]);
 
   const onCloseWorkspace = useCallback(() => {
-    void run(async () => {
+    void runOp(AppOperation.CloseWorkspace, async () => {
       await api().closeFolder();
       onClearPage();
       setTree(null);
       await onRefresh();
     });
-  }, [run, onClearPage, onRefresh]);
+  }, [runOp, onClearPage, onRefresh]);
 
   return {
     workspace,

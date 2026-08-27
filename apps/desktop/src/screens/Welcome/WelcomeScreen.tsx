@@ -1,6 +1,6 @@
 import { Button, Card, Description } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconFolder } from "../../components/icons";
+import { IconFolder, IconSlash } from "../../components/icons";
 import { LanguageSelector } from "../../i18n/LanguageSelector";
 import { ThemeSelector } from "../../theme/ThemeSelector";
 import { useWelcomeController } from "./hooks/useWelcomeController";
@@ -33,7 +33,10 @@ export function WelcomeScreen({ busy, error, onOpen, onOpenPath }: Props) {
       >
         <Card.Header className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-accent">Slash MD</p>
+            <p className="flex items-center gap-1.5 text-sm font-medium text-accent">
+              <IconSlash size={18} />
+              {t("app.brand")}
+            </p>
             <Card.Title className="text-2xl">{t("welcome.title")}</Card.Title>
           </div>
           <div className="flex items-center gap-2">

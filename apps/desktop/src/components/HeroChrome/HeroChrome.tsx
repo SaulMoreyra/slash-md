@@ -1,6 +1,7 @@
 import { Button } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import type { FrontmatterFields } from "../../../shared/api";
+import { IconImage, IconTrash } from "../icons";
 import { CoverMenu } from "./components/CoverMenu";
 import { IconPicker } from "./components/IconPicker";
 import { useHeroChromeController } from "./hooks/useHeroChromeController";
@@ -8,12 +9,20 @@ import { useHeroChromeController } from "./hooks/useHeroChromeController";
 export type HeroChromeProps = {
   fields: FrontmatterFields;
   imageMap: Record<string, string>;
+  canWrite?: boolean;
   onPatch: (patch: Partial<FrontmatterFields>) => Promise<void>;
   onUploadCover: (file: File) => Promise<string>;
   children: React.ReactNode;
 };
 
-export function HeroChrome({ fields, imageMap, onPatch, onUploadCover, children }: HeroChromeProps) {
+export function HeroChrome({
+  fields,
+  imageMap,
+  canWrite = true,
+  onPatch,
+  onUploadCover,
+  children,
+}: HeroChromeProps) {
   const { t } = useTranslation();
   const {
     icon,
@@ -25,6 +34,10 @@ export function HeroChrome({ fields, imageMap, onPatch, onUploadCover, children 
     fileRef,
     hasIcon,
     hasCover,
+    showCoverToolbar,
+    showAddIcon,
+    showAddCover,
+    iconEditable,
     onOpenCoverMenu,
     onCloseCoverMenu,
     onOpenPicker,
@@ -34,27 +47,25 @@ export function HeroChrome({ fields, imageMap, onPatch, onUploadCover, children 
     onRequestUpload,
     onSelectIcon,
     onCoverFileChange,
-  } = useHeroChromeController({ fields, imageMap, onPatch, onUploadCover });
+  } = useHeroChromeController({ fields, imageMap, canWrite, onPatch, onUploadCover });
 
   return (
     <>
       {hasCover ? (
-        <CoverBanner
-          color={color}
-          coverSrc={coverSrc}
-          position={position}
-          onOpenCoverMenu={onOpenCoverMenu}
-          onRemoveCover={onRemoveCover}
-        />
+        <CoverBanner color={color} coverSrc={coverSrc} position={position}>
+          {showCoverToolbar ? (
+            <CoverToolbar onChange={onOpenCoverMenu} onRemove={onRemoveCover} />
+          ) : null}
+        </CoverBanner>
       ) : null}
       <div className="page-inner">
         <div className="page-chrome">
-          {!hasIcon ? (
+          {showAddIcon ? (
             <Button size="sm" variant="ghost" className="cover-add" onPress={onOpenPicker}>
               {t("hero.addIcon")}
             </Button>
           ) : null}
-          {!hasCover ? (
+          {showAddCover ? (
             <div className="cover-add-wrap">
               <Button size="sm" variant="ghost" className="cover-add" onPress={onOpenCoverMenu}>
                 {t("hero.addCover")}
@@ -67,9 +78,13 @@ export function HeroChrome({ fields, imageMap, onPatch, onUploadCover, children 
         ) : null}
         {hasIcon ? (
           <div className="hero-icon-wrap">
-            <Button variant="ghost" className="hero-icon" aria-label={t("hero.pageIcon")} onPress={onOpenPicker}>
-              {icon}
-            </Button>
+            {iconEditable ? (
+              <Button variant="ghost" className="hero-icon" aria-label={t("hero.pageIcon")} onPress={onOpenPicker}>
+                {icon}
+              </Button>
+            ) : (
+              <span className="hero-icon">{icon}</span>
+            )}
           </div>
         ) : null}
         {picker ? <IconPicker current={icon} onSelect={onSelectIcon} onClose={onClosePicker} /> : null}
@@ -84,17 +99,13 @@ function CoverBanner({
   color,
   coverSrc,
   position,
-  onOpenCoverMenu,
-  onRemoveCover,
+  children,
 }: {
   color: string | undefined;
   coverSrc: string;
   position: number;
-  onOpenCoverMenu: () => void;
-  onRemoveCover: () => void;
+  children?: React.ReactNode;
 }) {
-  const { t } = useTranslation();
-
   return (
     <div className={color ? "cover is-color" : "cover"} style={color ? { background: color } : undefined}>
       {!color && coverSrc ? (
@@ -106,14 +117,36 @@ function CoverBanner({
           style={{ objectPosition: `50% ${position}%` }}
         />
       ) : null}
-      <div className="cover-toolbar">
-        <Button size="sm" variant="secondary" className="cover-btn" onPress={onOpenCoverMenu}>
-          {t("hero.change")}
-        </Button>
-        <Button size="sm" variant="secondary" className="cover-btn" onPress={onRemoveCover}>
-          {t("hero.remove")}
-        </Button>
-      </div>
+      {children}
+    </div>
+  );
+}
+
+function CoverToolbar({ onChange, onRemove }: { onChange: () => void; onRemove: () => void }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="cover-toolbar">
+      <Button
+        isIconOnly
+        size="sm"
+        variant="secondary"
+        className="cover-btn"
+        aria-label={t("hero.change")}
+        onPress={onChange}
+      >
+        <IconImage />
+      </Button>
+      <Button
+        isIconOnly
+        size="sm"
+        variant="secondary"
+        className="cover-btn"
+        aria-label={t("hero.remove")}
+        onPress={onRemove}
+      >
+        <IconTrash />
+      </Button>
     </div>
   );
 }

@@ -6,7 +6,7 @@ Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github
 
 | App | Where | Who it’s for |
 | --- | --- | --- |
-| **Desktop** | Electron (`apps/desktop`) | Wiki: nav, drafts, review, publish, and editor in one window |
+| **Desktop (SlashMD)** | Electron (`apps/desktop`) | Wiki: nav, drafts, review, publish, and editor in one window |
 | **VS Code / Cursor** | Extension (`apps/vscode`) | WYSIWYG Markdown editor inside the IDE |
 
 ![Slash MD icon](media/slash.png)
@@ -30,7 +30,7 @@ Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github
 
 Product flows (with diagrams): [docs/FLOWS.md](docs/FLOWS.md). Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Desktop (Electron)
+## Desktop (SlashMD)
 
 From the repo root:
 
@@ -62,6 +62,8 @@ Or from the repo without installing: `npm run slash -- .`
 3. Write in the editor; stage drafts in the middle pane → **Mandar a revisión**.
 
 Production bundle: `npm run desktop:build`, then `npm run start -w @slash-md/desktop`.
+
+macOS installers (arm64 `.dmg` + `.zip`): `npm run desktop:pack` → `apps/desktop/release/`.
 
 ## VS Code / Cursor extension
 

@@ -19,7 +19,7 @@ describe("WelcomeScreen", () => {
 
   it("renders brand and open folder action", () => {
     renderComponent();
-    expect(screen.getByText("Slash MD")).toBeInTheDocument();
+    expect(screen.getByText(t("app.brand"))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: t("welcome.openFolder") })).toBeInTheDocument();
   });
 

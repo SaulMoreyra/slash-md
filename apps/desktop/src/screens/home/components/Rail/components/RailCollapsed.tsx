@@ -7,6 +7,7 @@ import { ChromeTrigger, CreateIntent } from "../../../enums";
 import type { NavView } from "../../../types";
 import { AccountMenu } from "../../AccountMenu";
 import { WorkspaceSwitch } from "../../WorkspaceSwitch";
+import { RailBrand } from "./RailBrand";
 import { RailCollapsedNav } from "./RailCollapsedNav";
 
 type Props = {
@@ -89,6 +90,7 @@ export function RailCollapsed({
       className="flex h-full min-h-0 w-12 shrink-0 flex-col items-center gap-1 py-1"
       aria-label={t("home.rail.aria")}
     >
+      <RailBrand size={22} />
       <WorkspaceSwitch
         title={title}
         trigger={ChromeTrigger.Icon}

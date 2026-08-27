@@ -2,14 +2,20 @@ import { vi } from "vitest";
 import type { AppControllerApi } from "../hooks/useAppController";
 import { AppPhase } from "../enums";
 
-export function buildMockAppController(
-  overrides: Partial<AppControllerApi> = {},
-): AppControllerApi {
+type MockOverrides = Omit<Partial<AppControllerApi>, "session" | "chrome" | "operations" | "actions"> & {
+  session?: Partial<AppControllerApi["session"]>;
+  chrome?: Partial<AppControllerApi["chrome"]>;
+  operations?: Partial<AppControllerApi["operations"]>;
+  actions?: Partial<AppControllerApi["actions"]>;
+};
+
+export function buildMockAppController(overrides: MockOverrides = {}): AppControllerApi {
   return {
     phase: overrides.phase ?? AppPhase.Loading,
     session: {
       workspace: null,
       tree: null,
+      git: { branch: null },
       page: null,
       trail: "",
       focusThreadId: null,
@@ -19,6 +25,18 @@ export function buildMockAppController(
       busy: false,
       error: null,
       ...overrides.chrome,
+    },
+    operations: {
+      busy: false,
+      operation: null,
+      pending: 0,
+      error: null,
+      runOp: vi.fn(async (_op, fn) => fn()),
+      refresh: vi.fn(async () => undefined),
+      git: { branch: null },
+      onGit: vi.fn(),
+      onSyncGit: vi.fn(async () => undefined),
+      ...overrides.operations,
     },
     actions: {
       onRefresh: vi.fn(async () => undefined),
@@ -32,6 +50,5 @@ export function buildMockAppController(
       onCloseWorkspace: vi.fn(),
       ...overrides.actions,
     },
-    run: (overrides.run ?? vi.fn(async (fn) => fn())) as AppControllerApi["run"],
   };
 }

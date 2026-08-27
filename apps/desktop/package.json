@@ -2,11 +2,21 @@
   "name": "@slash-md/desktop",
   "version": "0.1.0",
   "private": true,
+  "productName": "SlashMD",
+  "description": "Local-first wiki for product docs",
+  "author": "Saul Moreyra",
+  "license": "MIT",
+  "homepage": "https://github.com/SaulMoreyra/slash-md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SaulMoreyra/slash-md.git"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "start": "electron .",
+    "pack": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --arm64",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src electron shared && tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
@@ -35,12 +45,61 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",
-    "electron": "^35.0.0",
+    "electron": "35.7.5",
+    "electron-builder": "^26.0.12",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.3",
     "vite": "^6.3.0",
     "vite-plugin-electron": "^0.29.0",
     "vite-plugin-electron-renderer": "^0.14.6",
     "vitest": "^4.1.11"
+  },
+  "build": {
+    "appId": "app.slashmd.desktop",
+    "productName": "SlashMD",
+    "electronVersion": "35.7.5",
+    "copyright": "Copyright © 2026 Saul Moreyra",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "build/icon.png",
+      "build/icon.icns",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "name": "slashmd",
+      "main": "dist-electron/main.js"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "darkModeSupport": true,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "SlashMD"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Office",
+      "target": ["AppImage"]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": ["nsis"]
+    }
   }
 }

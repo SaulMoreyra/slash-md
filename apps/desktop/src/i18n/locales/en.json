@@ -19,7 +19,8 @@
     "loading": "Loading…"
   },
   "app": {
-    "loading": "Loading Slash MD…",
+    "brand": "SlashMD",
+    "loading": "Loading SlashMD…",
     "loadingHint": "Opening your workspace",
     "retry": "Try again"
   },
@@ -53,12 +54,9 @@
     "selectPage": "Select a page to edit.",
     "selectPageOrCreate": "Pick a page on the left, or create a new one here.",
     "selectTemplateOrCreate": "Open a template on the left, or create a new one here.",
-    "section": {
-      "emptyTitle": "No cover yet",
-      "emptyBody": "Write a cover so this folder has a landing page. The tree already shows the files.",
-      "writeCover": "Write cover",
-      "hasCoverTitle": "Cover is open",
-      "hasCoverBody": "Create a new page in this section, or keep editing the cover."
+    "create": {
+      "targetAria": "Creating in {{path}}",
+      "filePreviewAria": "Will be saved as {{path}}"
     },
     "nav": {
       "myWork": "My work",
@@ -74,7 +72,16 @@
     "tree": {
       "menuAria": "Actions for {{title}}",
       "rename": "Rename",
-      "delete": "Delete"
+      "delete": "Delete",
+      "newFile": "New file",
+      "newFolder": "New folder",
+      "newFileAria": "New file in {{title}}",
+      "newFolderAria": "New folder in {{title}}",
+      "loading": "Loading pages",
+      "emptyTitle": "No pages yet",
+      "emptyBody": "Create a page or a folder to get started.",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
     },
     "account": {
       "aria": "Account",
@@ -106,13 +113,30 @@
       "emptyNeedsTitle": "Start with a publication",
       "emptyNeedsPublication": "The wiki is read-only. Create a publication to write.",
       "close": "Close panel",
-      "publishHint": "Publish lives in each page’s editor.",
+      "publish": "Publish",
+      "publishCount_one": "Publish {{count}} page",
+      "publishCount_other": "Publish {{count}} pages",
+      "published": "Changes published.",
       "sendCount_one": "Send {{count}} selected to review",
       "sendCount_other": "Send {{count}} selected to review",
       "sendReview": "Send to review",
       "includeAria": "Include {{title}} in the batch",
       "discardAria": "Discard changes to {{title}}",
-      "discardConfirm": "Discard local changes to \"{{title}}\"? This cannot be undone."
+      "discardConfirm": "Discard local changes to \"{{title}}\"? This cannot be undone.",
+      "deletedAria": "Deleted page {{title}}. Discard to restore.",
+      "badgeDeleted": "Deleted"
+    },
+    "process": {
+      "title": "How publishing works",
+      "lede": "The published wiki is read-only. You write in a publication, send it for review, then publish.",
+      "wikiTitle": "Live wiki",
+      "wikiBody": "What is already live stays the same for everyone.",
+      "draftTitle": "Your publication",
+      "draftBody": "Create and edit pages at your own pace in a private draft.",
+      "reviewTitle": "Review",
+      "reviewBody": "When it is ready, send it so teammates can review and approve.",
+      "publishTitle": "Publish",
+      "publishBody": "After approval, publish so the wiki updates for everyone."
     },
     "publication": {
       "new": "New publication",
@@ -124,6 +148,18 @@
       "mountedBanner": "Publication: {{title}}",
       "branchLabel": "Branch",
       "copyBranch": "Copy branch",
+      "copyFailed": "Could not copy the branch name.",
+      "viewOnGithub": "View on GitHub",
+      "menuAria": "Actions for {{title}}",
+      "discard": "Discard",
+      "discarding": "Discarding…",
+      "discardTitle": "Discard \"{{title}}\"?",
+      "discardLede": "It will not be published. This cannot be undone.",
+      "discardDirty_one": "{{count}} page with changes on this device.",
+      "discardDirty_other": "{{count}} pages with changes on this device.",
+      "discardCancelsReview": "The review in progress will be cancelled.",
+      "discardOtherReview": "If a review was open, it is cancelled.",
+      "discarded": "Publication discarded.",
       "listTitle": "Publications",
       "listEmpty": "No open publications.",
       "emptyTitle": "No publications",
@@ -136,10 +172,41 @@
       "modalTitle": "New publication",
       "modalTitleLabel": "Title",
       "modalTitlePlaceholder": "Onboarding Q3",
-      "modalHint": "Creates a draft you can edit and send to review.",
+      "modalLede": "The published wiki stays as it is. You work in your own draft.",
+      "modalPointWikiTitle": "Live wiki",
+      "modalPointWiki": "What is already live stays the same for everyone.",
+      "modalPointEditTitle": "Your draft",
+      "modalPointEdit": "You can create and edit pages here at your own pace.",
+      "modalPointReviewTitle": "Review",
+      "modalPointReview": "When it is ready, you send it and then publish.",
+      "modalHint": "A short name makes it easier to find later.",
       "readOnlyHint": "The wiki is read-only. Create a publication to edit.",
       "needsPublicationForNewPage": "Create a publication before adding pages.",
-      "fabAria": "Publication actions"
+      "fabAria": "Publication actions",
+      "statusWikiBehind": "The wiki changed",
+      "statusWikiConflict": "Pages clash with the wiki",
+      "statusWikiMerging": "Choose what to keep",
+      "statusUnsent": "Not sent yet",
+      "statusWaitingApproval": "Needs a review",
+      "statusChecksFail": "Needs a fix",
+      "statusChecking": "Checking…",
+      "statusReadyToPublish": "Ready to publish",
+      "statusOnWiki": "Already on the wiki",
+      "landWiki": "Update wiki",
+      "landed": "Wiki updated.",
+      "changesCount_one": "{{count}} page with changes",
+      "changesCount_other": "{{count}} pages with changes",
+      "rowApproved": "Approved",
+      "rowAwaitingApproval": "Not approved",
+      "filesChanged_one": "{{count}} file",
+      "filesChanged_other": "{{count}} files",
+      "commentersAria": "Comments from {{names}}",
+      "moreCommenters": "+{{count}}",
+      "reviewersLabel": "Reviewers",
+      "reviewersEmpty": "None assigned",
+      "reviewersAria": "Reviewers: {{names}}",
+      "commentsLabel": "Comments",
+      "commentsEmpty": "None yet"
     },
     "conflicts": {
       "title": "Pages that clash",
@@ -247,9 +314,9 @@
         "title": "New folder",
         "name": "Name",
         "namePlaceholder": "Folder name",
-        "placeholder": "product",
-        "hint": "Created at the workspace root.",
-        "inside": "Inside {{parent}}"
+        "lede": "Pick a short name.",
+        "rootLabel": "Workspace root",
+        "destination": "The folder will be created here."
       },
       "rename": {
         "titleFile": "Rename page",
@@ -263,22 +330,22 @@
       "delete": {
         "titleFile": "Delete page",
         "titleFolder": "Delete folder",
-        "bodyFile": "Delete \"{{title}}\"? This cannot be undone.",
-        "bodyFolder": "Delete \"{{title}}\" and everything inside it? This cannot be undone."
+        "ledeFile": "This cannot be undone.",
+        "ledeFolder": "The folder and everything inside it will be deleted. This cannot be undone.",
+        "targetFile": "Page",
+        "targetFolder": "Folder"
       },
       "page": {
         "title": "New page",
         "titleLabel": "Title",
         "titlePlaceholder": "Untitled",
-        "template": "Template",
-        "folder": "Folder: {{section}}"
+        "template": "Template"
       },
       "template": {
         "title": "New template",
         "titleLabel": "Name",
         "titlePlaceholder": "Template name",
-        "startFrom": "Start from",
-        "folder": "Folder: {{section}}"
+        "startFrom": "Start from"
       },
       "templates": {
         "workspace": "Your templates",
@@ -413,6 +480,45 @@
     "resolve": "Resolve",
     "unresolve": "Unresolve",
     "openGithub": "Open on GitHub"
+  },
+  "operations": {
+    "names": {
+      "refresh": "Refreshing library",
+      "reviewBatch": "Sending to review",
+      "publishBatch": "Publishing",
+      "publishPersonal": "Publishing",
+      "syncWithWiki": "Syncing with the wiki",
+      "finishSyncWithWiki": "Updating the wiki",
+      "abortSyncWithWiki": "Canceling sync",
+      "resolveConflict": "Resolving conflict",
+      "createPublication": "Creating publication",
+      "resumePublication": "Switching publication",
+      "leavePublication": "Leaving publication",
+      "landPublication": "Updating the wiki",
+      "discardPublication": "Discarding publication",
+      "discardDraft": "Discarding draft",
+      "openFolder": "Opening folder",
+      "changeFolder": "Changing folder",
+      "closeWorkspace": "Closing workspace",
+      "createPage": "Creating page",
+      "createFolder": "Creating folder",
+      "savePage": "Saving",
+      "openPage": "Opening page",
+      "signOut": "Signing out",
+      "signIn": "Signing in",
+      "initWorkspace": "Initializing workspace",
+      "saveConfig": "Saving settings",
+      "renamePage": "Renaming",
+      "renameFolder": "Renaming folder",
+      "deletePage": "Deleting",
+      "deleteFolder": "Deleting folder",
+      "setDraftSelection": "Updating selection",
+      "threadReply": "Sending reply",
+      "threadResolve": "Updating thread",
+      "threadCreate": "Creating thread"
+    },
+    "queued": "{{operation}} — will run when the current one finishes",
+    "alreadyRunning": "{{operation}} is already in progress"
   },
   "hero": {
     "change": "Change",

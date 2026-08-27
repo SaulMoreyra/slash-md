@@ -1,5 +1,8 @@
 import { useEffect } from "react";
+import { AppOperation } from "../../../App/enums";
 import { ModalKind, NavKind, RailMode } from "../enums";
+import type { HomeScreenProps } from "../types";
+import { newPageModalKind, settingsModalKind } from "../utils";
 import type { ModalsApi } from "./useModals";
 import type { NavApi } from "./useNav";
 import type { SearchApi } from "./useSearch";
@@ -16,7 +19,8 @@ type Params = {
     | "workPaneOpen"
     | "railOpen"
     | "railMode"
-    | "onNavigate"
+    | "view"
+    | "onToggleWorkDest"
     | "onCloseWorkPane"
     | "onToggleWorkPane"
     | "onCloseRail"
@@ -24,6 +28,7 @@ type Params = {
   >;
   onClosePage: () => void;
   onRefresh: () => Promise<void>;
+  runOp: HomeScreenProps["runOp"];
 };
 
 export function useKeyboardShortcuts({
@@ -35,6 +40,7 @@ export function useKeyboardShortcuts({
   nav,
   onClosePage,
   onRefresh,
+  runOp,
 }: Params) {
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -71,7 +77,7 @@ export function useKeyboardShortcuts({
           ev.preventDefault();
           if (ev.shiftKey) {
             nav.onToggleRail();
-          } else {
+          } else if (nav.view.kind !== NavKind.Folder) {
             nav.onToggleWorkPane();
           }
           return;
@@ -83,13 +89,7 @@ export function useKeyboardShortcuts({
         }
         if (key === "n" && !ev.shiftKey) {
           ev.preventDefault();
-          if (needsInit) {
-            modals.onOpen(ModalKind.Init);
-          } else if (nav.isWorkspace && !canWrite) {
-            modals.onOpen(ModalKind.Publication);
-          } else {
-            modals.onOpen(ModalKind.New);
-          }
+          modals.onOpen(newPageModalKind(Boolean(needsInit), nav.isWorkspace, canWrite));
           return;
         }
         if (key === "n" && ev.shiftKey) {
@@ -99,32 +99,32 @@ export function useKeyboardShortcuts({
         }
         if (key === "," && !ev.shiftKey) {
           ev.preventDefault();
-          modals.onOpen(needsInit ? ModalKind.Init : ModalKind.Config);
+          modals.onOpen(settingsModalKind(Boolean(needsInit)));
           return;
         }
         if (key === "1" && !ev.shiftKey) {
           ev.preventDefault();
-          nav.onNavigate({ kind: NavKind.Drafts });
+          nav.onToggleWorkDest({ kind: NavKind.Drafts });
           return;
         }
         if (key === "2" && !ev.shiftKey && nav.isWorkspace) {
           ev.preventDefault();
-          nav.onNavigate({ kind: NavKind.Publications });
+          nav.onToggleWorkDest({ kind: NavKind.Publications });
           return;
         }
         if (key === "3" && !ev.shiftKey && nav.isWorkspace) {
           ev.preventDefault();
-          nav.onNavigate({ kind: NavKind.Inbox });
+          nav.onToggleWorkDest({ kind: NavKind.Inbox });
           return;
         }
         if (key === "4" && !ev.shiftKey && nav.isWorkspace) {
           ev.preventDefault();
-          nav.onNavigate({ kind: NavKind.Publications });
+          nav.onToggleWorkDest({ kind: NavKind.Publications });
           return;
         }
         if (key === "r" && ev.shiftKey) {
           ev.preventDefault();
-          void onRefresh();
+          void runOp(AppOperation.Refresh, onRefresh);
           return;
         }
         if (key === "w" && pagePath) {
@@ -152,8 +152,9 @@ export function useKeyboardShortcuts({
     nav.workPaneOpen,
     nav.railOpen,
     nav.railMode,
+    nav.view.kind,
     nav.isWorkspace,
-    nav.onNavigate,
+    nav.onToggleWorkDest,
     nav.onCloseWorkPane,
     nav.onToggleWorkPane,
     nav.onCloseRail,
@@ -162,5 +163,6 @@ export function useKeyboardShortcuts({
     canWrite,
     onClosePage,
     onRefresh,
+    runOp,
   ]);
 }

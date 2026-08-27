@@ -11,8 +11,10 @@ import type { ReviewPreviewItem } from "@slash-md/core/homeProtocol";
 import type { FrontmatterFields, ReviewThread } from "@slash-md/core/protocol";
 import type { TemplatePick } from "@slash-md/core/templates";
 import type { ConflictChoice } from "@slash-md/core/conflictModel";
+import type { MenuAction } from "./menu";
 
 export type { ConflictChoice } from "@slash-md/core/conflictModel";
+export type { MenuAction } from "./menu";
 
 export type AuthInfo = { login: string } | null;
 
@@ -25,6 +27,11 @@ export type WorkspaceInfo = {
   needsInit: boolean;
   auth: AuthInfo;
   theme: AppTheme;
+};
+
+/** Cheap HEAD snapshot — not the mounted publication. */
+export type GitSnapshot = {
+  branch: string | null;
 };
 
 export type PagePayload = {
@@ -79,6 +86,7 @@ export type DesktopApi = {
   /** Resolve a dropped File to an absolute directory path (Electron). */
   resolveDroppedFolder(file: File): Promise<string>;
   getWorkspace(): Promise<WorkspaceInfo>;
+  gitStatus(): Promise<GitSnapshot>;
   homeTree(): Promise<HomeTreePayload>;
   openPage(path: string): Promise<PagePayload>;
   savePage(path: string, markdown: string): Promise<{ savedAt: string }>;
@@ -99,10 +107,12 @@ export type DesktopApi = {
   previewReview(): Promise<ReviewPreviewItem[]>;
   reviewBatch(reviewers?: string, excludePaths?: string[]): Promise<ReviewBatchResult>;
   publishBatch(preferredPr?: number): Promise<PublishBatchResult>;
-  publishPersonal(path: string): Promise<{ url: string }>;
+  publishPersonal(paths: string | string[]): Promise<{ url: string }>;
   createPublication(title: string): Promise<PublicationState>;
   resumePublication(branch: string): Promise<PublicationState>;
   leavePublication(): Promise<void>;
+  landPublication(branch?: string): Promise<void>;
+  discardPublication(branch: string): Promise<void>;
   listPublications(): Promise<PublicationSummary[]>;
   getConflictState(): Promise<WikiSyncState>;
   syncWithWiki(): Promise<WikiSyncState>;
@@ -126,6 +136,7 @@ export type DesktopApi = {
   setTheme(theme: AppTheme): Promise<void>;
   onTheme(listener: (theme: AppTheme) => void): () => void;
   onFolderOpened(listener: (folder: string) => void): () => void;
+  onMenuAction(listener: (action: MenuAction) => void): () => void;
 };
 
 export type {

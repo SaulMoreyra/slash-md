@@ -1,5 +1,6 @@
 import { isPosixUnder, rewritePosixPrefix } from "@slash-md/core/paths";
 import type { HomeTreeNode } from "../../../../shared/api";
+import { AppOperation } from "../../../App/enums";
 import { ModalKind, TreeEntryKind } from "../enums";
 import type { HomeScreenProps } from "../types";
 import type { ModalsApi } from "./useModals";
@@ -12,7 +13,7 @@ type Args = {
   pagePath: string | null;
   modals: ModalsApi;
   nav: Pick<NavApi, "onRewritePath">;
-  run: HomeScreenProps["run"];
+  runOp: HomeScreenProps["runOp"];
   onRefresh: HomeScreenProps["onRefresh"];
   onOpenPage: HomeScreenProps["onOpenPage"];
   onClosePage: HomeScreenProps["onClosePage"];
@@ -25,7 +26,7 @@ export function useTreeMutations({
   pagePath,
   modals,
   nav,
-  run,
+  runOp,
   onRefresh,
   onOpenPage,
   onClosePage,
@@ -63,7 +64,7 @@ export function useTreeMutations({
     }
 
     if (target.kind === TreeEntryKind.File) {
-      const result = await run(async () => {
+      const result = await runOp(AppOperation.RenamePage, async () => {
         const renamed = await api().renamePage(target.path, trimmed);
         if (renamed) {
           await onRefresh();
@@ -80,7 +81,7 @@ export function useTreeMutations({
       return;
     }
 
-    const result = await run(async () => {
+    const result = await runOp(AppOperation.RenameFolder, async () => {
       const renamed = await api().renameFolder(target.path, trimmed);
       if (renamed) {
         await onRefresh();
@@ -107,7 +108,7 @@ export function useTreeMutations({
       if (pagePath === target.path) {
         onClosePage();
       }
-      const deleted = await run(async () => {
+      const deleted = await runOp(AppOperation.DeletePage, async () => {
         await api().deletePage(target.path);
         await onRefresh();
         return true;
@@ -121,7 +122,7 @@ export function useTreeMutations({
     if (pagePath && isPosixUnder(pagePath, target.path)) {
       onClosePage();
     }
-    const deleted = await run(async () => {
+    const deleted = await runOp(AppOperation.DeleteFolder, async () => {
       await api().deleteFolder(target.path);
       await onRefresh();
       return true;

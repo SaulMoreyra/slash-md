@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
 import { cleanup, renderWithProviders, screen, userEvent } from "../../../../../test/render";
-import type { Run } from "../../../types";
+import type { RunOp } from "../../../types";
 import { mockDraft, mockPayload } from "../../../__fixtures__/home";
 import { DraftPane } from "../DraftPane";
 
@@ -9,11 +9,10 @@ describe("DraftPane", () => {
   const onRefresh = vi.fn(async () => undefined);
   const onOpenPage = vi.fn();
   const onClosePage = vi.fn();
-  const onClose = vi.fn();
   const onNewPage = vi.fn();
   const onNewPublication = vi.fn();
   const onReview = vi.fn();
-  const run = vi.fn(async <T,>(fn: () => Promise<T>) => fn()) as unknown as Run;
+  const runOp = vi.fn(async <T,>(_op: string, fn: () => Promise<T>) => fn()) as unknown as RunOp;
 
   beforeEach(() => {
     cleanup();
@@ -28,11 +27,10 @@ describe("DraftPane", () => {
         busy={false}
         pagePath={null}
         trails={new Map()}
-        run={run}
+        runOp={runOp}
         onRefresh={onRefresh}
         onOpenPage={onOpenPage}
         onClosePage={onClosePage}
-        onClose={onClose}
         onNewPage={onNewPage}
         onNewPublication={onNewPublication}
         onReview={onReview}
@@ -87,7 +85,8 @@ describe("DraftPane", () => {
     expect(onOpenPage).toHaveBeenCalledWith(draft.path);
   });
 
-  it("lists drafts without a send-review footer in publication mode", () => {
+  it("shows send-review icon in the header during publication mode", async () => {
+    const user = userEvent.setup();
     const draft = mockDraft();
     renderComponent({
       payload: mockPayload({
@@ -103,10 +102,14 @@ describe("DraftPane", () => {
       }),
     });
     expect(screen.getByRole("list", { name: t("home.drafts.title") })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("home.publication.sendReview") })).not.toBeInTheDocument();
+    const send = screen.getByRole("button", { name: t("home.publication.sendReview") });
+    expect(send).toBeEnabled();
+    await user.click(send);
+    expect(onReview).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: t("home.drafts.sendCount", { count: 1 }) })).not.toBeInTheDocument();
   });
 
-  it("hides send review in the pane when there are no pending changes", () => {
+  it("disables send-review icon when there are no pending changes", () => {
     const draft = mockDraft();
     renderComponent({
       payload: mockPayload({
@@ -121,6 +124,42 @@ describe("DraftPane", () => {
         canSendReview: false,
       }),
     });
-    expect(screen.queryByRole("button", { name: t("home.publication.sendReview") })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("home.publication.sendReview") })).toBeDisabled();
+  });
+
+  it("shows an empty local-changes pane in personal mode", () => {
+    renderComponent({ personal: true, payload: mockPayload({ drafts: [] }) });
+    expect(screen.getByText(t("home.drafts.localChanges"))).toBeInTheDocument();
+    expect(screen.getByText(t("home.drafts.emptyTitle"))).toBeInTheDocument();
+    expect(screen.queryByText(t("home.drafts.modifiedCount", { count: 5 }))).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("home.drafts.close") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("home.drafts.publish") })).not.toBeInTheDocument();
+  });
+
+  it("publishes deleted local changes from the pane", async () => {
+    const user = userEvent.setup();
+    const publishPersonal = vi.fn(async () => ({ url: "https://github.com/acme/docs" }));
+    Object.defineProperty(window, "slashmd", {
+      configurable: true,
+      value: { publishPersonal },
+    });
+    const draft = mockDraft({
+      path: "docs/prds/new-template.md",
+      title: "new-template.md",
+      badge: "eliminado",
+    });
+    renderComponent({
+      personal: true,
+      pagePath: draft.path,
+      payload: mockPayload({ drafts: [draft] }),
+    });
+
+    expect(screen.getByRole("button", { name: t("home.drafts.publish") })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: t("home.drafts.publishCount", { count: 1 }) }));
+
+    expect(publishPersonal).toHaveBeenCalledWith([draft.path]);
+    expect(onRefresh).toHaveBeenCalled();
+    expect(onClosePage).toHaveBeenCalled();
+    expect(screen.getByText(t("home.drafts.published"))).toBeInTheDocument();
   });
 });

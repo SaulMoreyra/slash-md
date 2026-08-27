@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ConflictFile, HomeTreePayload, WikiSyncState } from "../../../../shared/api";
 import type { WikiSyncStatus } from "@slash-md/core/homeTypes";
 import { ConflictConfirmKind, NavKind } from "../enums";
+import { AppOperation } from "../../../App/enums";
 import type { HomeScreenProps } from "../types";
 import type { NavApi } from "./useNav";
 
@@ -14,13 +15,13 @@ export type DecidedConflict = ConflictFile & {
 type Params = {
   tree: HomeTreePayload | null;
   nav: Pick<NavApi, "view" | "onNavigate">;
-  run: HomeScreenProps["run"];
+  runOp: HomeScreenProps["runOp"];
   onRefresh: HomeScreenProps["onRefresh"];
   onOpenPage: HomeScreenProps["onOpenPage"];
   onClosePage: HomeScreenProps["onClosePage"];
 };
 
-export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePage }: Params) {
+export function useConflicts({ tree, nav, runOp, onRefresh, onOpenPage, onClosePage }: Params) {
   const status: WikiSyncStatus = tree?.wikiSyncStatus ?? "idle";
   const [files, setFiles] = useState<ConflictFile[]>([]);
   const [decided, setDecided] = useState<DecidedConflict[]>([]);
@@ -121,8 +122,11 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
   }, [merging]);
 
   async function onSyncWithWiki() {
-    const state = await run(() => api().syncWithWiki());
-    await onRefresh();
+    const state = await runOp(AppOperation.SyncWithWiki, async () => {
+      const next = await api().syncWithWiki();
+      await onRefresh();
+      return next;
+    });
     if (!state) {
       return;
     }
@@ -152,7 +156,7 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
     }
     const path = selectedPath;
     const file = filesRef.current.find((entry) => entry.path === path);
-    const state = await run(() => api().resolveConflict(path, "ours"));
+    const state = await runOp(AppOperation.ResolveConflict, () => api().resolveConflict(path, "ours"));
     if (!state) {
       return;
     }
@@ -185,7 +189,7 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
     }
     const path = selectedPath;
     const file = filesRef.current.find((entry) => entry.path === path);
-    const state = await run(() => api().resolveConflict(path, "theirs"));
+    const state = await runOp(AppOperation.ResolveConflict, () => api().resolveConflict(path, "theirs"));
     setConfirm(ConflictConfirmKind.None);
     if (!state) {
       return;
@@ -199,12 +203,15 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
   }
 
   async function onConfirmAbort() {
-    const state = await run(() => api().abortSyncWithWiki());
+    const state = await runOp(AppOperation.AbortSync, async () => {
+      const next = await api().abortSyncWithWiki();
+      await onRefresh();
+      return next;
+    });
     setConfirm(ConflictConfirmKind.None);
     invalidateFetches();
     setDecided([]);
     decidedRef.current = [];
-    await onRefresh();
     onClosePage();
     nav.onNavigate({ kind: NavKind.Drafts });
     if (state) {
@@ -226,7 +233,9 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
     }
     const path = selectedPath;
     const file = filesRef.current.find((entry) => entry.path === path);
-    const state = await run(() => api().resolveConflict(path, { markdown }));
+    const state = await runOp(AppOperation.ResolveConflict, () =>
+      api().resolveConflict(path, { markdown }),
+    );
     if (!state) {
       return;
     }
@@ -236,14 +245,19 @@ export function useConflicts({ tree, nav, run, onRefresh, onOpenPage, onClosePag
   }
 
   async function onFinish() {
-    const state = await run(() => api().finishSyncWithWiki());
+    const state = await runOp(AppOperation.FinishSync, async () => {
+      const next = await api().finishSyncWithWiki();
+      if (next) {
+        await onRefresh();
+      }
+      return next;
+    });
     if (!state) {
       return;
     }
     invalidateFetches();
     setDecided([]);
     decidedRef.current = [];
-    await onRefresh();
     onClosePage();
     nav.onNavigate({ kind: NavKind.Drafts });
     applyState(state);
