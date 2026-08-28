@@ -116,6 +116,35 @@ Ejecutar **en secuencia**. Los planes 00–01 son prerrequisitos de calidad; 03�
 
 ---
 
+## Planes de tablas del editor
+
+Alcance **`packages/ui/src/editor/`** (compartido: desktop + extensión de VS Code), no `apps/desktop/`.
+
+Origen: en producción, una tabla de Markdown con muchas columnas se aplasta y lo que se sale se recorta. El diagnóstico está completo en el [Plan 11](./11-tablas-anchas.md); los tres planes atacan capas distintas del mismo síntoma y **11 va primero**.
+
+| # | Plan | Resumen |
+|---|------|---------|
+| 11 | [11-tablas-anchas.md](./11-tablas-anchas.md) | Scroll horizontal propio + columnas al contenido. Solo CSS |
+| 12 | [12-tablas-resize-columnas.md](./12-tablas-resize-columnas.md) | Reponer el `<colgroup>` que Crepe desplaza; el resize vuelve a pintarse |
+| 13 | [13-tablas-markdown-estable.md](./13-tablas-markdown-estable.md) | `tablePipeAlign: false`: editar una celda deja de reescribir la tabla entera |
+
+```
+11-tablas-anchas  ──►  12-tablas-resize-columnas
+
+13-tablas-markdown-estable   (independiente)
+```
+
+### Decisiones — tablas
+
+| Tema | Decisión |
+|------|----------|
+| Tabla ancha | Scroll horizontal dentro de su marco, tipo Notion — no comprimir a la página |
+| Ancho de columna | Por contenido, con piso `8ch` y techo `40ch` |
+| Persistir el resize | **No.** Markdown no tiene dónde guardarlo; se declara en el Plan 12 |
+| Formato en disco | D-1 abierta en el [Plan 13](./13-tablas-markdown-estable.md); recomendación: compacto |
+
+---
+
 ## Comandos útiles
 
 ```bash
