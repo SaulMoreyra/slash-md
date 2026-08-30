@@ -61,7 +61,9 @@ GitHub y el propio editor renderizan las dos igual.
 
 ## Decisión abierta
 
-**D-1 — ¿Compacto o alineado?**
+**D-1 — ¿Compacto o alineado? → RESUELTA: compacto.**
+
+Razón: medido sobre remark con la misma tabla, editar **una** celda cambia **5 de 5 líneas** con el formato alineado y **1 de 5** con el compacto. El alineado no tiene arreglo intermedio: alinear *es* reflowear.
 
 | Opción | A favor | En contra |
 |---|---|---|
@@ -102,9 +104,49 @@ Y a mano: abrir un doc con tabla en `desktop:dev`, escribir una palabra en una c
 
 ## Criterios de aceptación
 
-- [ ] D-1 resuelta y anotada aquí con su razón
-- [ ] Editar una celda produce un diff de una sola línea
-- [ ] Las tablas alineadas existentes se siguen **leyendo** sin problema
-- [ ] `fixtures/table.md` y `fixtures/gallery-blocks.md` actualizadas; round-trip e idempotencia en verde
-- [ ] El reformateo de `docs/` y `README.md` va en un commit propio
-- [ ] `npm run test` y `npm run lint` en verde
+- [x] **D-1 resuelta: compacto**, con su razón anotada arriba
+- [x] Editar una celda produce un diff de **1 línea** (antes: 5 de 5). Medido sobre remark con ambas opciones, y otra vez a través del editor completo
+- [x] El `config` llega a tiempo — la salida del editor sale compacta, así que `ConfigReady` precede a `InitReady` como decía el plan
+- [x] Las marcas de alineación se conservan: `| - | - | :-: | … | -: |`
+- [x] Las tablas alineadas existentes se siguen **leyendo** sin problema (round-trip verde sobre las 10 fixtures)
+- [x] `fixtures/table.md` y `fixtures/gallery-blocks.md` reescritas — con un guard que verificó que **solo** cambiaron líneas de tabla (0 líneas fuera de tablas)
+- [x] Aserción anti-regresión en `test/integration/crepeRoundtrip.ts`: falla si vuelve a aparecer relleno
+- [x] `npm test` exit 0 · `npm run typecheck` exit 0
+- [ ] **Decisión pendiente:** si reformatear `docs/` y `README.md` de golpe en un commit propio — ver abajo
+
+### El reformateo masivo es más pequeño de lo que el plan temía
+
+35 archivos del repo tienen tablas, con 874 líneas de tabla en total. De ésas, **768 ya están compactas** escritas a mano. Pasada en seco sobre docs reales:
+
+| Archivo | Líneas | Cambian | De tabla | Fuera de tabla |
+|---|---|---|---|---|
+| docs/ARCHITECTURE.md | 97 | 10 | 5 | 5 |
+| docs/FLOWS.md | 335 | 28 | 7 | 21 |
+| docs/DECISIONS.md | 121 | 11 | 5 | 6 |
+| README.md | 146 | 14 | 1 | 13 |
+| AGENTS.md | 28 | 2 | 2 | 0 |
+
+Conclusión: el churn de **tabla** que este plan elimina es de 1–7 líneas por archivo. Pero la mayoría de lo que cambia al abrir un doc **no son tablas** — y eso ya pasaba antes de este plan.
+
+---
+
+## Lo que este plan destapó y NO arregla
+
+Abrir cualquier doc en SlashMD re-serializa el archivo entero, y eso produce dos cambios ajenos a las tablas:
+
+1. **Viñetas `-` → `\***. remark-stringify usa `*` por defecto. Se arregla con `bullet: "-"` en las opciones de stringify. Cosmético, pero es la mayor parte del churn de `README.md`.
+
+2. **Las imágenes en bloque pierden su `alt`** — y esto **no es cosmético, es pérdida de datos**:
+
+   ```
+   ![Slash MD icon](media/slash.png)  ->  ![1.00](media/slash.png)
+   ![alt con texto](foo.png)          ->  ![1.00](foo.png)
+   ![](foo.png)                       ->  ![1.00](foo.png)
+   ![alt](foo.png "un título")        ->  ![1.00](foo.png "un título")
+   ```
+
+   El `1.00` parece el `ratio` del `imageBlock` de Crepe escribiéndose en el hueco del alt. Las imágenes **inline** (dentro de un párrafo) se salvan. Verificado también contra `HEAD` limpio (`a671838`) en un worktree aparte: **es preexistente**, no lo introduce ninguno de estos tres planes.
+
+   Merece su propio plan. Cada guardado de un doc con imagen en bloque destruye texto alternativo, que además es accesibilidad.
+
+3. **El escape de `_`**: `nombre_completo` se guarda como `nombre\_completo`. Desactivarlo exige un handler propio de serialización. Fuera de alcance.

@@ -64,9 +64,8 @@ Un bloque nuevo en `theme.css`, junto a las demás reglas de `.milkdown .ProseMi
   position: relative;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  /* El botón «añadir fila» cuelga medio cuerpo fuera del borde izquierdo:
-     sin este colchón el scroller lo recorta. */
-  padding-left: 14px;
+  padding-left: 14px;   /* sitio para el botón «añadir fila» */
+  padding-right: 2px;   /* absorbe el handle de «añadir columna» */
   margin-left: -14px;
 }
 
@@ -78,15 +77,23 @@ Un bloque nuevo en `theme.css`, junto a las demás reglas de `.milkdown .ProseMi
 
 .milkdown .milkdown-table-block table.children :is(th, td) {
   min-width: 8ch;
+  max-width: 40ch;
   overflow-wrap: anywhere;
 }
-
-/* Techo de crecimiento por columna: sin esto una celda con un párrafo largo
-   se lleva la tabla a 3000 px. El <p> es el hijo directo que emite Crepe. */
-.milkdown .milkdown-table-block table.children :is(th, td) > p {
-  max-width: 40ch;
-}
 ```
+
+> **Corregido al medir en Chromium.** El plan proponía el techo en el `<p>`
+> (`:is(th, td) > p { max-width: 40ch }`). Eso rompe las columnas alineadas a la
+> derecha: cuando `min-width: 100%` estira la tabla, la celda crece pero el `<p>`
+> se queda en 40ch y el texto acaba **166 px corto** del borde. Con el techo en la
+> celda, el `<p>` la llena (`rightGap: 17px` = el padding) y el tope sigue
+> haciendo su trabajo: 403 px en vez de los 1208 px que mide sin tope.
+>
+> El `padding-right: 2px` tampoco estaba en el plan. El handle de «añadir columna»
+> se sitúa en el borde derecho de la tabla y sobresale 1 px — suficiente para
+> volver scrolleable hasta una tabla de dos columnas. No se arregla con
+> `display: none`: `pointer.ts` lee el ancho del handle **mientras está oculto**
+> para colocarlo, y con `display: none` leería 0.
 
 ### Por qué cada declaración
 
@@ -99,7 +106,8 @@ Un bloque nuevo en `theme.css`, junto a las demás reglas de `.milkdown .ProseMi
 | `width: max-content` + `min-width: 100%` | Ancha cuando el contenido lo pide (y entonces scrollea); a página completa cuando cabe |
 | `min-width: 8ch` en celdas | Piso legible: una columna de `sí`/`no` no colapsa a nada |
 | `overflow-wrap: anywhere` | Una URL larga ya no fija sola el ancho de su columna |
-| `max-width: 40ch` en el `<p>` | Techo: acota la contribución max-content de la celda, que es lo que suma `width: max-content` |
+| `max-width: 40ch` en la celda | Techo: acota la contribución max-content de la columna. En la celda y no en el `<p>` — ver la nota de arriba |
+| `padding-right: 2px` | El handle de «añadir columna» sobresale 1 px y volvía scrolleable cualquier tabla |
 | `table.children` (no `table`) | Excluye la tabla fantasma de `.drag-preview`, que también vive dentro de `.table-wrapper` |
 
 ---
@@ -140,12 +148,21 @@ Tabla de prueba (8 columnas, contenido desigual):
 
 ## Criterios de aceptación
 
-- [ ] La tabla de prueba muestra `sí`/`no` en columnas estrechas y la descripción en una ancha — no ocho columnas iguales
-- [ ] La tabla scrollea horizontalmente dentro de su marco; el resto del documento no se mueve
-- [ ] Ninguna parte de la tabla queda inalcanzable (nada recortado por `overflow-x: clip` del body)
-- [ ] Hover sobre una celda muestra los handles de fila y columna en el sitio correcto, también con la tabla scrolleada
-- [ ] El botón «añadir fila» se ve completo
-- [ ] Una tabla de 2 columnas sigue ocupando el ancho de la página (`min-width: 100%`)
-- [ ] Una celda con una URL de 200 caracteres no ensancha la tabla más allá de `40ch`
-- [ ] Mismo resultado en la extensión de VS Code
-- [ ] `npm run test` y `npm run lint` en verde
+Medidos en Chromium real (Electron, `show: false`) sobre el DOM exacto que monta Crepe, con `theme.css` bundleado por esbuild. Ventana 1200 px, columna de editor 1000 px, `.page-inner` a `50rem` con `padding: 2.5rem 3rem` — igual que el desktop.
+
+- [x] Las columnas se miden por contenido — **257 / 88 / 113 / 403 / 89 / 200 / 115 / 88 px**, no ocho iguales de ~90
+- [x] La tabla scrollea horizontalmente dentro de su marco — `scrollWidth 1400 > clientWidth 718`
+- [x] El resto del documento no se mueve ni se recorta — `document.scrollWidth - clientWidth === 0`
+- [x] El botón «añadir fila» se ve completo — 37 px de holgura por la izquierda, borde derecho dentro
+- [x] Una columna alineada a la derecha llega hasta el borde de su celda — `gap 17px` = el `padding: 4px 16px`
+- [x] Una tabla de 2 columnas ocupa el ancho de la página y **no** scrollea — 702 px de 702 disponibles
+- [x] Una celda con una URL de 200 caracteres no ensancha la tabla — se queda en 702 px, sin desbordar
+- [x] `npm run test` en verde (exit 0); round-trip de las 10 fixtures intacto
+- [ ] **Pendiente en la app real:** hover sobre una celda coloca los handles de fila y columna en su sitio, también con la tabla scrolleada
+- [ ] **Pendiente en la app real:** mismo resultado en la extensión de VS Code
+
+Los dos pendientes necesitan el editor corriendo (`npm run desktop:dev`): dependen de `computePosition` de floating-ui reaccionando a `pointermove`, que un fixture estático no ejerce.
+
+### Nota sobre `npm run lint`
+
+Reporta 3 errores en `apps/desktop/scripts/brand-electron.mjs` (`'process' is not defined`). Son **previos a este plan**: salen idénticos con el cambio guardado en stash. No los toco aquí.

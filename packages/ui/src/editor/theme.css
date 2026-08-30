@@ -1028,6 +1028,16 @@ body,
   line-height: 1.5;
 }
 
+/* Crepe pinta el fondo de la selección pero no toca el color del texto, así que
+   dentro del editor sobrevive el `color` del `::selection` global del host
+   (`apps/desktop/src/styles.css`), que es blanco. En light mode eso deja texto
+   blanco sobre un azul al 14% encima de página blanca: 1.18:1, ilegible.
+   `currentColor` devuelve a cada elemento su propio color al seleccionarlo. */
+.milkdown .ProseMirror ::selection,
+.milkdown .ProseMirror::selection {
+  color: currentColor;
+}
+
 .milkdown .ProseMirror h1 {
   font-size: 1.75em;
   font-weight: 600;
@@ -1190,6 +1200,20 @@ body,
   padding: 0.15em 0.35em;
 }
 
+/* Crepe pone `display: inline-block` en su reset.css. Un inline-block no fluye
+   con el texto: es una caja, así que un código largo crece hasta el ancho
+   disponible, envuelve por dentro y queda una banda gris de dos líneas que
+   además se sale del párrafo (790px medidos contra 704 de párrafo). `clone` da a
+   cada fragmento su propio padding y sus esquinas, en vez de repartirlos solo
+   entre el principio del primero y el final del último.
+   Acotado a `:not(pre) > code`: los bloques cercados se quedan como están.
+   Ver docs/plans/16-codigo-inline-ancho.md. */
+.milkdown .ProseMirror :not(pre) > code {
+  display: inline;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 .milkdown .ProseMirror blockquote {
   border-left: 3px solid var(--slash-border);
   margin: 0.75em 0;
@@ -1201,6 +1225,53 @@ body,
   border: none;
   border-top: 1px solid var(--slash-border);
   margin: 1.5em 0;
+}
+
+/* —— Tablas —— */
+/* Crepe monta `.milkdown-table-block > div > .table-wrapper > table.children` y
+   su node view desplaza al de prosemirror-tables, que era quien creaba el
+   <colgroup>. Sin él, `table-layout: fixed` reparte el ancho a partes iguales y
+   `.tableWrapper { overflow-x: auto }` nunca aplica (Crepe usa otro nombre de
+   clase). Ver docs/plans/11-tablas-anchas.md. */
+
+.milkdown .milkdown-table-block .table-wrapper {
+  /* Ancla los handles de línea, que si no se posicionan contra `.page`: ni se
+     recortan ni scrollean con la tabla. */
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Izquierda: el botón «añadir fila» cuelga medio cuerpo fuera del borde, y sin
+     este colchón el scroller lo corta por la mitad. El margen negativo entra en
+     el padding de `.page-inner`, así que no desborda la página.
+     Derecha: el handle de «añadir columna» se sitúa en el borde derecho de la
+     tabla y sobresale 1px, suficiente para volver scrolleable hasta una tabla
+     angosta. No se puede ocultar con `display: none`: `pointer.ts` lee su ancho
+     mientras está oculto para colocarlo. */
+  padding-left: 14px;
+  padding-right: 2px;
+  margin-left: -14px;
+}
+
+.milkdown .milkdown-table-block table.children {
+  table-layout: auto;
+  /* `!important` a propósito: al arrastrar una columna, `displayColumnWidth` de
+     prosemirror-tables escribe `width`/`min-width` inline sobre el <table>. Ese
+     `min-width` es la suma de los anchos de columna, y en una tabla angosta vale
+     menos que el 100% — medido, una de 2 columnas se encogía de 702px a 200px y
+     dejaba de llenar la página. Los `<col>` del colgroup sí mandan (ver
+     plugins/tableColgroup.ts); lo que neutralizamos es el ancho de la tabla. */
+  width: max-content !important;
+  min-width: 100% !important;
+}
+
+.milkdown .milkdown-table-block table.children :is(th, td) {
+  min-width: 8ch;
+  /* Techo de crecimiento por columna: sin esto una celda con un párrafo largo se
+     lleva la tabla a 2158px. Va en la celda y no en el <p>: acotando el <p> la
+     celda igual se estira con `min-width: 100%` y el texto de una columna
+     alineada a la derecha se queda 166px corto del borde. */
+  max-width: 40ch;
+  overflow-wrap: anywhere;
 }
 
 .milkdown svg,

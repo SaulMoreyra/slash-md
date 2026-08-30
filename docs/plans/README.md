@@ -116,22 +116,34 @@ Ejecutar **en secuencia**. Los planes 00–01 son prerrequisitos de calidad; 03�
 
 ---
 
-## Planes de tablas del editor
+## Planes del editor: tablas e imágenes
 
 Alcance **`packages/ui/src/editor/`** (compartido: desktop + extensión de VS Code), no `apps/desktop/`.
 
-Origen: en producción, una tabla de Markdown con muchas columnas se aplasta y lo que se sale se recorta. El diagnóstico está completo en el [Plan 11](./11-tablas-anchas.md); los tres planes atacan capas distintas del mismo síntoma y **11 va primero**.
+Origen: en producción, una tabla de Markdown con muchas columnas se aplasta y lo que se sale se recorta. El diagnóstico completo está en el [Plan 11](./11-tablas-anchas.md); los planes 11–13 atacan capas distintas del mismo síntoma y **11 va primero**. El 14 salió de una pasada en seco del 13 y no tiene que ver con tablas.
 
 | # | Plan | Resumen |
 |---|------|---------|
-| 11 | [11-tablas-anchas.md](./11-tablas-anchas.md) | Scroll horizontal propio + columnas al contenido. Solo CSS |
-| 12 | [12-tablas-resize-columnas.md](./12-tablas-resize-columnas.md) | Reponer el `<colgroup>` que Crepe desplaza; el resize vuelve a pintarse |
-| 13 | [13-tablas-markdown-estable.md](./13-tablas-markdown-estable.md) | `tablePipeAlign: false`: editar una celda deja de reescribir la tabla entera |
+| 11 | [11-tablas-anchas.md](./11-tablas-anchas.md) | **Hecho.** Scroll horizontal propio + columnas al contenido. Solo CSS |
+| 12 | [12-tablas-resize-columnas.md](./12-tablas-resize-columnas.md) | **Hecho.** Reponer el `<colgroup>` que Crepe desplaza; además el arrastre ya no borra filas |
+| 13 | [13-tablas-markdown-estable.md](./13-tablas-markdown-estable.md) | **Hecho.** `tablePipeAlign: false`: editar una celda pasa de 5 a 1 línea de diff |
+| 14 | [14-imagen-alt.md](./14-imagen-alt.md) | **Hecho.** Las imágenes en bloque dejan de perder su `alt` (`![texto]` → `![1.00]`) |
+| 15 | [15-seleccion-light-mode.md](./15-seleccion-light-mode.md) | **Hecho.** En light mode el texto seleccionado desaparecía: 1.27:1 → 13.96:1 |
+| 16 | [16-codigo-inline-ancho.md](./16-codigo-inline-ancho.md) | **Hecho.** El código inline largo ya no se pinta como banda a todo lo ancho |
+| 17 | [17-buscar-en-la-pagina.md](./17-buscar-en-la-pagina.md) | **Pendiente.** Buscar dentro del documento abierto (`Cmd+F`); `Cmd+K` seguirá siendo la biblioteca |
 
 ```
 11-tablas-anchas  ──►  12-tablas-resize-columnas
 
 13-tablas-markdown-estable   (independiente)
+
+14-imagen-alt                (independiente; lo destapó el 13)
+
+15-seleccion-light-mode      (independiente)
+
+16-codigo-inline-ancho       (independiente; solo CSS)
+
+17-buscar-en-la-pagina       (independiente; 3 etapas, ver el plan)
 ```
 
 ### Decisiones — tablas
@@ -141,7 +153,12 @@ Origen: en producción, una tabla de Markdown con muchas columnas se aplasta y l
 | Tabla ancha | Scroll horizontal dentro de su marco, tipo Notion — no comprimir a la página |
 | Ancho de columna | Por contenido, con piso `8ch` y techo `40ch` |
 | Persistir el resize | **No.** Markdown no tiene dónde guardarlo; se declara en el Plan 12 |
-| Formato en disco | D-1 abierta en el [Plan 13](./13-tablas-markdown-estable.md); recomendación: compacto |
+| Formato en disco | **D-1 cerrada: compacto.** Editar una celda cambia 1 línea en vez de 5 |
+| Alt vs ratio de imagen | **D-2 cerrada: preservar el `alt`.** GitHub lo respeta y es accesibilidad; el `ratio` deja de persistir entre sesiones |
+
+### Pendiente conocido
+
+Al abrir un doc, `remark-stringify` reescribe las viñetas `-` como `*`. Es lo que queda del churn tras el Plan 13 (12 de 13 líneas en `README.md`, 21 de 28 en `docs/FLOWS.md`). Se arregla con `bullet: "-"` en las opciones de stringify: un plan de una línea, aún sin abrir.
 
 ---
 

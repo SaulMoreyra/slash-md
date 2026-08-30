@@ -1,4 +1,4 @@
-| Col A | Col B  |
-| ----- | ------ |
-| uno   | dos    |
-| tres  | cuatro |
+| Col A | Col B |
+| - | - |
+| uno | dos |
+| tres | cuatro |

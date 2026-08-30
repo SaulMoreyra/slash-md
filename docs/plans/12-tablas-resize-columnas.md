@@ -13,6 +13,27 @@
 
 Resultado: arrastras, el documento cambia, la pantalla no. Y como cada guardado re-serializa a Markdown —que no tiene anchos de columna— el ajuste tampoco sobrevive a recargar.
 
+### Y hay algo peor que «no hace nada»
+
+`displayColumnWidth` (`prosemirror-tables/dist/index.js:2546`) sube desde la celda hasta el `<table>` y **asume que el primer hijo es el `<colgroup>`**:
+
+```js
+let dom = view.domAtPos($cell.start(-1)).node;
+while (dom && dom.nodeName != "TABLE") dom = dom.parentNode;
+updateColumnsOnResize(table, dom.firstChild, dom, defaultCellMinWidth, col, width);
+```
+
+Sin colgroup, `dom.firstChild` es el **`<tbody>`**. `updateColumnsOnResize` entonces recorre los `<tr>` como si fueran `<col>`, les escribe `style.width`, y al terminar **borra todos los sobrantes**. Esto corre en cada `mousemove` del arrastre.
+
+Medido con la función real de prosemirror-tables sobre el DOM de Crepe, tabla de 2 columnas y 6 filas:
+
+```
+antes:   A B fila1 x fila2 x fila3 x fila4 x fila5 x    (6 filas)
+después: A B fila1 x                                     (2 filas)
+```
+
+Cuatro filas desaparecen de la pantalla hasta el siguiente repintado de ProseMirror. Es muy probable que esto sea parte de lo que se vive como «la tabla se desacomoda».
+
 > **Declarado por adelantado:** el ancho de columna **no se persiste**. Markdown no tiene dónde guardarlo. Este plan hace que el resize funcione durante la sesión; al reabrir el archivo las columnas vuelven a medirse por contenido (Plan 11). Persistirlo exigiría metadata fuera del estándar y queda fuera.
 
 ---
@@ -27,47 +48,13 @@ Resultado: arrastras, el documento cambia, la pantalla no. Y como cada guardado 
 
 ## El cambio
 
-### `packages/ui/src/editor/plugins/tableColgroup.ts`
+### 1. `packages/ui/src/editor/plugins/tableColgroup.ts` (nuevo)
 
-```ts
-import { Plugin } from "@milkdown/kit/prose/state";
-import { updateColumnsOnResize } from "@milkdown/kit/prose/tables";
-import { $prose } from "@milkdown/kit/utils";
-import type { Editor } from "@milkdown/kit/core";
+Un plugin de ProseMirror que, en cada `update`, recorre las tablas del documento y repone el `<colgroup>` **como primer hijo** del `<table>` —que es justo donde lo busca `displayColumnWidth`— con un `<col>` por columna y su `style.width` cuando la celda tiene `colwidth`.
 
-/** Ancho de reparto para columnas sin `colwidth` propio. */
-const DEFAULT_CELL_MIN_WIDTH = 120;
+> **Desviación del plan.** El plan decía reutilizar `updateColumnsOnResize` de `@milkdown/kit/prose/tables`. No lo usamos: además del colgroup, esa función escribe `width`/`min-width` **inline sobre el `<table>`**, y ese `min-width` es la suma de anchos de columna. En una tabla angosta vale menos que el `100%` del Plan 11, así que la encogía. Escribir el colgroup nosotros (20 líneas) evita el efecto secundario. La función sigue corriendo durante el arrastre —eso no lo controlamos— y por eso hace falta el punto 2.
 
-// Crepe monta su propio node view de tabla y deja fuera al de prosemirror-tables,
-// que era quien creaba el <colgroup>. Sin él `colwidth` no se pinta y el resize
-// de columnas no hace nada. Aquí lo reponemos sobre el DOM que Crepe ya montó.
-export const tableColgroup = $prose(() => new Plugin({
-  view: (view) => {
-    const sync = () => {
-      view.state.doc.descendants((node, pos) => {
-        if (node.type.name !== "table") {
-          return true;
-        }
-        const dom = view.nodeDOM(pos);
-        // ... localizar `table.children` dentro del .milkdown-table-block,
-        //     crear el <colgroup> si falta (siempre como primer hijo),
-        //     y llamar updateColumnsOnResize(node, colgroup, table, DEFAULT_CELL_MIN_WIDTH)
-        return false; // las tablas no anidan
-      });
-    };
-    sync();
-    return { update: sync };
-  },
-}));
-
-export function registerTableColgroup(editor: Editor): void {
-  editor.use(tableColgroup);
-}
-```
-
-### `packages/ui/src/editor/core/crepe.ts`
-
-Junto a los demás `register*`, después de `await builder.create()` no — **antes**, con el resto:
+### 2. Registro en `packages/ui/src/editor/core/crepe.ts`
 
 ```ts
 registerCallout(builder.editor);
@@ -76,14 +63,26 @@ registerEmptyTaskList(builder.editor);
 registerTableColgroup(builder.editor);   // ← nuevo
 ```
 
-### CSS: qué **no** cambiar
+### 3. `theme.css`: neutralizar el ancho inline del arrastre
 
-El Plan 11 deja `table-layout: auto`. **Se queda así.** Con `auto`, el ancho de un `<col>` es una sugerencia fuerte que el navegador respeta salvo que el contenido mínimo no quepa. La combinación resultante es la que queremos:
+```css
+.milkdown .milkdown-table-block table.children {
+  table-layout: auto;
+  width: max-content !important;
+  min-width: 100% !important;
+}
+```
+
+> **Tampoco estaba en el plan.** `!important` a propósito, y medido: durante el arrastre `displayColumnWidth` escribe `min-width` inline en el `<table>`. Sin `!important`, una tabla de 2 columnas se encogía de **702 px a 200 px** y dejaba de llenar la página en cuanto tocabas una columna. Los `<col>` del colgroup siguen mandando sobre cada columna; lo único que neutralizamos es el ancho de la tabla entera.
+
+### CSS: qué **no** cambia
+
+`table-layout` se queda en `auto`. Con `auto`, el ancho de un `<col>` es una sugerencia fuerte que el navegador respeta salvo que el contenido mínimo no quepa. Medido: un `<col style="width: 300px">` da exactamente **300 px**, y las demás columnas siguen midiéndose por contenido (`88 / 113 / 403 / …`). Es la combinación que queremos:
 
 - columna sin tocar → ancho por contenido (Plan 11)
 - columna arrastrada → el ancho que pediste
 
-El precio, declarado: una columna no baja de su ancho min-content. Con `overflow-wrap: anywhere` (Plan 11) ese piso es pequeño, así que en la práctica se encoge. Volver a `table-layout: fixed` daría exactitud milimétrica pero devolvería el reparto a partes iguales en cuanto una columna quede sin `colwidth` — que es exactamente el bug del Plan 11.
+El precio, declarado: una columna no baja de su ancho min-content. Con `overflow-wrap: anywhere` (Plan 11) ese piso es pequeño, así que en la práctica se encoge.
 
 ---
 
@@ -120,10 +119,29 @@ Y a mano en `npm run desktop:dev`:
 
 ## Criterios de aceptación
 
-- [ ] Arrastrar el borde de una columna la redimensiona en pantalla
-- [ ] El ancho sobrevive a seguir escribiendo en la tabla
-- [ ] Añadir y borrar columnas mantiene el `<colgroup>` con el número correcto de `<col>`
-- [ ] Las columnas sin tocar siguen midiéndose por contenido (no vuelve el reparto a partes iguales)
-- [ ] La tabla fantasma del arrastre se ve igual que antes
-- [ ] El round-trip a Markdown no cambia (los anchos no se serializan)
-- [ ] `npm run test` y `npm run lint` en verde
+Medido con la función real de prosemirror-tables (`updateColumnsOnResize`) sobre el DOM que monta Crepe, en Chromium (Electron), simulando lo que hace `displayColumnWidth` en un arrastre.
+
+| | Sin colgroup (antes) | Con colgroup (ahora) |
+|---|---|---|
+| Filas tras arrastrar (tabla 2×6) | 6 → **2** | 6 → **6** |
+| Contenido | `AB fila1 x` — 4 filas perdidas | íntegro |
+| Ancho pedido de 300 px | 200 px (ignorado) | **300 px** |
+| Tabla angosta tras arrastrar | 702 → 200 px | **702 px** |
+
+- [x] Arrastrar una columna ya no borra filas del DOM — el fallo que el plan no había visto
+- [x] El ancho pedido se aplica: `<col style="width: 300px">` da 300 px exactos
+- [x] Las columnas sin tocar siguen midiéndose por contenido — `88 / 113 / 403 / …`
+- [x] Una tabla angosta sigue llenando la página después de arrastrar (gracias al `!important`)
+- [x] El `<colgroup>` es el primer hijo del `<table>`, con un `<col>` por columna — aserción en `test/integration/crepeRoundtrip.ts`
+- [x] El colgroup no altera las filas ni se serializa a Markdown — aserciones en la misma suite
+- [x] Los 8 criterios del Plan 11 siguen en verde tras añadir el `!important`
+- [x] `npm test` exit 0 · `npm run typecheck` exit 0 · `npm run lint` sin errores nuevos (los 3 de `brand-electron.mjs` son previos)
+- [ ] **Pendiente en la app real:** arrastrar el borde con el ratón y ver la columna moverse en vivo
+- [ ] **Pendiente en la app real:** añadir y borrar columnas mantiene el `<colgroup>` cuadrado
+- [ ] **Pendiente en la app real:** la tabla fantasma del arrastre se ve igual que antes
+
+Los tres pendientes necesitan el ratón: `displayColumnWidth` solo corre desde un `mousedown` real sobre el handle de resize.
+
+### Declarado: el ancho no se persiste
+
+Markdown no tiene dónde guardar anchos de columna. Al reabrir el archivo, las columnas vuelven a medirse por contenido (Plan 11). No es un bug de este plan.
