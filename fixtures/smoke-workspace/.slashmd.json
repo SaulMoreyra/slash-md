@@ -1,0 +1,7 @@
+{
+  "repo": "slash-md/smoke",
+  "contentPath": "docs",
+  "defaultBranch": "main",
+  "mode": "personal",
+  "sections": ["producto"]
+}

@@ -9,12 +9,15 @@ import { registerIpc } from "./ipc";
 import { registerAppMenu } from "./menu";
 import { resolveExistingFolder } from "./openFolder";
 import { setWorkspaceRoot } from "./session";
+import { applySmokeProfile, captureSmoke, isSmokeRun } from "./smoke";
 import { applyWindowChrome, getTheme, resolveWindowTheme, themeColors } from "./themeStore";
 
 app.setName(APP_NAME);
 if (process.platform === "win32") {
   app.setAppUserModelId(APP_ID);
 }
+applySmokeProfile();
+const smoke = isSmokeRun();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RENDERER_DIST = path.join(__dirname, "../dist");
@@ -44,6 +47,11 @@ function applyCliFolder(argv: string[], cwd = process.cwd()): void {
     notifyFolderOpened(mainWindow, folder);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (smoke) {
+      console.error(message);
+      app.exit(1);
+      return;
+    }
     dialog.showErrorBox(APP_NAME, message);
   }
 }
@@ -81,7 +89,12 @@ function createWindow(): void {
   });
 
   mainWindow.once("ready-to-show", () => {
-    mainWindow?.show();
+    if (!smoke || process.env.SLASHMD_SMOKE_SHOW === "1") {
+      mainWindow?.show();
+    }
+    if (mainWindow) {
+      void captureSmoke(mainWindow);
+    }
   });
 
   nativeTheme.on("updated", () => {
@@ -107,19 +120,21 @@ function createWindow(): void {
   });
 }
 
-if (!app.requestSingleInstanceLock()) {
+if (!smoke && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on("second-instance", (_event, argv, workingDirectory) => {
-    applyCliFolder(argv, workingDirectory);
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
+  if (!smoke) {
+    app.on("second-instance", (_event, argv, workingDirectory) => {
+      applyCliFolder(argv, workingDirectory);
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+        }
+        mainWindow.show();
+        mainWindow.focus();
       }
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
+    });
+  }
 
   registerIpc(() => mainWindow);
 
@@ -129,6 +144,9 @@ if (!app.requestSingleInstanceLock()) {
     applyCliFolder(process.argv);
     createWindow();
     app.on("activate", () => {
+      if (smoke) {
+        return;
+      }
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
       }
@@ -136,7 +154,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
+    if (smoke || process.platform !== "darwin") {
       app.quit();
     }
   });

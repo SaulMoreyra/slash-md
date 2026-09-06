@@ -458,6 +458,14 @@
       "label": "Comentario",
       "placeholder": "Tu comentario",
       "submit": "Comentar"
+    },
+    "find": {
+      "label": "Buscar en la página",
+      "placeholder": "Buscar en el documento…",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "close": "Cerrar",
+      "noMatches": "0 / 0"
     }
   },
   "modal": {

@@ -2,6 +2,7 @@ export enum MenuAction {
   NewPage = "newPage",
   NewFolder = "newFolder",
   Search = "search",
+  FindInPage = "findInPage",
   Settings = "settings",
   ToggleWorkPane = "toggleWorkPane",
   ToggleRail = "toggleRail",
@@ -28,6 +29,7 @@ export type MenuCopy = {
   newPage: string;
   newFolder: string;
   search: string;
+  findInPage: string;
   settings: string;
   toggleWorkPane: string;
   toggleRail: string;
@@ -49,6 +51,7 @@ const EN: MenuCopy = {
   newPage: "New Page",
   newFolder: "New Folder",
   search: "Search",
+  findInPage: "Find in Page",
   settings: "Settings…",
   toggleWorkPane: "Toggle Work List",
   toggleRail: "Toggle Navigation",
@@ -70,6 +73,7 @@ const ES: MenuCopy = {
   newPage: "Nueva página",
   newFolder: "Nueva carpeta",
   search: "Buscar",
+  findInPage: "Buscar en la página",
   settings: "Configuración…",
   toggleWorkPane: "Mostrar lista de trabajo",
   toggleRail: "Mostrar navegación",

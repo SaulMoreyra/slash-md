@@ -8,13 +8,17 @@ import { placeholder } from "@milkdown/crepe/feature/placeholder";
 import { table } from "@milkdown/crepe/feature/table";
 import { toolbar } from "@milkdown/crepe/feature/toolbar";
 import { editorViewCtx } from "@milkdown/kit/core";
+import { remarkGFMPlugin } from "@milkdown/kit/preset/gfm";
 import { TextSelection } from "@milkdown/kit/prose/state";
 import { replaceAll } from "@milkdown/kit/utils";
 import { registerCallout } from "../plugins/callout";
+import { registerImageAlt } from "../plugins/imageAlt";
 import { registerComments } from "../plugins/commentsPlugin";
+import { createSearchHandle, registerSearch, type SearchHandle } from "../plugins/search";
 import { codeLanguages, vscodeCmTheme } from "../plugins/languages";
 import { mermaidLanguage, renderMermaidPreview } from "../plugins/mermaid";
 import { slashConfig } from "../plugins/slash";
+import { registerTableColgroup } from "../plugins/tableColgroup";
 import { registerEmptyTaskList } from "../plugins/taskList";
 import { registerToggle } from "../plugins/toggle";
 
@@ -32,6 +36,8 @@ export async function createSlashCrepe(opts: {
   onCommentSelection?: (selectedText: string) => void;
   /** Set to false to make the editor read-only (default true). */
   editable?: boolean;
+  /** Called when the in-document search handle is ready. */
+  onSearchReady?: (handle: SearchHandle) => void;
 }): Promise<CrepeBuilder> {
   const builder = new CrepeBuilder({
     root: opts.root,
@@ -85,9 +91,19 @@ export async function createSlashCrepe(opts: {
       mode: "block",
     });
 
+  // remark rellena cada celda de tabla hasta la más ancha de su columna: escribir
+  // una palabra re-alinea la tabla entera y ensucia el diff. Formato compacto, que
+  // solo depende del contenido de cada celda. Ver docs/plans/13-tablas-markdown-estable.md.
+  builder.editor.config((ctx) => {
+    ctx.set(remarkGFMPlugin.options.key, { tablePipeAlign: false });
+  });
+
   registerCallout(builder.editor);
   registerToggle(builder.editor);
   registerEmptyTaskList(builder.editor);
+  registerTableColgroup(builder.editor);
+  registerImageAlt(builder.editor);
+  registerSearch(builder.editor);
   if (opts.comments) {
     registerComments(builder.editor);
   }
@@ -108,6 +124,8 @@ export async function createSlashCrepe(opts: {
       view.setProps({ editable: () => false });
     });
   }
+
+  opts.onSearchReady?.(createSearchHandle(builder.editor));
 
   return builder;
 }

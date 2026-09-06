@@ -20,10 +20,10 @@ Paragraph. Type `/` to insert any block on this page.
 * [ ] To-do
 * [x] Done
 
-| Col A | Col B  |
-| ----- | ------ |
-| uno   | dos    |
-| tres  | cuatro |
+| Col A | Col B |
+| - | - |
+| uno | dos |
+| tres | cuatro |
 
 Lee la [guía](https://example.com/guide) y este ![icono](./images/icon.png) inline.
 
@@ -68,3 +68,4 @@ flowchart TD
   D -->|Yes| E[Publish]
   D -->|No| B
 ```
+

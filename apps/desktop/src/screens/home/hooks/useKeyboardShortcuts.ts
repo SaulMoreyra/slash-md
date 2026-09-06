@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { AppOperation } from "../../../App/enums";
+import { requestCloseFindInPage } from "../../editor/findInPageBridge";
 import { ModalKind, NavKind, RailMode } from "../enums";
 import type { HomeScreenProps } from "../types";
 import { newPageModalKind, settingsModalKind } from "../utils";
@@ -84,7 +85,14 @@ export function useKeyboardShortcuts({
         }
         if (key === "k" && !ev.shiftKey) {
           ev.preventDefault();
+          requestCloseFindInPage();
           search.onToggle();
+          return;
+        }
+        if (key === "f" && !ev.shiftKey) {
+          if (!pagePath) {
+            ev.preventDefault();
+          }
           return;
         }
         if (key === "n" && !ev.shiftKey) {

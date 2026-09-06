@@ -107,6 +107,11 @@ export function registerAppMenu(getWindow: () => BrowserWindow | null): void {
         accelerator: "CmdOrCtrl+K",
         click: () => send(MenuAction.Search),
       },
+      {
+        label: copy.findInPage,
+        accelerator: "CmdOrCtrl+F",
+        click: () => send(MenuAction.FindInPage),
+      },
       ...(isMac
         ? ([
             { type: "separator" },

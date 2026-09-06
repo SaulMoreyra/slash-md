@@ -22,6 +22,9 @@ export default defineConfig({
     electron([
       {
         entry: path.join(root, "electron/main.ts"),
+        onstart({ startup }) {
+          startup();
+        },
         vite: {
           resolve: { alias: aliases },
           build: {
