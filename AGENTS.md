@@ -7,6 +7,7 @@ When working on this repo, read skills under **`.cursor/skills/`** before large 
 | Skill | When |
 |-------|------|
 | **`slash-md-desktop`** | Desktop app (`apps/desktop`) screens, hooks, feature folders |
+| **`slash-md-smoke`** | After desktop UI work — capture the window and look at it |
 | **`react-list-screen-pattern`** | Thin views + `useXController` + presentational components |
 | **`react-compound-components`** | Compound APIs / future HeroUI-style primitives |
 

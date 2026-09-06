@@ -22,6 +22,7 @@
     "desktop:pack": "npm run pack -w @slash-md/desktop",
     "desktop:lint": "npm run lint -w @slash-md/desktop",
     "desktop:typecheck": "npm run typecheck -w @slash-md/desktop",
+    "desktop:smoke": "node apps/desktop/scripts/smoke-shot.mjs",
     "slash": "node apps/desktop/bin/slash"
   },
   "devDependencies": {

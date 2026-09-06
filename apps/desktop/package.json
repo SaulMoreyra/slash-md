@@ -13,7 +13,7 @@
   },
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "node ./scripts/brand-electron.mjs && vite",
+    "dev": "node ./scripts/brand-electron.mjs && env -u ELECTRON_RUN_AS_NODE vite",
     "build": "vite build",
     "start": "node ./scripts/brand-electron.mjs && electron .",
     "postinstall": "node ./scripts/brand-electron.mjs",
