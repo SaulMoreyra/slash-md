@@ -2,6 +2,7 @@ import { editorViewCtx } from "@milkdown/kit/core";
 import { findSnippetInText, normalizeSnippet } from "@slash-md/core/commentAnchor";
 import type { ReviewThread } from "@slash-md/core/protocol";
 import { placeThreads } from "../packages/ui/src/editor/plugins/commentsPlugin";
+import type { SearchHandle } from "../packages/ui/src/editor/plugins/search";
 import { createSlashCrepe } from "../packages/ui/src/editor/core/crepe";
 import { normalizeMarkdown } from "@slash-md/core/markdown";
 
@@ -89,4 +90,26 @@ export async function runCommentFixtures(
 
   await crepe.destroy();
   root.remove();
+
+  {
+    const searchRoot = document.createElement("div");
+    document.body.appendChild(searchRoot);
+    let handle: SearchHandle | undefined;
+    const searchCrepe = await createSlashCrepe({
+      root: searchRoot,
+      markdown: "# Title\n\nHello world paragraph.\n\nMore text.\n",
+      onSearchReady: (next) => {
+        handle = next;
+      },
+    });
+    assert(Boolean(handle), "search handle is ready");
+    const state = handle!.search("hello");
+    assert(state.total >= 1, "search finds matches in crepe doc");
+    assert(
+      searchRoot.querySelectorAll(".slash-search-hit").length >= 1,
+      "search renders highlight decorations",
+    );
+    await searchCrepe.destroy();
+    searchRoot.remove();
+  }
 }

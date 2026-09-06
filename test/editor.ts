@@ -6,6 +6,13 @@ import type { EditorContext } from "../packages/ui/src/editor/context";
 import { isCoverColor, coverColorHex } from "../packages/ui/src/editor/hero/cover";
 import { filterEmoji } from "../packages/ui/src/editor/hero/emojiCatalog";
 import { placeThreads } from "../packages/ui/src/editor/plugins/commentsPlugin";
+import {
+  clampActiveIndex,
+  findLiteralMatches,
+  nextActiveIndex,
+  prevActiveIndex,
+  toSearchState,
+} from "../packages/ui/src/editor/plugins/searchMatch";
 import { promoteLiteralTaskItems } from "../packages/ui/src/editor/plugins/taskList";
 
 function mockBoot(): import("@slash-md/core/protocol").WebviewBoot {
@@ -109,6 +116,20 @@ export function runEditorTests(assert: (ok: boolean, message: string) => void): 
       ],
     );
     assert(placements.length === 1, "placeThreads returns placement for snippet");
+  }
+
+  {
+    const hits = findLiteralMatches("Hello HELLO world", "hello");
+    assert(hits.length === 2, "findLiteralMatches is case-insensitive");
+    assert(hits[0]!.from === 0 && hits[0]!.to === 5, "findLiteralMatches preserves query length");
+    assert(findLiteralMatches("abab", "ab").length === 2, "findLiteralMatches finds overlapping hits");
+    assert(findLiteralMatches("a.a", ".").length === 1, "findLiteralMatches treats query as literal");
+    assert(nextActiveIndex(1, 3) === 2, "nextActiveIndex wraps forward");
+    assert(nextActiveIndex(2, 3) === 0, "nextActiveIndex wraps from last to first");
+    assert(prevActiveIndex(0, 3) === 2, "prevActiveIndex wraps from first to last");
+    assert(clampActiveIndex(4, 2) === 1, "clampActiveIndex clamps high index");
+    assert(toSearchState("foo", [{ from: 0, to: 3 }], 0).active === 1, "toSearchState is 1-based");
+    assert(toSearchState("foo", [], -1).active === 0, "toSearchState active is 0 when empty");
   }
 
   {

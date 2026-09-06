@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { CrepeCanvas } from "../../../../../components/CrepeCanvas";
 import { HeroChrome } from "../../../../../components/HeroChrome";
 import { PageProperties } from "../../PageProperties";
+import { FindInPagePanel } from "../../FindInPagePanel";
 import { useEditor } from "../context";
 
 export function Canvas() {
   const { t } = useTranslation();
-  const { page, auth, editor, threads, comments } = useEditor();
+  const { page, auth, editor, threads, comments, find } = useEditor();
   const canWrite = editor.canWrite;
   const pageClass = [
     "page",
@@ -21,6 +22,19 @@ export function Canvas() {
 
   return (
     <div className={pageClass} id="page">
+      {find.open ? (
+        <FindInPagePanel
+          open={find.open}
+          query={find.query}
+          active={find.active}
+          total={find.total}
+          inputRef={find.inputRef}
+          onQueryChange={find.onQueryChange}
+          onNext={find.onNext}
+          onPrev={find.onPrev}
+          onClose={find.onClose}
+        />
+      ) : null}
       <HeroChrome
         fields={page.frontmatter}
         imageMap={editor.imageMap}
@@ -69,6 +83,7 @@ export function Canvas() {
           onOpenThread={threads.onThreadOpen}
           onOrphans={threads.onOrphansChange}
           onCommentSelection={comments.onCommentDraftStart}
+          onSearchReady={find.onSearchReady}
         />
       </HeroChrome>
     </div>

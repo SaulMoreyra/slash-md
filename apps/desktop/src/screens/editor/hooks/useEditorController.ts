@@ -1,7 +1,9 @@
+import { useHomeOptional } from "../../home/components/Home/context";
 import type { AuthInfo, PagePayload } from "../../../../shared/api";
 import type { RunOp } from "../../home/types";
 import { useComments } from "./useComments";
 import { useEditorChrome } from "./useEditorChrome";
+import { useFindInPage } from "./useFindInPage";
 import { useFormatter } from "./useFormatter";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { useThreads } from "./useThreads";
@@ -33,6 +35,7 @@ export function useEditorController({
   onCreatePublication,
   runOp,
 }: EditorScreenProps) {
+  const home = useHomeOptional();
   const canWrite = page.canWrite !== false;
   const editor = useFormatter({ page, trail, canWrite, onError, onPage, runOp });
   const threads = useThreads({ page, focusThreadId, runOp });
@@ -44,8 +47,13 @@ export function useEditorController({
     runOp,
     onFlushSave: editor.onFlushSave,
   });
+  const find = useFindInPage({
+    docPath: page.path,
+    onThreadClose: threads.onThreadClose,
+    onCloseLibrarySearch: home?.search.onClose,
+  });
 
-  useKeyboardShortcuts({ onClose, editor, threads, comments, chrome });
+  useKeyboardShortcuts({ onClose, editor, threads, comments, chrome, find });
 
   return {
     page,
@@ -57,6 +65,7 @@ export function useEditorController({
     threads,
     comments,
     chrome,
+    find,
   };
 }
 

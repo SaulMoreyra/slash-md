@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { CrepeBuilder } from "@milkdown/crepe/builder";
 import { createSlashCrepe } from "@slash-md/ui/editor/core/crepe";
+import type { SearchHandle } from "@slash-md/ui/editor/plugins/search";
 import { mountComments, type CommentsHandle } from "@slash-md/ui/editor/threads/commentsMount";
 import type { ReviewThread } from "../../../shared/api";
 
@@ -17,6 +18,8 @@ type Props = {
   onCommentSelection: (selectedText: string) => void;
   /** When false the ProseMirror view is read-only (default true). */
   editable?: boolean;
+  /** Fired when the in-document search API is ready; pass null when the canvas unmounts. */
+  onSearchReady?: (handle: SearchHandle | null) => void;
 };
 
 export function CrepeCanvas({
@@ -31,6 +34,7 @@ export function CrepeCanvas({
   onOrphans,
   onCommentSelection,
   editable = true,
+  onSearchReady,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const builderRef = useRef<CrepeBuilder | null>(null);
@@ -40,6 +44,7 @@ export function CrepeCanvas({
   const openRef = useRef(onOpenThread);
   const orphansRef = useRef(onOrphans);
   const commentRef = useRef(onCommentSelection);
+  const searchReadyRef = useRef(onSearchReady);
   const mapRef = useRef(imageMap);
   const initialRef = useRef(markdown);
 
@@ -48,6 +53,7 @@ export function CrepeCanvas({
   openRef.current = onOpenThread;
   orphansRef.current = onOrphans;
   commentRef.current = onCommentSelection;
+  searchReadyRef.current = onSearchReady;
   mapRef.current = imageMap;
 
   useEffect(() => {
@@ -69,6 +75,7 @@ export function CrepeCanvas({
         onUpload: (file) => uploadRef.current(file),
         proxyDomURL: (url) => mapRef.current[url] ?? mapRef.current[url.replace(/^\.\//, "")] ?? url,
         onCommentSelection: (text) => commentRef.current(text),
+        onSearchReady: (handle) => searchReadyRef.current?.(handle),
       });
       if (cancelled) {
         await destroy(builder);
@@ -85,6 +92,7 @@ export function CrepeCanvas({
 
     return () => {
       cancelled = true;
+      searchReadyRef.current?.(null);
       commentsRef.current?.destroy();
       commentsRef.current = null;
       if (builder) {

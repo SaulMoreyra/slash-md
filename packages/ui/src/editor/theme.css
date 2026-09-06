@@ -1394,6 +1394,19 @@ body,
   transition: background var(--dur-short) var(--ease-out);
 }
 
+.slash-search-hit {
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.slash-search-hit-active {
+  background: color-mix(in srgb, var(--color-accent) 44%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--color-accent) 65%, transparent);
+  outline-offset: 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .slash-reveal-hl {
     transition: none;

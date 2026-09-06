@@ -14,6 +14,7 @@ import { replaceAll } from "@milkdown/kit/utils";
 import { registerCallout } from "../plugins/callout";
 import { registerImageAlt } from "../plugins/imageAlt";
 import { registerComments } from "../plugins/commentsPlugin";
+import { createSearchHandle, registerSearch, type SearchHandle } from "../plugins/search";
 import { codeLanguages, vscodeCmTheme } from "../plugins/languages";
 import { mermaidLanguage, renderMermaidPreview } from "../plugins/mermaid";
 import { slashConfig } from "../plugins/slash";
@@ -35,6 +36,8 @@ export async function createSlashCrepe(opts: {
   onCommentSelection?: (selectedText: string) => void;
   /** Set to false to make the editor read-only (default true). */
   editable?: boolean;
+  /** Called when the in-document search handle is ready. */
+  onSearchReady?: (handle: SearchHandle) => void;
 }): Promise<CrepeBuilder> {
   const builder = new CrepeBuilder({
     root: opts.root,
@@ -100,6 +103,7 @@ export async function createSlashCrepe(opts: {
   registerEmptyTaskList(builder.editor);
   registerTableColgroup(builder.editor);
   registerImageAlt(builder.editor);
+  registerSearch(builder.editor);
   if (opts.comments) {
     registerComments(builder.editor);
   }
@@ -120,6 +124,8 @@ export async function createSlashCrepe(opts: {
       view.setProps({ editable: () => false });
     });
   }
+
+  opts.onSearchReady?.(createSearchHandle(builder.editor));
 
   return builder;
 }

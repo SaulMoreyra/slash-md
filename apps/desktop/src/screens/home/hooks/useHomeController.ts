@@ -4,6 +4,7 @@ import { AppOperation } from "../../../App/enums";
 import { MenuAction } from "../../../../shared/menu";
 import type { HomeScreenProps } from "../types";
 import { ModalKind, NavKind } from "../enums";
+import { requestOpenFindInPage } from "../../editor/findInPageBridge";
 import { newPageModalKind, settingsModalKind } from "../utils";
 import { useConflicts } from "./useConflicts";
 import { useHomeActions } from "./useHomeActions";
@@ -96,6 +97,11 @@ export function useHomeController({
     },
     [MenuAction.Search]: () => {
       search.onToggle();
+    },
+    [MenuAction.FindInPage]: () => {
+      if (pagePath) {
+        requestOpenFindInPage();
+      }
     },
     [MenuAction.Settings]: () => {
       modals.onOpen(settingsModalKind(Boolean(nav.payload?.needsInit)));

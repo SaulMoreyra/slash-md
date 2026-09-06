@@ -130,7 +130,7 @@ Origen: en producción, una tabla de Markdown con muchas columnas se aplasta y l
 | 14 | [14-imagen-alt.md](./14-imagen-alt.md) | **Hecho.** Las imágenes en bloque dejan de perder su `alt` (`![texto]` → `![1.00]`) |
 | 15 | [15-seleccion-light-mode.md](./15-seleccion-light-mode.md) | **Hecho.** En light mode el texto seleccionado desaparecía: 1.27:1 → 13.96:1 |
 | 16 | [16-codigo-inline-ancho.md](./16-codigo-inline-ancho.md) | **Hecho.** El código inline largo ya no se pinta como banda a todo lo ancho |
-| 17 | [17-buscar-en-la-pagina.md](./17-buscar-en-la-pagina.md) | **Pendiente.** Buscar dentro del documento abierto (`Cmd+F`); `Cmd+K` seguirá siendo la biblioteca |
+| 17 | [17-buscar-en-la-pagina.md](./17-buscar-en-la-pagina.md) | **Hecho** (desktop). Find-in-page (`Cmd+F`): panel discreto sobre el canvas; `Cmd+K` sigue siendo la biblioteca. QA manual y UI VS Code pendientes |
 
 ```
 11-tablas-anchas  ──►  12-tablas-resize-columnas
