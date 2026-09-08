@@ -5,6 +5,7 @@ import { ShortcutKbd, shortcutLabel } from "../../../../components/ShortcutKbd";
 import { LanguageSelector } from "../../../../i18n/LanguageSelector";
 import { ThemeSelector } from "../../../../theme/ThemeSelector";
 import { AccountMenuAction, ChromeTrigger } from "../../enums";
+import { isWebHost } from "../../../../host";
 import { useAccountMenuController } from "./hooks/useAccountMenuController";
 
 type Props = {
@@ -46,6 +47,7 @@ export function AccountMenu({
     AccountMenuAction.CloseWorkspace,
   ];
   const iconOnly = trigger === ChromeTrigger.Icon;
+  const webHost = isWebHost();
 
   return (
     <Dropdown>
@@ -86,32 +88,36 @@ export function AccountMenu({
           <Dropdown.Item id={AccountMenuAction.Mode} textValue={identity} className="pointer-events-none opacity-70">
             {identity} · {modeLabel}
           </Dropdown.Item>
-          <Dropdown.Item id={AccountMenuAction.Folder} textValue={t("home.account.newFolder")} className="gap-3">
-            <span className="flex-1">{t("home.account.newFolder")}</span>
-            <ShortcutKbd keys={shortcutLabel.newFolder()} />
-          </Dropdown.Item>
-          <Dropdown.Item id={AccountMenuAction.Config} textValue={configLabel} className="gap-3">
-            <span className="flex-1">{configLabel}</span>
-            <ShortcutKbd keys={shortcutLabel.settings()} />
-          </Dropdown.Item>
-          <Dropdown.Item id={AccountMenuAction.Refresh} textValue={t("home.account.refresh")} className="gap-3">
-            <span className="flex-1">{t("home.account.refresh")}</span>
-            <ShortcutKbd keys={shortcutLabel.refresh()} />
-          </Dropdown.Item>
-          <Dropdown.Item id={AccountMenuAction.ChangeFolder} textValue={t("home.account.openOther")}>
-            {t("home.account.openOther")}
-          </Dropdown.Item>
-          <Dropdown.Item id={AccountMenuAction.CloseWorkspace} textValue={t("home.account.closeWorkspace")}>
-            {t("home.account.closeWorkspace")}
-          </Dropdown.Item>
-          {workspace.auth ? (
-            <Dropdown.Item id={AccountMenuAction.SignOut} textValue={t("home.account.signOut")} className="text-danger">
-              {t("home.account.signOut")}
-            </Dropdown.Item>
-          ) : (
-            <Dropdown.Item id={AccountMenuAction.SignIn} textValue={t("home.account.signIn")}>
-              {t("home.account.signIn")}
-            </Dropdown.Item>
+          {webHost ? null : (
+            <>
+              <Dropdown.Item id={AccountMenuAction.Folder} textValue={t("home.account.newFolder")} className="gap-3">
+                <span className="flex-1">{t("home.account.newFolder")}</span>
+                <ShortcutKbd keys={shortcutLabel.newFolder()} />
+              </Dropdown.Item>
+              <Dropdown.Item id={AccountMenuAction.Config} textValue={configLabel} className="gap-3">
+                <span className="flex-1">{configLabel}</span>
+                <ShortcutKbd keys={shortcutLabel.settings()} />
+              </Dropdown.Item>
+              <Dropdown.Item id={AccountMenuAction.Refresh} textValue={t("home.account.refresh")} className="gap-3">
+                <span className="flex-1">{t("home.account.refresh")}</span>
+                <ShortcutKbd keys={shortcutLabel.refresh()} />
+              </Dropdown.Item>
+              <Dropdown.Item id={AccountMenuAction.ChangeFolder} textValue={t("home.account.openOther")}>
+                {t("home.account.openOther")}
+              </Dropdown.Item>
+              <Dropdown.Item id={AccountMenuAction.CloseWorkspace} textValue={t("home.account.closeWorkspace")}>
+                {t("home.account.closeWorkspace")}
+              </Dropdown.Item>
+              {workspace.auth ? (
+                <Dropdown.Item id={AccountMenuAction.SignOut} textValue={t("home.account.signOut")} className="text-danger">
+                  {t("home.account.signOut")}
+                </Dropdown.Item>
+              ) : (
+                <Dropdown.Item id={AccountMenuAction.SignIn} textValue={t("home.account.signIn")}>
+                  {t("home.account.signIn")}
+                </Dropdown.Item>
+              )}
+            </>
           )}
         </Dropdown.Menu>
         <div className="flex items-center justify-between gap-2 border-t border-separator p-2">

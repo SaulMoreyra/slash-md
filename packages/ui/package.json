@@ -9,7 +9,9 @@
     "./editor.css": "./src/editor/theme.css",
     "./home": "./src/home/home.ts",
     "./home/*": "./src/home/*.ts",
-    "./tokens.css": "./src/shared/tokens.css"
+    "./tokens.css": "./src/shared/tokens.css",
+    "./app-theme.css": "./src/shared/app-theme.css",
+    "./content.css": "./src/editor/content.css"
   },
   "dependencies": {
     "@slash-md/core": "0.1.0",

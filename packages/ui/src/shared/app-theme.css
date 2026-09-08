@@ -1,0 +1,135 @@
+/* Slash MD — app theme (HeroUI blue / zinc). Shared by desktop and the Pages reader.
+ * Self-contained: pulls the base Notion tokens, then overrides them. */
+
+@import "./tokens.css";
+
+:root {
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --rail-width: 16.25rem;
+  --pane-width: 20rem;
+  --home-measure: 50rem;
+
+  --text-label: 0.75rem;
+  --text-ui: 0.875rem;
+  --text-body: 0.9375rem;
+  --text-title: 1.125rem;
+  --text-display: 2rem;
+
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+/* Dark — Milkdown / Crepe tokens aligned to HeroUI blue */
+html.dark body,
+body.vscode-dark,
+body.vscode-high-contrast {
+  color-scheme: dark;
+  --slash-font: var(--font-body);
+  --slash-font-code: var(--font-outlier);
+  --slash-bg: #18181b;
+  --slash-chrome: #18181b;
+  --slash-text: #ececec;
+  --slash-muted: #a1a1aa;
+  --slash-border: #27272a;
+  --slash-hover: #27272a;
+  --slash-selected: #27272a;
+  --slash-accent: #006fee;
+  --slash-accent-fg: #ffffff;
+  --slash-secondary: #27272a;
+  --slash-secondary-fg: #f4f4f5;
+  --slash-danger: #f31260;
+  --slash-inline-code: #f5a524;
+  --slash-inline-area: #27272a;
+  --slash-surface: #18181b;
+  --slash-surface-low: #18181b;
+  --slash-caret: #006fee;
+  --slash-callout-note: #338ef7;
+  --slash-callout-tip: #005bc4;
+  --slash-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --slash-shadow-2: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --slash-overlay: rgba(0, 0, 0, 0.7);
+
+  --color-canvas: #18181b;
+  --color-paper: #18181b;
+  --color-paper-2: #18181b;
+  --color-paper-3: #111113;
+  --color-rule: #27272a;
+  --color-rule-strong: #3f3f46;
+  --color-ink: #ececec;
+  --color-ink-bright: #fafafa;
+  --color-muted: #a1a1aa;
+  --color-accent: #338ef7;
+  --color-accent-strong: #006fee;
+  --color-accent-ink: #ffffff;
+  --color-accent-dim: #002e62;
+  --color-focus: #006fee;
+  --color-danger: #f31260;
+  --color-hover: #27272a;
+  --color-selected: #27272a;
+  --color-secondary: #27272a;
+  --color-secondary-ink: #f4f4f5;
+  --color-success: #17c964;
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-chip-add: #002e62;
+  --color-outline-variant: #3f3f46;
+}
+
+/* Light (default — bare `body` so no-JS contexts get the light theme) */
+body,
+html.light body,
+body.vscode-light,
+body.vscode-high-contrast-light {
+  color-scheme: light;
+  --slash-font: var(--font-body);
+  --slash-font-code: var(--font-outlier);
+  --slash-bg: #ffffff;
+  --slash-chrome: #ffffff;
+  --slash-text: #18181b;
+  --slash-muted: #71717a;
+  --slash-border: #e4e4e7;
+  --slash-hover: #ececec;
+  --slash-selected: #e4e4e7;
+  --slash-accent: #006fee;
+  --slash-accent-fg: #ffffff;
+  --slash-secondary: #ececec;
+  --slash-secondary-fg: #18181b;
+  --slash-danger: #f31260;
+  --slash-inline-code: #c2410c;
+  --slash-inline-area: #f4f4f5;
+  --slash-surface: #ffffff;
+  --slash-surface-low: #ffffff;
+  --slash-caret: #006fee;
+  --slash-callout-note: #006fee;
+  --slash-callout-tip: #005bc4;
+  --slash-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --slash-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --slash-overlay: rgba(24, 24, 27, 0.4);
+
+  --color-canvas: #ffffff;
+  --color-paper: #ffffff;
+  --color-paper-2: #ffffff;
+  --color-paper-3: #f4f4f5;
+  --color-rule: #e4e4e7;
+  --color-rule-strong: #d4d4d8;
+  --color-ink: #18181b;
+  --color-ink-bright: #09090b;
+  --color-muted: #71717a;
+  --color-accent: #006fee;
+  --color-accent-strong: #005bc4;
+  --color-accent-ink: #ffffff;
+  --color-accent-dim: #dbeafe;
+  --color-focus: #006fee;
+  --color-danger: #f31260;
+  --color-hover: #ececec;
+  --color-selected: #e4e4e7;
+  --color-secondary: #ececec;
+  --color-secondary-ink: #18181b;
+  --color-success: #12a150;
+  --color-overlay: rgba(24, 24, 27, 0.4);
+  --color-chip-add: #dbeafe;
+  --color-outline-variant: #d4d4d8;
+}

@@ -31,7 +31,7 @@ export function EditorMoreActions({
   const { t } = useTranslation();
   const api = () => window.slashmd;
 
-  if (page.repoMode === RepoMode.Personal) {
+  if (page.repoMode === RepoMode.Personal && page.canWrite !== false) {
     return (
       <Button
         variant="ghost"

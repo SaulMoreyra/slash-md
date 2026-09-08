@@ -6,6 +6,7 @@ import { joinSitePath, stripContentPrefix } from "@slash-md/core/sitePages";
 import { flattenLibrary, rankLibraryHits } from "@slash-md/ui/home/utils/tree";
 import { createSlashCrepe } from "@slash-md/ui/editor/core/crepe";
 import { resolveInternalHref } from "./links";
+import { bindSystemTheme, paintThemeToggle, toggleTheme } from "./theme";
 import { escapeHtml, hrefForRoute, renderTree } from "./tree";
 import type { SiteBoot, SiteManifest, SitePage } from "./types";
 
@@ -29,6 +30,7 @@ async function bootReader(boot: SiteBoot, app: HTMLElement): Promise<void> {
   app.innerHTML = layoutHtml(manifest, boot.page);
   bindSearch(manifest);
   bindPaletteKeys();
+  bindTheme();
 
   if (!page) {
     const canvas = app.querySelector(".reader-canvas");
@@ -86,7 +88,10 @@ function layoutHtml(manifest: SiteManifest, activePath: string): string {
   return `<div class="reader">
     <aside class="reader-tree">
       <p><strong>${escapeHtml(manifest.name)}</strong></p>
-      <button type="button" class="reader-search-btn" data-open-search>Search ⌘K</button>
+      <div class="reader-tree-actions">
+        <button type="button" class="reader-search-btn" data-open-search>Search ⌘K</button>
+        <button type="button" class="reader-theme-btn" data-toggle-theme>☾</button>
+      </div>
       ${renderTree(manifest.tree, manifest.pages, manifest.basePath, activePath)}
     </aside>
     <div class="reader-main">
@@ -180,4 +185,10 @@ function bindPaletteKeys(): void {
       palette.hidden = true;
     }
   });
+}
+
+function bindTheme(): void {
+  paintThemeToggle();
+  bindSystemTheme();
+  document.querySelector("[data-toggle-theme]")?.addEventListener("click", toggleTheme);
 }

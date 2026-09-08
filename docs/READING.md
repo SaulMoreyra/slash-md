@@ -10,7 +10,12 @@ GitHub renders `.md` files natively. Readers navigate the repo tree or open dire
 
 ## Option 2 — GitHub Pages (Slash MD reader)
 
-Opt in with `site.enabled` in `.slashmd.json`. A reusable workflow builds a static site: folder tree, search, and the same Crepe preview as the desktop wiki (read-only).
+Opt in with `site.enabled` in `.slashmd.json`. A reusable workflow builds a static site
+that **renders like the desktop app**: it web-builds the same React app in read-only mode,
+so readers get the same sidebar (folder tree, ⌘K search, theme toggle) and the same editor
+rendering (hero, Crepe content, dark/light) as the desktop wiki. No write chrome — no
+Inbox/Drafts/Publications, no "new page", no ⌘N. It follows your OS dark/light preference,
+with a manual toggle in the sidebar. Implementation: [plan 13](plans/13-web-renders-like-desktop.md).
 
 ### In Slash MD (Desktop)
 

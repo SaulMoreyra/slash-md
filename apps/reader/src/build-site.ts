@@ -7,7 +7,7 @@ import { parseOwnerName } from "@slash-md/core/configTypes";
 import { contentPathPrefix, posixBasename, posixJoin } from "@slash-md/core/paths";
 import { parseSlashmd, siteEnabled } from "@slash-md/core/slashmd";
 import { joinSitePath, normalizeBasePath, routeFor, stripContentPrefix } from "@slash-md/core/sitePages";
-import { shellHtml } from "./shell";
+import { shellHtml, type SiteAssets } from "./shell";
 import type { SiteManifest, SitePage } from "./types";
 import { listPublishableMarkdown } from "./walk";
 
@@ -19,7 +19,7 @@ type BuildSiteOpts = {
   root: string;
   out: string;
   basePath?: string;
-  readerDir: string;
+  webAssetsDir: string;
 };
 
 export async function buildSite(opts: BuildSiteOpts): Promise<BuildSiteResult> {
@@ -65,21 +65,26 @@ export async function buildSite(opts: BuildSiteOpts): Promise<BuildSiteResult> {
     for (const image of referencedImages(markdown, page.path)) {
       await copyIfExists(opts.root, opts.out, contentPath, image.repoPath);
     }
-    const html = shellHtml(
-      {
-        basePath,
-        page: page.path,
-        manifestUrl: joinSitePath(basePath, "manifest.json"),
-      },
-      page.title === name ? name : `${page.title} · ${name}`,
-    );
-    const htmlPath = routeToHtmlPath(opts.out, page.route);
-    await fs.mkdir(path.dirname(htmlPath), { recursive: true });
-    await fs.writeFile(htmlPath, html);
   }
 
   await copyImagesDir(opts.root, opts.out, contentPath);
-  await copyReaderAssets(opts.readerDir, path.join(opts.out, "assets"));
+  const assets = await copyWebAssets(opts.webAssetsDir, basePath, path.join(opts.out, "assets"));
+  for (const page of pages) {
+    const htmlPath = routeToHtmlPath(opts.out, page.route);
+    await fs.mkdir(path.dirname(htmlPath), { recursive: true });
+    await fs.writeFile(
+      htmlPath,
+      shellHtml(
+        {
+          basePath,
+          page: page.path,
+          manifestUrl: joinSitePath(basePath, "manifest.json"),
+        },
+        page.title === name ? name : `${page.title} · ${name}`,
+        assets,
+      ),
+    );
+  }
   return { skipped: false, out: opts.out, pages };
 }
 
@@ -140,18 +145,27 @@ async function copyImagesDir(root: string, out: string, contentPath: string): Pr
   await fs.cp(src, path.join(out, "content", "images"), { recursive: true });
 }
 
-async function copyReaderAssets(readerDir: string, destDir: string): Promise<void> {
-  const distJs = path.join(readerDir, "dist/reader.js");
-  const distCss = path.join(readerDir, "dist/reader.css");
-  const stub = path.join(readerDir, "src/stub-reader.js");
-  try {
-    await fs.copyFile(distJs, path.join(destDir, "reader.js"));
-  } catch {
-    await fs.copyFile(stub, path.join(destDir, "reader.js"));
+async function copyWebAssets(webAssetsDir: string, basePath: string, destDir: string): Promise<SiteAssets> {
+  const files = await fs.readdir(webAssetsDir).catch(() => [] as string[]);
+  const entryHtml = files.find((file) => file.endsWith(".html"));
+  if (!entryHtml) {
+    return { css: [], js: [] };
   }
-  try {
-    await fs.copyFile(distCss, path.join(destDir, "reader.css"));
-  } catch {
-    await fs.writeFile(path.join(destDir, "reader.css"), "/* reader styles */\n");
+  const html = await fs.readFile(path.join(webAssetsDir, entryHtml), "utf8");
+  const assetName = (attrib: string, suffix: string): string | null => {
+    const match = html.match(new RegExp(`${attrib}="\\.\\/assets\\/([^"]+${suffix})"`));
+    return match?.[1] ?? null;
+  };
+  const cssName = assetName("href", "\\.css");
+  const jsName = assetName("src", "\\.js");
+  const css = cssName ? [cssName] : [];
+  const js = jsName ? [jsName] : [];
+  if (css.length > 0 || js.length > 0) {
+    await fs.cp(path.join(webAssetsDir, "assets"), destDir, { recursive: true });
   }
+  const href = (name: string) => joinSitePath(basePath, `assets/${name}`);
+  return {
+    css: css.map((name) => href(name)),
+    js: js.map((name) => href(name)),
+  };
 }

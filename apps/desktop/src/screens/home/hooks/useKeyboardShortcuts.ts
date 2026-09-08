@@ -3,6 +3,7 @@ import { AppOperation } from "../../../App/enums";
 import { ModalKind, NavKind, RailMode } from "../enums";
 import type { HomeScreenProps } from "../types";
 import { newPageModalKind, settingsModalKind } from "../utils";
+import { isWebHost } from "../../../host";
 import type { ModalsApi } from "./useModals";
 import type { NavApi } from "./useNav";
 import type { SearchApi } from "./useSearch";
@@ -53,6 +54,7 @@ export function useKeyboardShortcuts({
         (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       const mod = ev.metaKey || ev.ctrlKey;
       const key = ev.key.toLowerCase();
+      const webHost = isWebHost();
 
       if (ev.key === "Escape") {
         if (search.open) {
@@ -77,7 +79,7 @@ export function useKeyboardShortcuts({
           ev.preventDefault();
           if (ev.shiftKey) {
             nav.onToggleRail();
-          } else if (nav.view.kind !== NavKind.Folder) {
+          } else if (!webHost && nav.view.kind !== NavKind.Folder) {
             nav.onToggleWorkPane();
           }
           return;
@@ -85,6 +87,9 @@ export function useKeyboardShortcuts({
         if (key === "k" && !ev.shiftKey) {
           ev.preventDefault();
           search.onToggle();
+          return;
+        }
+        if (webHost) {
           return;
         }
         if (key === "n" && !ev.shiftKey) {

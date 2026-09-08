@@ -9,6 +9,7 @@ import type {
 } from "../../../../../shared/api";
 import { CreateIntent, TreeExpandMode } from "../../enums";
 import type { NavView } from "../../types";
+import { isWebHost } from "../../../../host";
 import { AccountMenu } from "../AccountMenu";
 import { RailHeader } from "./components/RailHeader";
 import { RailNav } from "./components/RailNav";
@@ -94,6 +95,7 @@ export function Rail({
   const isWorkspace = !personal;
   const canWrite = payload?.canWrite ?? true;
   const showPublicationCta = isWorkspace && !canWrite;
+  const hidePrimary = isWebHost();
 
   function handlePrimaryCta() {
     if (needsInit) {
@@ -169,20 +171,22 @@ export function Rail({
       </ScrollShadow>
 
       <div className="flex flex-col gap-2">
-        <Button
-          variant="primary"
-          fullWidth
-          className="justify-between"
-          isDisabled={busy}
-          aria-keyshortcuts="Meta+N Control+N"
-          onPress={handlePrimaryCta}
-        >
-          <span className="inline-flex items-center gap-2">
-            <IconPlus />
-            {ctaLabel}
-          </span>
-          {needsInit ? null : <ShortcutKbd keys={shortcutLabel.newPage()} />}
-        </Button>
+        {hidePrimary ? null : (
+          <Button
+            variant="primary"
+            fullWidth
+            className="justify-between"
+            isDisabled={busy}
+            aria-keyshortcuts="Meta+N Control+N"
+            onPress={handlePrimaryCta}
+          >
+            <span className="inline-flex items-center gap-2">
+              <IconPlus />
+              {ctaLabel}
+            </span>
+            {needsInit ? null : <ShortcutKbd keys={shortcutLabel.newPage()} />}
+          </Button>
+        )}
         <AccountMenu
           workspace={workspace}
           personal={personal}

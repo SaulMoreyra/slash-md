@@ -120,6 +120,39 @@ Ejecutar **en secuencia**. Los planes 00–01 son prerrequisitos de calidad; 03�
 
 **Orden:** 11a → 11b → 11c → 11d. 11e tras 11a (el snippet de 11d se pega en la guía).
 
+### Planes de tema del sitio (12)
+
+Índice y decisiones: [12-reader-desktop-theme.md](./12-reader-desktop-theme.md).
+
+| # | Plan | Resumen |
+|---|------|---------|
+| 12 | [12-reader-desktop-theme.md](./12-reader-desktop-theme.md) | **Hecho.** El sitio Pages usa el tema del Desktop (colores, fuentes, dark) |
+| 12a | [12a-app-theme-tokens.md](./12a-app-theme-tokens.md) | **Hecho.** `app-theme.css` compartido (paleta HeroUI) |
+| 12b | [12b-content-css.md](./12b-content-css.md) | **Hecho.** `content.css` compartido (rendering Crepe) |
+| 12c | [12c-reader-wiring.md](./12c-reader-wiring.md) | **Hecho.** Reader consume ambos; chrome/hero Desktop; Google Fonts |
+| 12d | [12d-dark-boot.md](./12d-dark-boot.md) | **Hecho.** Boot `prefers-color-scheme` + toggle persistido |
+| 12e | [12e-verify-docs.md](./12e-verify-docs.md) | **Hecho.** Smoke light/dark + checks + READING |
+
+### Planes de web renders-como-desktop (13)
+
+Índice y decisiones: [13-web-renders-like-desktop.md](./13-web-renders-like-desktop.md).
+
+| # | Plan | Resumen |
+|---|------|---------|
+| 13 | [13-web-renders-like-desktop.md](./13-web-renders-like-desktop.md) | **Hecho.** El site Pages web-builda el mismo app desktop en modo lectura |
+| 13a | [13a-web-build.md](./13a-web-build.md) | **Hecho.** `vite.web.config.ts` + `index.web.html` + `main.web.tsx` |
+| 13b | [13b-adapter.md](./13b-adapter.md) | **Hecho.** `createWebApi` static read-only sobre `manifest.json` |
+| 13c | [13c-page-boot.md](./13c-page-boot.md) | **Hecho.** `WebPageBoot` abre la página de arranque |
+| 13d | [13d-chrome-lite.md](./13d-chrome-lite.md) | **Hecho.** Sin My Work/CTA/write-keys; Publicar gateado por `canWrite` |
+| 13e | [13e-site-pipeline.md](./13e-site-pipeline.md) | **Hecho.** Reader consume bundle web; links internos → route |
+
+**Decisiones (13):**
+
+- Enfoque A: dual-build del desktop con config Vite web-only (sin Electron)
+- Sidebar = **árbol + búsqueda (⌘K) + tema**; sin Inbox/Drafts/Publications/WorkPane
+- Navegación = carga completa por documento (`location.href` → route)
+- Toda escritura oculta/deshabilitada; editor `contenteditable=false`
+
 ### Decisiones — carpetas (acordadas previamente)
 
 | Tema | Decisión |

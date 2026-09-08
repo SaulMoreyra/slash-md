@@ -2,6 +2,7 @@ node_modules/
 dist/
 out/
 _site/
+.tmp/
 *.vsix
 .vscode-test/
 .vscode/settings.json
@@ -12,5 +13,6 @@ _site/
 .hallmark/
 apps/desktop/dist/
 apps/desktop/dist-electron/
+apps/desktop/dist-web/
 apps/desktop/release/
 apps/vscode/dist/

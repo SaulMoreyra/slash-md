@@ -2,6 +2,7 @@ import { AppContext } from "./context";
 import { EditorSlot } from "./components/EditorSlot";
 import { Gate } from "./components/Gate";
 import { Loading } from "./components/Loading";
+import { WebPageBoot } from "./components/WebPageBoot";
 import { WelcomeSlot } from "./components/WelcomeSlot";
 import { Workspace } from "./components/Workspace";
 import { useAppController, type AppControllerApi } from "./hooks/useAppController";
@@ -11,6 +12,7 @@ function Root() {
   return (
     <AppContext.Provider value={value}>
       <Gate />
+      <WebPageBoot />
     </AppContext.Provider>
   );
 }

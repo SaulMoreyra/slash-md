@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CreateIntent } from "../../enums";
 import { CreatePageForm, type CreatePageInput } from "../CreatePageForm";
 import { ProcessGuide } from "../ProcessGuide";
+import { isWebHost } from "../../../../host";
 
 type Props = {
   section?: string;
@@ -26,6 +27,25 @@ export function EditorBlank({
     createIntent === CreateIntent.Template
       ? t("home.selectTemplateOrCreate")
       : t("home.selectPageOrCreate");
+
+  if (isWebHost()) {
+    return (
+      <div className="relative flex min-h-0 flex-1 flex-col justify-center overflow-auto px-8 py-12">
+        {busy ? (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface/75 animate-fade-in motion-reduce:animate-none"
+            role="status"
+          >
+            <Spinner aria-hidden />
+            <p className="text-sm text-muted">{t("common.creating")}</p>
+          </div>
+        ) : null}
+        <p className="mx-auto w-full max-w-lg text-center text-sm text-muted">
+          {t("home.selectPageOrCreate")}
+        </p>
+      </div>
+    );
+  }
 
   if (showProcessGuide) {
     return (

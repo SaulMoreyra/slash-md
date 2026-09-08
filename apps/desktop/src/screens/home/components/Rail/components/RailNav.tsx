@@ -6,6 +6,7 @@ import { ShortcutKbd, shortcutLabel } from "../../../../../components/ShortcutKb
 import type { HomeTreePayload } from "../../../../../../shared/api";
 import { NavKind, RailHint, TreeExpandMode } from "../../../enums";
 import type { NavView } from "../../../types";
+import { isWebHost } from "../../../../../host";
 
 type Props = {
   nav: NavView;
@@ -60,6 +61,7 @@ export function RailNav({
   const pubCount = payload?.publications?.length ?? 0;
   const hasPubs = isWorkspace && pubCount > 0;
   const inboxCount = payload?.inbox.length ?? 0;
+  const webHost = isWebHost();
 
   return (
     <ListBox
@@ -75,38 +77,40 @@ export function RailNav({
         emitWorkNav(String(key), onNav);
       }}
     >
-      <ListBox.Section>
-        <Header>{t("home.nav.myWork")}</Header>
-        {isWorkspace ? (
-          <WorkNavItem id={NavKind.Inbox} label={t("home.nav.inbox")} onNav={onNav}>
-            <IconInbox />
-            <Label>{t("home.nav.inbox")}</Label>
-            {inboxCount > 0 ? (
-              <Chip size="sm" variant="soft" color="accent">
-                <Chip.Label>{inboxCount}</Chip.Label>
-              </Chip>
-            ) : null}
-            <ShortcutKbd keys={shortcutLabel.inbox()} className="ml-auto" />
+      {webHost ? null : (
+        <ListBox.Section>
+          <Header>{t("home.nav.myWork")}</Header>
+          {isWorkspace ? (
+            <WorkNavItem id={NavKind.Inbox} label={t("home.nav.inbox")} onNav={onNav}>
+              <IconInbox />
+              <Label>{t("home.nav.inbox")}</Label>
+              {inboxCount > 0 ? (
+                <Chip size="sm" variant="soft" color="accent">
+                  <Chip.Label>{inboxCount}</Chip.Label>
+                </Chip>
+              ) : null}
+              <ShortcutKbd keys={shortcutLabel.inbox()} className="ml-auto" />
+            </WorkNavItem>
+          ) : null}
+          <WorkNavItem id={NavKind.Drafts} label={t("home.nav.drafts")} onNav={onNav}>
+            <IconDrafts />
+            <Label>{t("home.nav.drafts")}</Label>
+            <ShortcutKbd keys={shortcutLabel.drafts()} className="ml-auto" />
           </WorkNavItem>
-        ) : null}
-        <WorkNavItem id={NavKind.Drafts} label={t("home.nav.drafts")} onNav={onNav}>
-          <IconDrafts />
-          <Label>{t("home.nav.drafts")}</Label>
-          <ShortcutKbd keys={shortcutLabel.drafts()} className="ml-auto" />
-        </WorkNavItem>
-        {isWorkspace ? (
-          <WorkNavItem id={NavKind.Publications} label={t("home.publication.listTitle")} onNav={onNav}>
-            <IconHistory />
-            <Label>{t("home.publication.listTitle")}</Label>
-            {hasPubs ? (
-              <Chip size="sm" variant="soft" color="default">
-                <Chip.Label>{pubCount}</Chip.Label>
-              </Chip>
-            ) : null}
-            <ShortcutKbd keys={shortcutLabel.publications()} className="ml-auto" />
-          </WorkNavItem>
-        ) : null}
-      </ListBox.Section>
+          {isWorkspace ? (
+            <WorkNavItem id={NavKind.Publications} label={t("home.publication.listTitle")} onNav={onNav}>
+              <IconHistory />
+              <Label>{t("home.publication.listTitle")}</Label>
+              {hasPubs ? (
+                <Chip size="sm" variant="soft" color="default">
+                  <Chip.Label>{pubCount}</Chip.Label>
+                </Chip>
+              ) : null}
+              <ShortcutKbd keys={shortcutLabel.publications()} className="ml-auto" />
+            </WorkNavItem>
+          ) : null}
+        </ListBox.Section>
+      )}
       <ListBox.Section>
         <WorkspaceHeader
           canToggle={Boolean(canToggleAllFolders && onToggleAllFolders)}

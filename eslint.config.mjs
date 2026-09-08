@@ -9,6 +9,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/dist-electron/**",
+      "**/dist-web/**",
       "**/node_modules/**",
       "apps/vscode/out/**",
       "apps/vscode/.vscode-test/**",

@@ -22,9 +22,12 @@
     "desktop:pack": "npm run pack -w @slash-md/desktop",
     "desktop:lint": "npm run lint -w @slash-md/desktop",
     "desktop:typecheck": "npm run typecheck -w @slash-md/desktop",
+    "desktop:web:build": "npm run web:build -w @slash-md/desktop",
     "slash": "node apps/desktop/bin/slash",
     "reader:build": "npm run build -w @slash-md/reader",
-    "reader:site": "node apps/reader/dist/build-site.mjs"
+    "reader:site": "node apps/reader/dist/build-site.mjs",
+    "site:build": "npm run desktop:web:build && npm run reader:build && SITE_ROOT=${SITE_ROOT:-apps/reader/fixtures/wiki} SITE_BASE=${SITE_BASE:-/} SITE_OUT=${SITE_OUT:-$PWD/.tmp/site} WEB_ASSETS_DIR=${WEB_ASSETS_DIR:-$PWD/apps/desktop/dist-web} node apps/reader/dist/build-site.mjs",
+    "site:preview": "npm run site:build && npx --yes serve -l ${PORT:-4199} ${SITE_OUT:-$PWD/.tmp/site}"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
