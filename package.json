@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "description": "Slash MD monorepo — VS Code extension + Electron desktop + shared packages",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
