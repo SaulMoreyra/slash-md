@@ -83,6 +83,9 @@ export type ThreadsPayload = {
   headOid: string | null;
 };
 
+/** One searchable page: enough to rank and open it, without its body. */
+export type SearchEntry = { path: string; title: string };
+
 export type DesktopApi = {
   pickFolder(): Promise<string | undefined>;
   openFolder(path: string): Promise<WorkspaceInfo>;
@@ -94,6 +97,10 @@ export type DesktopApi = {
   getWorkspace(): Promise<WorkspaceInfo>;
   gitStatus(): Promise<GitSnapshot>;
   homeTree(): Promise<HomeTreePayload>;
+  /** One level of the library tree. Folders come back with `children` unset. */
+  listFolder(dirPath: string): Promise<HomeTreeNode[]>;
+  /** Flat path + title index for the search palette. */
+  searchIndex(): Promise<SearchEntry[]>;
   openPage(path: string): Promise<PagePayload>;
   savePage(path: string, markdown: string): Promise<{ savedAt: string }>;
   patchFrontmatter(path: string, patch: Partial<FrontmatterFields>): Promise<{ markdown: string }>;

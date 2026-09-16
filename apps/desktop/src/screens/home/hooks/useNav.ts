@@ -5,6 +5,7 @@ import type { HomeTreeNode, HomeTreePayload, WorkspaceInfo } from "../../../../s
 import { isWorkspaceOnlyNav, NavKind, RAIL_OVERLAY_MAX_WIDTH, RailMode, RepoMode, TreeEntryKind, TreeExpandMode } from "../enums";
 import type { NavView } from "../types";
 import { createIntentForSection, workspaceTitle } from "../utils";
+import { TreePathState, useFolderIndex } from "./useFolderIndex";
 import { useRailMode } from "./useRailMode";
 
 type Params = {
@@ -14,6 +15,9 @@ type Params = {
   libraryLabel: string;
   onClosePage: () => void;
 };
+
+/** Shared empty tree so an uninitialised workspace does not churn identities. */
+const EMPTY_ROOTS: HomeTreeNode[] = [];
 
 export type NavApi = ReturnType<typeof useNav>;
 
@@ -29,8 +33,13 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onClosePage }:
   const payload = tree;
   const isWorkspace = workspace.config?.mode === RepoMode.Workspace;
   const personal = !isWorkspace;
-  const roots = payload?.roots ?? [];
-  const folder = view.kind === NavKind.Folder && payload ? findFolder(payload.roots, view.path) : undefined;
+  // The snapshot carries only the top level; deeper folders are indexed as they
+  // are opened, so `roots` here is the grafted tree, not `payload.roots`.
+  const { tree: roots, stateOf } = useFolderIndex({
+    roots: payload?.roots ?? EMPTY_ROOTS,
+    expanded,
+  });
+  const folder = view.kind === NavKind.Folder ? findFolder(roots, view.path) : undefined;
   const section = view.kind === NavKind.Folder ? view.path : undefined;
   const createIntent = createIntentForSection(
     section,
@@ -189,11 +198,14 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onClosePage }:
     if (view.kind !== NavKind.Folder || !payload || payload.needsInit) {
       return;
     }
-    if (!findFolder(payload.roots, view.path)) {
+    // Only leave when the folder is definitively gone. A folder deeper than the
+    // indexed levels is merely unknown yet, and bouncing to Drafts on that would
+    // fight the user every time they opened something below the first level.
+    if (stateOf(view.path) === TreePathState.Absent) {
       setViewState({ kind: NavKind.Drafts });
       setWorkPaneOpen(true);
     }
-  }, [payload, view]);
+  }, [payload, view, stateOf]);
 
   useEffect(() => {
     setRailOpen(railMode !== RailMode.Overlay);

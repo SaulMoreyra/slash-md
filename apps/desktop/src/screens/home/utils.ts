@@ -7,7 +7,10 @@ import type {
 } from "@slash-md/core/homeTypes";
 import { isTemplateRepoPath, templateDirCandidates } from "@slash-md/core/templates";
 import type { TFunction } from "i18next";
-import type { HomeTreePayload } from "../../../shared/api";
+import { posixJoin, posixNormalize } from "@slash-md/core/paths";
+import { relativeToDir } from "@slash-md/core/homeTree";
+import type { LibraryHit } from "@slash-md/ui/home/utils/tree";
+import type { HomeTreePayload, SearchEntry } from "../../../shared/api";
 import { CreateIntent, ModalKind, PrCheckStatus, PublicationCta, PublicationKind, PublicationStatusTone, PublishBlocker } from "./enums";
 
 export function createIntentForSection(
@@ -345,4 +348,47 @@ export function publishErrorCopy(error: string, t: TFunction): string | null {
     return t("home.pr.publishClosed");
   }
   return null;
+}
+
+/**
+ * Turns the host's flat page index into the shape the search palette ranks.
+ *
+ * Search used to read the fully expanded tree, which only existed because the
+ * host walked everything up front. With the tree indexed lazily it reads this
+ * instead, so results no longer depend on which folders happen to be open.
+ *
+ * Folder hits are the directories the pages live in: the same set the tree
+ * shows, rebuilt from the paths rather than indexed separately.
+ */
+export function libraryHitsFromIndex(entries: SearchEntry[], contentPath: string): LibraryHit[] {
+  const base = posixNormalize(contentPath);
+  const hits: LibraryHit[] = [];
+  const seenFolders = new Set<string>();
+
+  for (const entry of entries) {
+    const rel = relativeToDir(base, entry.path);
+    if (rel === undefined) {
+      continue;
+    }
+    const segments = rel.split("/").filter(Boolean);
+    const dirs = segments.slice(0, -1);
+
+    for (let depth = 1; depth <= dirs.length; depth += 1) {
+      const folderPath = posixJoin(base, dirs.slice(0, depth).join("/"));
+      if (seenFolders.has(folderPath)) {
+        continue;
+      }
+      seenFolders.add(folderPath);
+      hits.push({
+        kind: "folder",
+        path: folderPath,
+        title: dirs[depth - 1]!,
+        trail: dirs.slice(0, depth - 1).join(" / "),
+      });
+    }
+
+    hits.push({ kind: "file", path: entry.path, title: entry.title, trail: dirs.join(" / ") });
+  }
+
+  return hits;
 }
