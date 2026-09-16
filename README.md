@@ -1,6 +1,16 @@
-# Slash MD
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="media/slash-dark.svg">
+    <img src="media/slash-light.svg" alt="Slash MD" width="88">
+  </picture>
+</p>
 
-Notion-like Markdown editor for product docs. Pages are real `.md` files in your repo; GitHub handles review and publishing.
+<h1 align="center">Slash MD</h1>
+
+<p align="center">
+  Notion-like Markdown editor for product docs.<br>
+  Pages are real <code>.md</code> files in your repo; GitHub handles review and publishing.
+</p>
 
 Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github`):
 
@@ -8,8 +18,6 @@ Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github
 | --- | --- | --- |
 | **Desktop (SlashMD)** | Electron (`apps/desktop`) | Wiki: nav, drafts, review, publish, and editor in one window |
 | **VS Code / Cursor** | Extension (`apps/vscode`) | WYSIWYG Markdown editor inside the IDE |
-
-![Slash MD icon](media/slash.png)
 
 ## What you get
 
@@ -30,6 +38,37 @@ Two apps share the same engine (`packages/core`, `packages/ui`, `packages/github
 
 Product flows (with diagrams): [docs/FLOWS.md](docs/FLOWS.md). Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Requirements
+
+| What | Needed | Why |
+| --- | --- | --- |
+| **Node** | **22.12+** — `.nvmrc` pins 22 | parts of the dep tree (jsdom, `@electron/rebuild`, Tailwind 4) `require()` ESM-only packages, which Node only supports from 20.19 / 22.12 on |
+| **npm** | 10+ (ships with Node 22) | workspaces |
+| **Git + GitHub** | account with `repo` scope | review and publish |
+| **VS Code / Cursor** | `^1.85.0` | extension only |
+
+```bash
+nvm install && nvm use   # reads .nvmrc
+node -v                  # expect v22.x
+```
+
+For the Desktop happy path, open your docs folder as the workspace.
+
+<details>
+<summary>On an older Node, install "succeeds" and then tests break</summary>
+
+Node 20.18 and below install fine — with a wall of `EBADENGINE` warnings — and the app still builds and runs. What does break is the desktop test suite:
+
+```
+npm test -w @slash-md/desktop
+# Error [ERR_REQUIRE_ESM]: require() of ES Module …/@exodus/bytes/encoding-lite.js
+#   → every vitest worker fails to start
+```
+
+That is jsdom's dependency chain needing `require(esm)`. Check `node -v` before filing a bug.
+
+</details>
+
 ## Desktop (SlashMD)
 
 From the repo root:
@@ -38,6 +77,8 @@ From the repo root:
 npm install
 npm run desktop:dev
 ```
+
+That builds `electron/main.ts` + `electron/preload.ts`, starts Vite on `http://localhost:5173`, and opens the Electron window. Both reload on save.
 
 Open a folder from the terminal (like `code .` / `cursor .`):
 
@@ -112,12 +153,6 @@ Use `"contentPath": "."` if Markdown lives at the repo root. Use `"mode": "perso
 
 Developers open the `.md` files on GitHub or in their IDE. Optional GitHub Pages / Docsify setup: [docs/READING.md](docs/READING.md) and [docs-site/](docs-site/).
 
-## Requirements
-
-- **Desktop:** Node 18+; Git + GitHub (`repo` scope) for review and publish. Connecting GitHub CLI is a second step in the app — see [sign-in](docs/USAGE.md#sign-in-to-github-desktop).
-- **Extension:** VS Code / Cursor `^1.85.0`
-- Docs folder opened as the workspace (Desktop happy path)
-
 ## Development
 
 ```
@@ -132,10 +167,13 @@ packages/
 
 ```bash
 npm install
-npm run desktop:dev    # Electron
-npm run build          # extension bundles → apps/vscode/dist
-npm test
-npm run package        # → apps/vscode/slash-md-<version>.vsix
+npm run desktop:dev            # Electron + Vite dev server
+npm run build                  # extension bundles → apps/vscode/dist
+npm run package                # → apps/vscode/slash-md-<version>.vsix
+
+npm run lint                   # eslint (desktop, packages, test) + tsc --noEmit
+npm test                       # extension round-trip (build + boot)
+npm test -w @slash-md/desktop  # desktop unit tests (vitest)
 ```
 
 F5 / debug uses `--extensionDevelopmentPath=apps/vscode`.
