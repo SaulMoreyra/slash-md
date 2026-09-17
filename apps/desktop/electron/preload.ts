@@ -18,6 +18,8 @@ const api: DesktopApi = {
   getWorkspace: invoke("getWorkspace"),
   gitStatus: invoke("gitStatus"),
   homeTree: invoke("homeTree"),
+  listFolder: invoke("listFolder"),
+  searchIndex: invoke("searchIndex"),
   openPage: invoke("openPage"),
   savePage: invoke("savePage"),
   patchFrontmatter: invoke("patchFrontmatter"),

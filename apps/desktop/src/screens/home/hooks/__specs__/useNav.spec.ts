@@ -33,6 +33,11 @@ describe("useNav", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // useNav indexes folders through the host as they are expanded.
+    Object.defineProperty(window, "slashmd", {
+      configurable: true,
+      value: { listFolder: vi.fn(async () => []) },
+    });
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: false,
       media: query,

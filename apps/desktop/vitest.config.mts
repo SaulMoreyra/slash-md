@@ -18,6 +18,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: [path.join(root, "src/test/setup.ts")],
-    include: ["src/**/*.spec.{ts,tsx}", "shared/**/*.spec.ts"],
+    include: ["src/**/*.spec.{ts,tsx}", "shared/**/*.spec.ts", "electron/**/*.spec.ts"],
   },
 });

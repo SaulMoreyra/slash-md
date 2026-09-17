@@ -6,11 +6,11 @@ import type { HomeTreePayload, InReviewPage, LoteReviewSummary } from "@slash-md
 import { commenterFromGithubUser, uniqueCommenters } from "@slash-md/core/publicationMeta";
 import { contentPathPrefix, posixJoin, posixNormalize } from "@slash-md/core/paths";
 import { templateDirCandidates } from "@slash-md/core/templates";
-import { configuredSections, dirExists, getContentConfig, readSlashmd, readText, repoFile } from "./config";
+import { configuredSections, dirExists, fileExists, getContentConfig, readSlashmd, readText, repoFile } from "./config";
 import { currentAuth, resolveToken } from "./auth";
 import { currentBranchName, isGitWorkspace, isMergeInProgress } from "./git";
 import { getWorkspaceRoot, readStaging, writeStaging } from "./session";
-import { buildLevel, listInReviewPages, listLocalDrafts, listLocalMarkdown, listPendingReviewMarkdown, titleFor } from "./workspace";
+import { listFolderLevel, listInReviewPages, listLocalDrafts, listLocalMarkdown, listPendingReviewMarkdown } from "./workspace";
 import { getPublicationState, listPublications } from "./publication";
 
 export async function buildHomeTree(): Promise<HomeTreePayload> {
@@ -33,14 +33,15 @@ export async function buildHomeTree(): Promise<HomeTreePayload> {
   }
 
   const slashmd = await readSlashmd(root);
-  const files = await listLocalMarkdown(root, config.contentPath);
   const configured = [
     ...new Set([
       ...configuredSections(slashmd, config.contentPath),
       ...(await existingTemplateSections(root, config.contentPath, slashmd.templatesPath)),
     ]),
   ];
-  const roots = await buildLevel(config.contentPath, files, configured, (filePath) => titleFor(root, filePath));
+  // Only the top level. Everything below is indexed when the folder is opened,
+  // over the `listFolder` channel.
+  const roots = await listFolderLevel(root, config.contentPath, configured);
 
   const workspaceMode = isWorkspaceMode(config.mode);
   const { publication, canWrite } = workspaceMode
@@ -56,7 +57,7 @@ export async function buildHomeTree(): Promise<HomeTreePayload> {
   const drafts =
     workspaceMode && !publication
       ? []
-      : await listLocalDrafts(root, config.contentPath, files);
+      : await listLocalDrafts(root, config.contentPath);
 
   const pendingReview = publication
     ? await listPendingReviewMarkdown(root, config.contentPath, config.defaultBranch, publication.branch)
@@ -82,7 +83,17 @@ export async function buildHomeTree(): Promise<HomeTreePayload> {
         })
       : { items: [] };
 
-  const inReview = await listInReviewPages(root, config.contentPath, files, publication);
+  // The fallback branch of listInReviewPages reads frontmatter across the whole
+  // content tree. Only workspace mode consumes the result, so personal and local
+  // workspaces must not pay for it.
+  const inReview = workspaceMode
+    ? await listInReviewPages(
+        root,
+        config.contentPath,
+        await listLocalMarkdown(root, config.contentPath),
+        publication,
+      )
+    : [];
 
   const canPublishBatch = publication?.kind === "in_review" && Boolean(publication.prNumber);
 
@@ -91,7 +102,8 @@ export async function buildHomeTree(): Promise<HomeTreePayload> {
     : await loadLoteReviewSummary(token, config, inReview);
 
   const indexCandidates = [posixJoin(config.contentPath, "README.md"), posixJoin(config.contentPath, "index.md")];
-  const indexPath = files.find((item) => indexCandidates.includes(item));
+  const indexHits = await Promise.all(indexCandidates.map((item) => fileExists(repoFile(root, item))));
+  const indexPath = indexCandidates.find((_, i) => indexHits[i]);
   const merging = (await isGitWorkspace(root)) ? await isMergeInProgress(root) : false;
   const wikiSyncStatus = merging ? "merging" : loteReview?.wikiSyncStatus ?? "idle";
 

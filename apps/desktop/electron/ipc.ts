@@ -2,7 +2,8 @@ import { BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import fs from "node:fs/promises";
 import type { AppTheme, DesktopApi, SlashmdFile, WorkspaceInfo } from "../shared/api";
 import { currentAuth, probeGhAuth, signInWithToken, signOut } from "./auth";
-import { detectGit, getContentConfig, readSlashmd, writeSlashmd } from "./config";
+import { configuredSections, detectGit, getContentConfig, readSlashmd, writeSlashmd } from "./config";
+import { buildSearchIndex, invalidateSearchIndex, listFolderLevel } from "./workspace";
 import { loadThreads, threadCreate, threadReply, threadResolve } from "./comments";
 import { buildHomeTree } from "./home";
 import { resolveImages, uploadImage } from "./images";
@@ -61,10 +62,27 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     );
   };
 
+  /**
+   * Same as `handle`, for anything that can add, remove or retitle a page: it
+   * drops the search index afterwards so the palette cannot serve stale hits.
+   * Going through a named wrapper keeps that from being forgotten the next time
+   * a write channel is added.
+   */
+  const handleWrite = <K extends keyof DesktopApi>(channel: K, fn: DesktopApi[K]) => {
+    handle(channel, (async (...args: unknown[]) => {
+      try {
+        return await (fn as (...rest: unknown[]) => Promise<unknown>)(...args);
+      } finally {
+        invalidateSearchIndex();
+      }
+    }) as DesktopApi[K]);
+  };
+
   handle("pickFolder", () => pickFolder(getWindow()));
 
   handle("openFolder", async (folderPath: string) => {
     setWorkspaceRoot(folderPath);
+    invalidateSearchIndex();
     return workspaceInfo();
   });
 
@@ -102,25 +120,44 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("homeTree", () => buildHomeTree());
 
+  handle("listFolder", async (dirPath: string) => {
+    const root = getWorkspaceRoot();
+    if (!root) {
+      return [];
+    }
+    const slashmd = await readSlashmd(root);
+    const config = await getContentConfig(root);
+    return listFolderLevel(root, dirPath, configuredSections(slashmd, config?.contentPath ?? "."));
+  });
+
+  handle("searchIndex", async () => {
+    const root = getWorkspaceRoot();
+    const config = await getContentConfig(root);
+    if (!root || !config) {
+      return [];
+    }
+    return buildSearchIndex(root, config.contentPath);
+  });
+
   handle("openPage", (pagePath: string) => loadPage(pagePath));
 
-  handle("savePage", (pagePath: string, markdown: string) => savePage(pagePath, markdown));
+  handleWrite("savePage", (pagePath: string, markdown: string) => savePage(pagePath, markdown));
 
-  handle("patchFrontmatter", (pagePath: string, patch) => patchFrontmatter(pagePath, patch));
+  handleWrite("patchFrontmatter", (pagePath: string, patch) => patchFrontmatter(pagePath, patch));
 
-  handle("newPage", (input) => createPage(input));
+  handleWrite("newPage", (input) => createPage(input));
 
-  handle("newFolder", (input) => createFolder(input));
+  handleWrite("newFolder", (input) => createFolder(input));
 
-  handle("renamePage", (pagePath: string, title: string) => renamePage(pagePath, title));
+  handleWrite("renamePage", (pagePath: string, title: string) => renamePage(pagePath, title));
 
-  handle("deletePage", (pagePath: string) => deletePage(pagePath));
+  handleWrite("deletePage", (pagePath: string) => deletePage(pagePath));
 
-  handle("renameFolder", (folderPath: string, name: string) => renameFolder(folderPath, name));
+  handleWrite("renameFolder", (folderPath: string, name: string) => renameFolder(folderPath, name));
 
-  handle("deleteFolder", (folderPath: string) => deleteFolder(folderPath));
+  handleWrite("deleteFolder", (folderPath: string) => deleteFolder(folderPath));
 
-  handle("discardDraft", (pagePath: string) => discardDraft(pagePath));
+  handleWrite("discardDraft", (pagePath: string) => discardDraft(pagePath));
 
   handle("setDraftSelection", async (paths: string[]) => {
     const root = getWorkspaceRoot();

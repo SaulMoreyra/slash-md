@@ -39,7 +39,10 @@ export function useHomeController({
     libraryLabel: t("home.nav.workspace"),
     onClosePage,
   });
-  const search = useSearch({ roots: nav.roots });
+  const search = useSearch({
+    contentPath: tree?.contentPath ?? ".",
+    enabled: Boolean(tree) && !tree?.needsInit,
+  });
   const canWrite = nav.payload?.canWrite ?? true;
   const publicationPr =
     nav.payload?.loteReview?.prNumber ?? nav.payload?.publication?.prNumber;
