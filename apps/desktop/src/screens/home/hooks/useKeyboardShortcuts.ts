@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { AppOperation } from "../../../App/enums";
+import type { TabState } from "../../../App/hooks/useTabs";
 import { requestCloseFindInPage } from "../../editor/findInPageBridge";
 import { ModalKind, NavKind, RailMode } from "../enums";
 import type { HomeScreenProps } from "../types";
@@ -27,6 +28,9 @@ type Params = {
     | "onCloseRail"
     | "onToggleRail"
   >;
+  tabs: TabState[];
+  activeKey: string | null;
+  onActivateTab: (key: string) => void;
   onClosePage: () => void;
   onRefresh: () => Promise<void>;
   runOp: HomeScreenProps["runOp"];
@@ -39,11 +43,23 @@ export function useKeyboardShortcuts({
   search,
   modals,
   nav,
+  tabs,
+  activeKey,
+  onActivateTab,
   onClosePage,
   onRefresh,
   runOp,
 }: Params) {
   useEffect(() => {
+    const cycleTab = (direction: 1 | -1) => {
+      if (tabs.length === 0) {
+        return;
+      }
+      const index = tabs.findIndex((tab) => tab.key === activeKey);
+      const next = (index < 0 ? (direction > 0 ? -1 : 0) : index + direction + tabs.length) % tabs.length;
+      onActivateTab(tabs[next].key);
+    };
+
     const onKey = (ev: KeyboardEvent) => {
       if (modals.kind !== ModalKind.None) {
         return;
@@ -135,6 +151,16 @@ export function useKeyboardShortcuts({
           void runOp(AppOperation.Refresh, onRefresh);
           return;
         }
+        if (key === "]" && ev.shiftKey) {
+          ev.preventDefault();
+          cycleTab(1);
+          return;
+        }
+        if (key === "[" && ev.shiftKey) {
+          ev.preventDefault();
+          cycleTab(-1);
+          return;
+        }
         if (key === "w" && pagePath) {
           ev.preventDefault();
           onClosePage();
@@ -172,5 +198,8 @@ export function useKeyboardShortcuts({
     onClosePage,
     onRefresh,
     runOp,
+    tabs,
+    activeKey,
+    onActivateTab,
   ]);
 }

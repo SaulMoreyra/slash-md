@@ -64,9 +64,9 @@
 - [x] `useTreeMutations.ts`: `onRewritePath`/`onCloseTabsUnder` en rename/delete.
 
 ### Fase 6 — Hardening
-- [ ] `stageKey`: no remonta en flips `editing/selected` con `hasPage`.
-- [ ] Accesibilidad tablist/tab, flechas ←/→, clic central.
-- [ ] ⌘⇧]/⌘⇧[ (opcional) en `screens/home/hooks/useKeyboardShortcuts.ts`.
+- [x] `stageKey`: no remonta en flips `editing/selected` con `hasPage`.
+- [x] Accesibilidad tablist/tab, flechas ←/→, clic central.
+- [x] ⌘⇧]/⌘⇧[ (opcional) en `screens/home/hooks/useKeyboardShortcuts.ts`.
 
 ### Fase 7 — Verificación
 - [ ] `npm run desktop:lint`

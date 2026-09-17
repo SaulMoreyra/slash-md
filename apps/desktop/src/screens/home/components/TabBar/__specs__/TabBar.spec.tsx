@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
 import { emptyFrontmatter } from "@slash-md/core/frontmatter";
-import { cleanup, renderWithProviders, screen, userEvent } from "../../../../../test/render";
+import { cleanup, fireEvent, renderWithProviders, screen, userEvent } from "../../../../../test/render";
 import type { PagePayload } from "../../../../../../shared/api";
 import type { TabState } from "../../../../../App/hooks/useTabs";
 import { TabBar } from "../TabBar";
@@ -75,6 +75,40 @@ describe("TabBar", () => {
     const user = userEvent.setup();
     renderComponent();
     await user.click(screen.getByRole("button", { name: t("home.tabs.close", { title: "Beta" }) }));
+    expect(onCloseTab).toHaveBeenCalledWith("docs/b.md");
+    expect(onActivateTab).not.toHaveBeenCalled();
+  });
+
+  it("activates and focuses the next tab with ArrowRight", () => {
+    renderComponent();
+    screen.getByRole("tablist").focus();
+    fireEvent.keyDown(screen.getByRole("tablist"), { key: "ArrowRight" });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/b.md");
+  });
+
+  it("wraps to the last tab with ArrowLeft from the first", () => {
+    renderComponent();
+    fireEvent.keyDown(screen.getByRole("tablist"), { key: "ArrowLeft" });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/b.md");
+  });
+
+  it("activates the first tab with Home", () => {
+    renderComponent({ activeKey: "docs/b.md" });
+    fireEvent.keyDown(screen.getByRole("tablist"), { key: "Home" });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/a.md");
+  });
+
+  it("activates a tab with Enter when focused", () => {
+    renderComponent();
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Beta" }), { key: "Enter" });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/b.md");
+  });
+
+  it("closes a tab on middle click without activating it", () => {
+    renderComponent();
+    screen.getByRole("tab", { name: "Beta" }).dispatchEvent(
+      new MouseEvent("auxclick", { button: 1, bubbles: true }),
+    );
     expect(onCloseTab).toHaveBeenCalledWith("docs/b.md");
     expect(onActivateTab).not.toHaveBeenCalled();
   });

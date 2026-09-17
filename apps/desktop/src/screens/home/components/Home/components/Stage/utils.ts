@@ -13,7 +13,10 @@ export function stageKey(flags: {
   if (flags.loading) {
     return "loading";
   }
-  if (flags.merging && flags.editing && flags.hasPage) {
+  if (flags.hasPage) {
+    return "page";
+  }
+  if (flags.merging && flags.editing) {
     return "conflict-edit";
   }
   if (flags.merging && flags.selected) {
@@ -21,9 +24,6 @@ export function stageKey(flags: {
   }
   if (flags.merging) {
     return "conflict-empty";
-  }
-  if (flags.hasPage) {
-    return "page";
   }
   return `blank:${flags.section ?? ""}`;
 }

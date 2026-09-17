@@ -10,7 +10,8 @@ type Props = {
 };
 
 export function EditorStage({ hasPage, merging, children }: Props) {
-  const { tabs } = useHome();
+  const { tabs, conflicts } = useHome();
+  const overlay = merging && !conflicts.editing;
   return (
     <>
       <TabBar
@@ -19,20 +20,14 @@ export function EditorStage({ hasPage, merging, children }: Props) {
         onActivateTab={tabs.onActivateTab}
         onCloseTab={tabs.onCloseTab}
       />
-      <EditorStageBody hasPage={hasPage} merging={merging}>
-        {children}
-      </EditorStageBody>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className={overlay ? "hidden" : "flex min-h-0 flex-1 flex-col"}>{children}</div>
+        {overlay ? (
+          <div className="absolute inset-0 flex min-h-0 flex-col">
+            <Conflict hasPage={hasPage}>{children}</Conflict>
+          </div>
+        ) : null}
+      </div>
     </>
   );
-}
-
-function EditorStageBody({
-  hasPage,
-  merging,
-  children,
-}: Props) {
-  if (merging) {
-    return <Conflict hasPage={hasPage}>{children}</Conflict>;
-  }
-  return children;
 }
