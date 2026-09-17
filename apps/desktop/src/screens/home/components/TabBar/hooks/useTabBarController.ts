@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { TabState } from "../../../../../App/hooks/useTabs";
-import { tabLabel } from "../utils";
+import { clampLabel, tabLabel } from "../utils";
 
 export type TabBarProps = {
   tabs: TabState[];
@@ -14,6 +14,7 @@ export type TabItemView = {
   key: string;
   tabId: string;
   label: string;
+  labelFull: string;
   dirty: boolean;
   selected: boolean;
 };
@@ -29,13 +30,17 @@ export function useTabBarController({
 
   const items = useMemo<TabItemView[]>(
     () =>
-      tabs.map((tab) => ({
-        key: tab.key,
-        tabId: tab.key,
-        label: tabLabel(tab.page.path, tab.page.frontmatter.title, untitled),
-        dirty: tab.dirty,
-        selected: tab.key === activeKey,
-      })),
+      tabs.map((tab) => {
+        const labelFull = tabLabel(tab.page.path, tab.page.frontmatter.title, untitled);
+        return {
+          key: tab.key,
+          tabId: tab.key,
+          label: clampLabel(labelFull),
+          labelFull,
+          dirty: tab.dirty,
+          selected: tab.key === activeKey,
+        };
+      }),
     [tabs, activeKey, untitled],
   );
 

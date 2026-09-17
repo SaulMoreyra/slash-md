@@ -43,7 +43,7 @@ export function TabList({ items, onActivateTab, onCloseTab }: Props) {
     <div
       role="tablist"
       aria-label={t("home.tabs.aria")}
-      className="flex min-h-9"
+      className="flex min-h-8"
       onKeyDown={handleKeyDown}
     >
       {items.map((item) => (

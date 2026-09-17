@@ -122,4 +122,15 @@ describe("TabBar", () => {
       screen.getByRole("tab", { name: `Alpha (${t("home.tabs.dirty")})` }),
     ).toBeInTheDocument();
   });
+
+  it("clamps a long tab name with an ellipsis but keeps the full title", () => {
+    const longTitle = "This is an extremely long document title that should be trimmed";
+    renderComponent({
+      tabs: [tab("docs/long.md", longTitle)],
+      activeKey: "docs/long.md",
+    });
+    const element = screen.getByRole("tab", { name: longTitle });
+    expect(element).toHaveAttribute("title", longTitle);
+    expect(screen.getByText("This is an extremely lo…")).toBeInTheDocument();
+  });
 });

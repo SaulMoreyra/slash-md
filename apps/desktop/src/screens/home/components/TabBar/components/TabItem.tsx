@@ -16,7 +16,7 @@ export function TabItem({ item, onActivateTab, onCloseTab, ref }: Props) {
   const selectedClass = item.selected
     ? "border-foreground bg-surface text-foreground"
     : "border-transparent text-muted hover:text-foreground";
-  const ariaLabel = item.dirty ? `${item.label} (${t("home.tabs.dirty")})` : item.label;
+  const ariaLabel = item.dirty ? `${item.labelFull} (${t("home.tabs.dirty")})` : item.labelFull;
 
   const handleClick = () => {
     onActivateTab(item.tabId);
@@ -50,8 +50,8 @@ export function TabItem({ item, onActivateTab, onCloseTab, ref }: Props) {
       aria-selected={item.selected}
       aria-label={ariaLabel}
       tabIndex={item.selected ? 0 : -1}
-      title={item.label}
-      className={`flex max-w-48 min-w-0 cursor-pointer items-center gap-1.5 border-b-2 px-2 py-1.5 text-sm ${selectedClass}`}
+      title={item.labelFull}
+      className={`flex max-w-40 min-w-0 cursor-pointer items-center gap-1.5 border-b-2 px-2 py-1 text-sm ${selectedClass}`}
       onClick={handleClick}
       onAuxClick={handleAuxClick}
       onKeyDown={handleKeyDown}
