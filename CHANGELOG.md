@@ -6,6 +6,7 @@ All notable changes to Slash MD are documented in this file.
 
 ### Added
 
+- Desktop: resize the editor page width by dragging the left/right edge of the page (Google Docs style), with double-click to restore the default width. The width is capped to the visible container and persisted per user in `localStorage`.
 - Desktop: refresh the workspace tree and re-read the open page when the window regains focus, so edits made externally (agents, editors) show up without switching files; re-opening the current file now reloads its content into the editor (guarded against clobbering unsaved edits).
 
 ### Changed

@@ -1,14 +1,16 @@
 import { Avatar, Chip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
+import type { CSSProperties } from "react";
 import { CrepeCanvas } from "../../../../../components/CrepeCanvas";
 import { HeroChrome } from "../../../../../components/HeroChrome";
 import { PageProperties } from "../../PageProperties";
 import { FindInPagePanel } from "../../FindInPagePanel";
+import { PageResizer } from "../../PageResizer";
 import { useEditor } from "../context";
 
 export function Canvas() {
   const { t } = useTranslation();
-  const { page, auth, editor, threads, comments, find } = useEditor();
+  const { page, auth, editor, threads, comments, find, resize } = useEditor();
   const canWrite = editor.canWrite;
   const pageClass = [
     "page",
@@ -21,7 +23,12 @@ export function Canvas() {
     .join(" ");
 
   return (
-    <div className={pageClass} id="page">
+    <div
+      ref={resize.containerRef}
+      style={{ "--page-measure": `${resize.width}px` } as CSSProperties}
+      className={pageClass}
+      id="page"
+    >
       {find.open ? (
         <FindInPagePanel
           open={find.open}
@@ -35,6 +42,13 @@ export function Canvas() {
           onClose={find.onClose}
         />
       ) : null}
+      <PageResizer
+        visible={resize.hasRoom}
+        width={resize.width}
+        containerRef={resize.containerRef}
+        onCommit={resize.onCommit}
+        onReset={resize.onReset}
+      />
       <HeroChrome
         fields={page.frontmatter}
         imageMap={editor.imageMap}

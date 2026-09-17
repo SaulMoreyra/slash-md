@@ -466,6 +466,10 @@
       "next": "Siguiente",
       "close": "Cerrar",
       "noMatches": "0 / 0"
+    },
+    "pageResize": {
+      "resize": "Arrastrar para ajustar el ancho de la página",
+      "reset": "Doble clic restaura el ancho por defecto"
     }
   },
   "modal": {

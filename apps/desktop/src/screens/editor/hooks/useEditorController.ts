@@ -6,6 +6,7 @@ import { useEditorChrome } from "./useEditorChrome";
 import { useFindInPage } from "./useFindInPage";
 import { useFormatter } from "./useFormatter";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { usePageWidth } from "./usePageWidth";
 import { useThreads } from "./useThreads";
 
 export type EditorScreenProps = {
@@ -52,6 +53,7 @@ export function useEditorController({
     onThreadClose: threads.onThreadClose,
     onCloseLibrarySearch: home?.search.onClose,
   });
+  const resize = usePageWidth();
 
   useKeyboardShortcuts({ onClose, editor, threads, comments, chrome, find });
 
@@ -66,6 +68,7 @@ export function useEditorController({
     comments,
     chrome,
     find,
+    resize,
   };
 }
 
