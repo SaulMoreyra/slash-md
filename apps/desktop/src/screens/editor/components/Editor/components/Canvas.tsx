@@ -84,6 +84,7 @@ export function Canvas() {
           onOrphans={threads.onOrphansChange}
           onCommentSelection={comments.onCommentDraftStart}
           onSearchReady={find.onSearchReady}
+          reloadKey={editor.reloadEpoch}
         />
       </HeroChrome>
     </div>

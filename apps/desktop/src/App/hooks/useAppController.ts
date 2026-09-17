@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
 import { pageTrail, resolveAppPhase } from "../utils";
+import { useFocusRefresh } from "./useFocusRefresh";
 import { useOperationsController } from "./useOperationsController";
 import { usePageSession } from "./usePageSession";
 import { useRun } from "./useRun";
@@ -21,6 +22,11 @@ export function useAppController() {
     onSyncGit: operations.onSyncGit,
   });
   fetchWorkspace.current = workspace.onRefresh;
+
+  useFocusRefresh({
+    onRefresh: workspace.onRefresh,
+    onReloadPage: page.onReloadPage,
+  });
 
   const trail = useMemo(
     () => pageTrail(page.page, workspace.tree),

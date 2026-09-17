@@ -4,6 +4,10 @@ All notable changes to Slash MD are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Desktop: refresh the workspace tree and re-read the open page when the window regains focus, so edits made externally (agents, editors) show up without switching files; re-opening the current file now reloads its content into the editor (guarded against clobbering unsaved edits).
+
 ### Changed
 
 - VS Code / Cursor extension is a **Markdown editor only**: Open with Slash MD, autosave, images beside the file, optional default editor.

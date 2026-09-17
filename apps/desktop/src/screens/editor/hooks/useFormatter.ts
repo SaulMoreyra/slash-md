@@ -25,11 +25,15 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
   const [title, setTitle] = useState(page.frontmatter.title);
   const titleRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<SaveStatus>(SaveStatus.Saved);
+  const [reloadEpoch, setReloadEpoch] = useState(0);
   const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [reviewable, setReviewable] = useState(page.reviewable);
   const markdownRef = useRef(page.markdown);
   const frontmatterRawRef = useRef(splitFrontmatter(page.markdown).raw);
+  const currentPathRef = useRef<string | null>(page.path);
   const saveTimer = useRef<number | undefined>(undefined);
+  const statusRef = useRef(status);
+  statusRef.current = status;
   const bodyMarkdown = splitFrontmatter(page.markdown).body;
   const lifecycle = pageLifecycle(page);
   const icon = normalizePageIcon(page.frontmatter.icon);
@@ -53,6 +57,17 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
   }, [page.path, page.reviewable]);
 
   useEffect(() => {
+    const pathChanged = currentPathRef.current !== page.path;
+    if (pathChanged) {
+      currentPathRef.current = page.path;
+    } else if (page.markdown === markdownRef.current) {
+      // Same path and the buffer already matches the page — nothing to adopt.
+      return;
+    } else if (canWrite && statusRef.current !== SaveStatus.Saved) {
+      // Same path but the file changed on disk while the buffer has unsaved
+      // edits: keep the local buffer instead of clobbering it.
+      return;
+    }
     markdownRef.current = page.markdown;
     frontmatterRawRef.current = splitFrontmatter(page.markdown).raw;
     setTitle(page.frontmatter.title);
@@ -63,7 +78,10 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
       .resolveImages(page.path, page.markdown)
       .then(setImageMap)
       .catch(() => setImageMap({}));
-  }, [page.path, page.markdown, page.frontmatter.title]);
+    if (!pathChanged) {
+      setReloadEpoch((next) => next + 1);
+    }
+  }, [page.path, page.markdown, page.frontmatter.title, canWrite]);
 
   function scheduleSave(markdown: string) {
     if (!canWrite) return;
@@ -129,6 +147,7 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
     title,
     titleRef,
     status,
+    reloadEpoch,
     imageMap,
     reviewable,
     lifecycle,

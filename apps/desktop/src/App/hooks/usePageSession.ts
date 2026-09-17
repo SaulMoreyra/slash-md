@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { PagePayload } from "../../../shared/api";
 import { AppOperation } from "../enums";
 import type { RunOp } from "./useOperationsController";
@@ -12,6 +12,8 @@ type Params = {
 export function usePageSession({ runOp }: Params) {
   const [page, setPage] = useState<PagePayload | null>(null);
   const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
+  const pageRef = useRef<PagePayload | null>(page);
+  pageRef.current = page;
 
   const onOpenPage = useCallback(
     async (path: string, threadId?: string) => {
@@ -23,6 +25,14 @@ export function usePageSession({ runOp }: Params) {
     [runOp],
   );
 
+  const onReloadPage = useCallback(async () => {
+    const current = pageRef.current;
+    if (!current) {
+      return;
+    }
+    setPage(await api().openPage(current.path));
+  }, []);
+
   const onClosePage = useCallback(() => {
     setPage(null);
     setFocusThreadId(null);
@@ -32,7 +42,7 @@ export function usePageSession({ runOp }: Params) {
     setPage(next);
   }, []);
 
-  return { page, focusThreadId, onOpenPage, onClosePage, onPage };
+  return { page, focusThreadId, onOpenPage, onReloadPage, onClosePage, onPage };
 }
 
 export type PageSessionApi = ReturnType<typeof usePageSession>;

@@ -20,6 +20,11 @@ type Props = {
   editable?: boolean;
   /** Fired when the in-document search API is ready; pass null when the canvas unmounts. */
   onSearchReady?: (handle: SearchHandle | null) => void;
+  /**
+   * Bump to force a remount with the current `markdown`, even when `docPath`
+   * is unchanged (e.g. the file changed externally while it was already open).
+   */
+  reloadKey?: number;
 };
 
 export function CrepeCanvas({
@@ -35,6 +40,7 @@ export function CrepeCanvas({
   onCommentSelection,
   editable = true,
   onSearchReady,
+  reloadKey,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const builderRef = useRef<CrepeBuilder | null>(null);
@@ -101,9 +107,10 @@ export function CrepeCanvas({
       builderRef.current = null;
       root.replaceChildren();
     };
-    // Remount only when the document, comment mode, or editable flag changes.
+    // Remount only when the document, comment mode, editable flag, or reload
+    // token changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docPath, commentsEnabled, editable]);
+  }, [docPath, commentsEnabled, editable, reloadKey]);
 
   useEffect(() => {
     commentsRef.current?.apply(threads);
