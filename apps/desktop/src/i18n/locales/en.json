@@ -466,6 +466,10 @@
       "next": "Next",
       "close": "Close",
       "noMatches": "0 / 0"
+    },
+    "pageResize": {
+      "resize": "Drag to adjust the page width",
+      "reset": "Double-click restores the default width"
     }
   },
   "modal": {

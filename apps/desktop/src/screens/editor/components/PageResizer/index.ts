@@ -1,0 +1,1 @@
+export { PageResizer, type PageResizerProps } from "./PageResizer";

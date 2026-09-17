@@ -473,10 +473,49 @@ body {
   transform: rotate(180deg);
 }
 
-.editor-shell .page-inner {
-  max-width: var(--home-measure);
+#page.page {
+  position: relative;
+}
+
+#page .page-inner {
+  width: var(--page-measure, auto);
+  max-width: min(var(--page-measure, var(--home-measure)), 100%);
   margin: 0 auto;
   padding: 2.5rem 3rem 8rem;
+}
+
+#page .page-resize-well {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 6;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+#page .page-resize-well::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+#page .page-resize-well:hover::before,
+#page .page-resize-well.is-active::before {
+  background: var(--color-accent);
+}
+
+#page .page-resize-well.is-left {
+  left: calc(50% - var(--page-measure) / 2 - 8px);
+}
+
+#page .page-resize-well.is-right {
+  left: calc(50% + var(--page-measure) / 2 - 2px);
 }
 
 .editor-shell .hero-title {
@@ -689,7 +728,7 @@ body {
     display: none;
   }
 
-  .editor-shell .page-inner {
+  #page .page-inner {
     padding: 2rem 1.5rem 5rem;
   }
 
