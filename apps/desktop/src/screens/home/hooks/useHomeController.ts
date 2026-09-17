@@ -26,6 +26,12 @@ export function useHomeController({
   onError,
   onOpenPage,
   onClosePage,
+  tabs,
+  activeKey,
+  onActivateTab,
+  onCloseTab,
+  onRewritePath,
+  onCloseTabsUnder,
   onChangeFolder,
   onCloseWorkspace,
   runOp,
@@ -37,7 +43,6 @@ export function useHomeController({
     tree,
     pagePath,
     libraryLabel: t("home.nav.workspace"),
-    onClosePage,
   });
   const search = useSearch({
     contentPath: tree?.contentPath ?? ".",
@@ -62,13 +67,12 @@ export function useHomeController({
 
   const treeActions = useTreeMutations({
     canWrite,
-    pagePath,
     modals,
     nav,
     runOp,
     onRefresh,
-    onOpenPage,
-    onClosePage,
+    onRewritePath,
+    onCloseTabsUnder,
   });
   const conflicts = useConflicts({
     tree,
@@ -86,6 +90,9 @@ export function useHomeController({
     search,
     modals,
     nav,
+    tabs,
+    activeKey,
+    onActivateTab,
     onClosePage,
     onRefresh,
     runOp,
@@ -138,6 +145,12 @@ export function useHomeController({
     onError,
     onOpenPage,
     onClosePage,
+    tabs: {
+      items: tabs,
+      activeKey,
+      onActivateTab,
+      onCloseTab,
+    },
     onChangeFolder,
     onCloseWorkspace,
     runOp,

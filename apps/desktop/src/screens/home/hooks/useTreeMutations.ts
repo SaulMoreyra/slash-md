@@ -1,4 +1,3 @@
-import { isPosixUnder, rewritePosixPrefix } from "@slash-md/core/paths";
 import type { HomeTreeNode } from "../../../../shared/api";
 import { AppOperation } from "../../../App/enums";
 import { ModalKind, TreeEntryKind } from "../enums";
@@ -10,26 +9,24 @@ const api = () => window.slashmd;
 
 type Args = {
   canWrite: boolean;
-  pagePath: string | null;
   modals: ModalsApi;
   nav: Pick<NavApi, "onRewritePath">;
   runOp: HomeScreenProps["runOp"];
   onRefresh: HomeScreenProps["onRefresh"];
-  onOpenPage: HomeScreenProps["onOpenPage"];
-  onClosePage: HomeScreenProps["onClosePage"];
+  onRewritePath: HomeScreenProps["onRewritePath"];
+  onCloseTabsUnder: HomeScreenProps["onCloseTabsUnder"];
 };
 
 export type TreeMutationsApi = ReturnType<typeof useTreeMutations>;
 
 export function useTreeMutations({
   canWrite,
-  pagePath,
   modals,
   nav,
   runOp,
   onRefresh,
-  onOpenPage,
-  onClosePage,
+  onRewritePath,
+  onCloseTabsUnder,
 }: Args) {
   function targetFrom(node: HomeTreeNode) {
     return {
@@ -75,9 +72,7 @@ export function useTreeMutations({
         return;
       }
       modals.onClose();
-      if (pagePath === target.path) {
-        onOpenPage(result.path);
-      }
+      onRewritePath(target.path, result.path);
       return;
     }
 
@@ -93,9 +88,7 @@ export function useTreeMutations({
     }
     modals.onClose();
     nav.onRewritePath(target.path, result.path);
-    if (pagePath && isPosixUnder(pagePath, target.path)) {
-      onOpenPage(rewritePosixPrefix(pagePath, target.path, result.path));
-    }
+    onRewritePath(target.path, result.path);
   }
 
   async function onDelete() {
@@ -105,9 +98,7 @@ export function useTreeMutations({
     }
 
     if (target.kind === TreeEntryKind.File) {
-      if (pagePath === target.path) {
-        onClosePage();
-      }
+      onCloseTabsUnder(target.path);
       const deleted = await runOp(AppOperation.DeletePage, async () => {
         await api().deletePage(target.path);
         await onRefresh();
@@ -119,9 +110,7 @@ export function useTreeMutations({
       return;
     }
 
-    if (pagePath && isPosixUnder(pagePath, target.path)) {
-      onClosePage();
-    }
+    onCloseTabsUnder(target.path);
     const deleted = await runOp(AppOperation.DeleteFolder, async () => {
       await api().deleteFolder(target.path);
       await onRefresh();

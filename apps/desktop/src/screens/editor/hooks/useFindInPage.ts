@@ -7,13 +7,19 @@ import {
 
 type Params = {
   docPath: string;
+  isActive?: boolean;
   onThreadClose: () => void;
   onCloseLibrarySearch?: () => void;
 };
 
 const DEBOUNCE_MS = 150;
 
-export function useFindInPage({ docPath, onThreadClose, onCloseLibrarySearch }: Params) {
+export function useFindInPage({
+  docPath,
+  isActive = true,
+  onThreadClose,
+  onCloseLibrarySearch,
+}: Params) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -136,13 +142,16 @@ export function useFindInPage({ docPath, onThreadClose, onCloseLibrarySearch }: 
   );
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
     const unregisterOpen = registerFindInPageOpener(onOpen);
     const unregisterClose = registerFindInPageCloser(onClose);
     return () => {
       unregisterOpen();
       unregisterClose();
     };
-  }, [onOpen, onClose]);
+  }, [isActive, onOpen, onClose]);
 
   useEffect(() => {
     return () => {

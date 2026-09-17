@@ -4,7 +4,7 @@ import type { DesktopApi, PagePayload } from "../../../../../shared/api";
 import { act, renderHook } from "../../../../test/render";
 import { AppOperation } from "../../../../App/enums";
 import type { RunOp } from "../../../home/types";
-import { SaveStatus } from "../../enums";
+import { BodyClass, SaveStatus } from "../../enums";
 import { useFormatter } from "../useFormatter";
 
 function mockPage(overrides: Partial<PagePayload> = {}): PagePayload {
@@ -44,10 +44,22 @@ describe("useFormatter", () => {
     vi.useRealTimers();
   });
 
-  const runHook = (page: PagePayload, canWrite = true) =>
+  const runHook = (
+    page: PagePayload,
+    canWrite = true,
+    extras: { active?: boolean; onDirtyChange?: (key: string, dirty: boolean) => void } = {},
+  ) =>
     renderHook(
       (props: PagePayload) =>
-        useFormatter({ page: props, trail: undefined, canWrite, onError, onPage, runOp }),
+        useFormatter({
+          page: props,
+          trail: undefined,
+          canWrite,
+          onError,
+          onPage,
+          runOp,
+          ...extras,
+        }),
       { initialProps: page },
     );
 
@@ -98,5 +110,29 @@ describe("useFormatter", () => {
     });
     expect(result.current.reloadEpoch).toBe(0);
     expect(result.current.getMarkdown()).toBe("# B");
+  });
+
+  it("reports dirty transitions to onDirtyChange", () => {
+    const onDirtyChange = vi.fn();
+    const { result } = runHook(mockPage(), true, { onDirtyChange });
+    expect(onDirtyChange).toHaveBeenLastCalledWith("docs/a.md", false);
+
+    act(() => {
+      result.current.onBodyMarkdownChange("body-local");
+    });
+    expect(onDirtyChange).toHaveBeenLastCalledWith("docs/a.md", true);
+  });
+
+  it("sets body classes only while active", () => {
+    const inactive = runHook(mockPage(), true, { active: false });
+    expect(document.body.classList.contains(BodyClass.WorkflowWorkspace)).toBe(false);
+    inactive.unmount();
+
+    const active = runHook(mockPage(), true, { active: true });
+    expect(document.body.classList.contains(BodyClass.WorkflowWorkspace)).toBe(true);
+    expect(document.body.classList.contains(BodyClass.PageWiki)).toBe(true);
+    expect(document.body.classList.contains(BodyClass.RepoPersonal)).toBe(true);
+    active.unmount();
+    expect(document.body.classList.contains(BodyClass.WorkflowWorkspace)).toBe(false);
   });
 });

@@ -2,8 +2,8 @@ import { useMemo, useRef } from "react";
 import { pageTrail, resolveAppPhase } from "../utils";
 import { useFocusRefresh } from "./useFocusRefresh";
 import { useOperationsController } from "./useOperationsController";
-import { usePageSession } from "./usePageSession";
 import { useRun } from "./useRun";
+import { useTabs } from "./useTabs";
 import { useWorkspace } from "./useWorkspace";
 
 export function useAppController() {
@@ -14,23 +14,23 @@ export function useAppController() {
     onRefresh: () => fetchWorkspace.current(),
     error: chrome.error,
   });
-  const page = usePageSession({ runOp: operations.runOp });
+  const session = useTabs({ runOp: operations.runOp });
   const workspace = useWorkspace({
     runOp: operations.runOp,
     onError: chrome.onError,
-    onClearPage: page.onClosePage,
+    onClearPage: session.onCloseAllPages,
     onSyncGit: operations.onSyncGit,
   });
   fetchWorkspace.current = workspace.onRefresh;
 
   useFocusRefresh({
     onRefresh: workspace.onRefresh,
-    onReloadPage: page.onReloadPage,
+    onReloadPage: session.onReloadPage,
   });
 
   const trail = useMemo(
-    () => pageTrail(page.page, workspace.tree),
-    [page.page, workspace.tree],
+    () => pageTrail(session.page, workspace.tree),
+    [session.page, workspace.tree],
   );
 
   return {
@@ -39,9 +39,11 @@ export function useAppController() {
       workspace: workspace.workspace,
       tree: workspace.tree,
       git: operations.git,
-      page: page.page,
+      page: session.page,
       trail,
-      focusThreadId: page.focusThreadId,
+      focusThreadId: session.focusThreadId,
+      tabs: session.tabs,
+      activeKey: session.activeKey,
     },
     chrome: {
       busy: operations.busy,
@@ -51,9 +53,15 @@ export function useAppController() {
     actions: {
       onRefresh: workspace.onRefresh,
       onError: chrome.onError,
-      onOpenPage: page.onOpenPage,
-      onClosePage: page.onClosePage,
-      onPage: page.onPage,
+      onOpenPage: session.onOpenPage,
+      onClosePage: session.onClosePage,
+      onPage: session.onPage,
+      onActivateTab: session.onActivateTab,
+      onCloseTab: session.onCloseTab,
+      onCloseAllPages: session.onCloseAllPages,
+      onCloseTabsUnder: session.onCloseTabsUnder,
+      onRewritePath: session.onRewritePath,
+      onDirtyChange: session.onDirtyChange,
       onOpenFolder: workspace.onOpenFolder,
       onOpenPath: workspace.onOpenPath,
       onChangeFolder: workspace.onChangeFolder,

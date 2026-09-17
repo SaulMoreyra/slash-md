@@ -47,6 +47,11 @@
       "close": "Close navigation",
       "dismiss": "Close navigation"
     },
+    "tabs": {
+      "aria": "Open pages",
+      "close": "Close {{title}}",
+      "dirty": "Unsaved changes"
+    },
     "connectTitle": "Connect your workspace",
     "connectBody": "Init writes .slashmd.json and gets this folder ready to write.",
     "init": "Init",

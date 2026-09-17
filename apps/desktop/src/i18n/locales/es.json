@@ -47,6 +47,11 @@
       "close": "Cerrar navegación",
       "dismiss": "Cerrar navegación"
     },
+    "tabs": {
+      "aria": "Páginas abiertas",
+      "close": "Cerrar {{title}}",
+      "dirty": "Cambios sin guardar"
+    },
     "connectTitle": "Conecta tu workspace",
     "connectBody": "Iniciar escribe .slashmd.json y deja este folder listo para escribir.",
     "init": "Iniciar",

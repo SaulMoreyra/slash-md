@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { GitSnapshot, HomeTreePayload, WorkspaceInfo } from "../../../shared/api";
 import type { AppOperation } from "../../App/enums";
+import type { TabState } from "../../App/hooks/useTabs";
 import type { NavKind, TreeEntryKind } from "./enums";
 
 export type Run = <T>(fn: () => Promise<T>) => Promise<T | undefined>;
@@ -19,6 +20,12 @@ export type HomeScreenProps = {
   onError: (message: string | null) => void;
   onOpenPage: (path: string, threadId?: string) => void;
   onClosePage: () => void;
+  tabs: TabState[];
+  activeKey: string | null;
+  onActivateTab: (key: string) => void;
+  onCloseTab: (key: string) => void;
+  onRewritePath: (from: string, to: string) => void;
+  onCloseTabsUnder: (prefix: string) => void;
   onChangeFolder: () => void;
   onCloseWorkspace: () => void;
   runOp: RunOp;

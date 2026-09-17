@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { emptyFrontmatter } from "@slash-md/core/frontmatter";
 import { renderHook } from "../../../../test/render";
 import { ModalKind, NavKind, RailMode } from "../../enums";
 import type { NavView } from "../../types";
+import type { PagePayload } from "../../../../../shared/api";
+import type { TabState } from "../../../../App/hooks/useTabs";
 import { useKeyboardShortcuts } from "../useKeyboardShortcuts";
 
 describe("useKeyboardShortcuts", () => {
@@ -30,6 +33,22 @@ describe("useKeyboardShortcuts", () => {
   };
   const onClosePage = vi.fn();
   const onRefresh = vi.fn(async () => undefined);
+  const onActivateTab = vi.fn();
+  const pagePayload = (path: string): PagePayload => ({
+    path,
+    markdown: "# Hello",
+    frontmatter: { ...emptyFrontmatter() },
+    savedAt: null,
+    pageKind: "wiki",
+    repoMode: "personal",
+    publishEnabled: true,
+    reviewable: true,
+    prUrl: null,
+  });
+  const tabs: TabState[] = [
+    { key: "docs/a.md", page: pagePayload("docs/a.md"), focusThreadId: null, dirty: false },
+    { key: "docs/b.md", page: pagePayload("docs/b.md"), focusThreadId: null, dirty: false },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,6 +58,7 @@ describe("useKeyboardShortcuts", () => {
     pagePath?: string | null;
     search?: Partial<typeof search>;
     nav?: Partial<typeof nav>;
+    activeKey?: string | null;
   } = {}) =>
     renderHook(() =>
       useKeyboardShortcuts({
@@ -48,6 +68,9 @@ describe("useKeyboardShortcuts", () => {
         search: { ...search, ...overrides.search },
         modals,
         nav: { ...nav, ...overrides.nav },
+        tabs,
+        activeKey: overrides.activeKey ?? "docs/a.md",
+        onActivateTab,
         onClosePage,
         onRefresh,
         runOp: vi.fn(async (_op, fn) => fn()),
@@ -99,5 +122,23 @@ describe("useKeyboardShortcuts", () => {
     runHook();
     press({ key: "3", metaKey: true });
     expect(nav.onToggleWorkDest).toHaveBeenCalledWith({ kind: NavKind.Inbox });
+  });
+
+  it("cycles to the next tab with mod+shift+]", () => {
+    runHook();
+    press({ key: "]", metaKey: true, shiftKey: true });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/b.md");
+  });
+
+  it("cycles to the previous tab with mod+shift+[", () => {
+    runHook();
+    press({ key: "[", metaKey: true, shiftKey: true });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/b.md");
+  });
+
+  it("cycles with wrap-around past the last tab", () => {
+    runHook({ activeKey: "docs/b.md" });
+    press({ key: "]", metaKey: true, shiftKey: true });
+    expect(onActivateTab).toHaveBeenCalledWith("docs/a.md");
   });
 });
