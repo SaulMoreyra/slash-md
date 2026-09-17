@@ -4,7 +4,7 @@ import type { CreateIntent } from "../../../../../../enums";
 import { EditorBlank } from "../../../../../EditorBlank";
 import { Empty } from "../../../../../Empty";
 import { useHome } from "../../../../context";
-import { Conflict } from "../Conflict";
+import { EditorStage } from "./components/EditorStage";
 import { Loading } from "../Loading";
 
 type Props = {
@@ -60,12 +60,12 @@ function BodyInner({
     return <Loading />;
   }
 
-  if (conflicts.merging) {
-    return <Conflict hasPage={hasPage}>{children}</Conflict>;
-  }
-
-  if (hasPage) {
-    return children;
+  if (conflicts.merging || hasPage) {
+    return (
+      <EditorStage hasPage={hasPage} merging={conflicts.merging}>
+        {children}
+      </EditorStage>
+    );
   }
 
   return (

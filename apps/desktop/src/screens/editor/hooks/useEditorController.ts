@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useHomeOptional } from "../../home/components/Home/context";
 import type { AuthInfo, PagePayload } from "../../../../shared/api";
 import type { RunOp } from "../../home/types";
@@ -15,11 +16,13 @@ export type EditorScreenProps = {
   focusThreadId?: string | null;
   trail?: string;
   auth: AuthInfo;
+  active?: boolean;
   onError: (message: string | null) => void;
   onPage: (page: PagePayload) => void;
   onRefresh: () => Promise<void>;
   onClose: () => void;
   onCreatePublication?: () => void;
+  onDirtyChange?: (key: string, dirty: boolean) => void;
   runOp: RunOp;
 };
 
@@ -29,16 +32,27 @@ export function useEditorController({
   focusThreadId,
   trail,
   auth,
+  active = true,
   onError,
   onPage,
   onRefresh,
   onClose,
   onCreatePublication,
+  onDirtyChange,
   runOp,
 }: EditorScreenProps) {
   const home = useHomeOptional();
   const canWrite = page.canWrite !== false;
-  const editor = useFormatter({ page, trail, canWrite, onError, onPage, runOp });
+  const editor = useFormatter({
+    page,
+    trail,
+    canWrite,
+    onError,
+    onPage,
+    runOp,
+    active,
+    onDirtyChange,
+  });
   const threads = useThreads({ page, focusThreadId, runOp });
   const comments = useComments({ page, runOp, onThreadsRefresh: threads.onThreadsRefresh });
   const chrome = useEditorChrome({
@@ -50,18 +64,24 @@ export function useEditorController({
   });
   const find = useFindInPage({
     docPath: page.path,
+    isActive: active,
     onThreadClose: threads.onThreadClose,
     onCloseLibrarySearch: home?.search.onClose,
   });
   const resize = usePageWidth();
 
-  useKeyboardShortcuts({ onClose, editor, threads, comments, chrome, find });
+  const handleClose = useCallback(() => {
+    void editor.onFlushSave();
+    onClose();
+  }, [editor.onFlushSave, onClose]);
+
+  useKeyboardShortcuts({ onClose: handleClose, active, editor, threads, comments, chrome, find });
 
   return {
     page,
     busy,
     auth,
-    onClose,
+    onClose: handleClose,
     onCreatePublication,
     editor: { ...editor, commentsOn: comments.commentsOn },
     threads,

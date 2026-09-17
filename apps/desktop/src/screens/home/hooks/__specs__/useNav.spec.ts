@@ -25,12 +25,6 @@ function mockWorkspace(mode: RepoMode): WorkspaceInfo {
 }
 
 describe("useNav", () => {
-  const onClosePage = vi.fn();
-
-  const navProps = {
-    onClosePage,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
     // useNav indexes folders through the host as they are expanded.
@@ -56,7 +50,7 @@ describe("useNav", () => {
         tree: mockPayload(),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
 
@@ -116,7 +110,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     act(() => {
@@ -126,7 +120,7 @@ describe("useNav", () => {
     expect(result.current.section).toBe("templates");
   });
 
-  it("closes the page when opening a folder", () => {
+  it("keeps the editor when opening a folder", () => {
     const { result } = renderHook(() =>
       useNav({
         workspace: mockWorkspace(RepoMode.Local),
@@ -145,13 +139,12 @@ describe("useNav", () => {
         }),
         pagePath: "docs/guide.md",
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     act(() => {
       result.current.onOpenFolder({ kind: "folder", path: "docs", title: "docs" });
     });
-    expect(onClosePage).toHaveBeenCalled();
     expect(result.current.view).toEqual({ kind: NavKind.Folder, path: "docs", title: "docs" });
     expect(result.current.section).toBe("docs");
     expect(result.current.workPaneOpen).toBe(false);
@@ -166,7 +159,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     expect(result.current.workPaneOpen).toBe(false);
@@ -190,7 +183,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     act(() => {
@@ -223,7 +216,7 @@ describe("useNav", () => {
           }),
           pagePath,
           libraryLabel: "Library",
-          ...navProps,
+  
         }),
       { initialProps: { pagePath: null as string | null } },
     );
@@ -280,7 +273,7 @@ describe("useNav", () => {
           tree,
           pagePath: null,
           libraryLabel: "Workspace",
-          ...navProps,
+  
         }),
       {
         initialProps: {
@@ -309,7 +302,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     act(() => {
@@ -318,7 +311,6 @@ describe("useNav", () => {
     expect(result.current.view).toEqual({ kind: NavKind.Folder, path: "docs", title: "docs" });
     expect(result.current.section).toBe("docs");
     expect(result.current.workPaneOpen).toBe(false);
-    expect(onClosePage).toHaveBeenCalled();
   });
 
   it("reopens the work pane when clicking the same dest after collapse", () => {
@@ -389,7 +381,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     expect(result.current.canToggleAllFolders).toBe(true);
@@ -417,7 +409,7 @@ describe("useNav", () => {
         }),
         pagePath: null,
         libraryLabel: "Library",
-        ...navProps,
+
       }),
     );
     expect(result.current.canToggleAllFolders).toBe(false);

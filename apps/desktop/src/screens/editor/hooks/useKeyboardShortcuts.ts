@@ -7,6 +7,7 @@ import type { ThreadsApi } from "./useThreads";
 
 type Params = {
   onClose: () => void;
+  active?: boolean;
   editor: Pick<FormatterApi, "onFlushSave">;
   threads: Pick<ThreadsApi, "openThread" | "onThreadClose">;
   comments: Pick<CommentsApi, "commentDraft" | "onCommentDraftCancel">;
@@ -14,8 +15,19 @@ type Params = {
   find: Pick<FindInPageApi, "open" | "onOpen" | "onClose" | "onFocusInput" | "onNext" | "onPrev">;
 };
 
-export function useKeyboardShortcuts({ onClose, editor, threads, comments, chrome, find }: Params) {
+export function useKeyboardShortcuts({
+  onClose,
+  active = true,
+  editor,
+  threads,
+  comments,
+  chrome,
+  find,
+}: Params) {
   useEffect(() => {
+    if (!active) {
+      return;
+    }
     const onKey = (ev: KeyboardEvent) => {
       const mod = ev.metaKey || ev.ctrlKey;
       const key = ev.key.toLowerCase();
@@ -69,6 +81,7 @@ export function useKeyboardShortcuts({ onClose, editor, threads, comments, chrom
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [
+    active,
     find.open,
     find.onOpen,
     find.onClose,

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
+import { emptyFrontmatter } from "@slash-md/core/frontmatter";
 import { cleanup, renderWithProviders, screen, waitFor } from "../../../../../../../../../test/render";
 import { CreateIntent } from "../../../../../../../enums";
 import type { HomeControllerApi } from "../../../../../../../hooks/useHomeController";
@@ -37,9 +38,25 @@ describe("Body", () => {
     });
   });
 
-  const renderComponent = (props: Partial<typeof defaultProps> = {}) =>
+  const renderComponent = (
+    props: Partial<typeof defaultProps> = {},
+    home: Partial<HomeControllerApi> = {},
+  ) =>
     renderWithProviders(
-      <HomeContext.Provider value={{ conflicts: { merging: false } } as HomeControllerApi}>
+      <HomeContext.Provider
+        value={
+          {
+            conflicts: { merging: false },
+            tabs: {
+              items: [],
+              activeKey: null,
+              onActivateTab: vi.fn(),
+              onCloseTab: vi.fn(),
+            },
+            ...home,
+          } as unknown as HomeControllerApi
+        }
+      >
         <Body {...defaultProps} {...props} />
       </HomeContext.Provider>,
     );
@@ -68,6 +85,39 @@ describe("Body", () => {
     renderComponent({ hasPage: true });
     expect(screen.getByText("editor")).toBeInTheDocument();
     expect(screen.queryByText(t("home.selectPageOrCreate"))).not.toBeInTheDocument();
+  });
+
+  it("shows the tab bar above an open page", () => {
+    renderComponent(
+      { hasPage: true },
+      {
+        tabs: {
+          items: [
+            {
+              key: "docs/a.md",
+              page: {
+                path: "docs/a.md",
+                markdown: "# A",
+                frontmatter: { ...emptyFrontmatter(), title: "Alpha" },
+                savedAt: null,
+                pageKind: "wiki",
+                repoMode: "personal",
+                publishEnabled: true,
+                reviewable: true,
+                prUrl: null,
+              },
+              focusThreadId: null,
+              dirty: false,
+            },
+          ],
+          activeKey: "docs/a.md",
+          onActivateTab: vi.fn(),
+          onCloseTab: vi.fn(),
+        },
+      },
+    );
+    expect(screen.getByRole("tab", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByText("editor")).toBeInTheDocument();
   });
 
   it("shows the process guide on read-only wiki blank", () => {

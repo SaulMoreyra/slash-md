@@ -15,12 +15,23 @@ type Params = {
   page: PagePayload;
   trail?: string;
   canWrite: boolean;
+  active?: boolean;
   onError: (message: string | null) => void;
   onPage: (page: PagePayload) => void;
+  onDirtyChange?: (key: string, dirty: boolean) => void;
   runOp: RunOp;
 };
 
-export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: Params) {
+export function useFormatter({
+  page,
+  trail,
+  canWrite,
+  active = true,
+  onError,
+  onPage,
+  onDirtyChange,
+  runOp,
+}: Params) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(page.frontmatter.title);
   const titleRef = useRef<HTMLDivElement>(null);
@@ -41,6 +52,9 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
   const crumbs = crumbParts(trail, title, t("common.untitled"));
 
   useEffect(() => {
+    if (!active) {
+      return;
+    }
     const classes = [
       BodyClass.WorkflowWorkspace,
       page.pageKind === PageKind.Wiki ? BodyClass.PageWiki : BodyClass.PageEditor,
@@ -50,7 +64,11 @@ export function useFormatter({ page, trail, canWrite, onError, onPage, runOp }: 
     return () => {
       document.body.classList.remove(...classes);
     };
-  }, [page.pageKind, page.repoMode]);
+  }, [page.pageKind, page.repoMode, active]);
+
+  useEffect(() => {
+    onDirtyChange?.(page.path, status !== SaveStatus.Saved);
+  }, [page.path, status, onDirtyChange]);
 
   useEffect(() => {
     setReviewable(page.reviewable);

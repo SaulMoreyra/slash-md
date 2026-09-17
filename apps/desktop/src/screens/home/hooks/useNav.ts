@@ -13,7 +13,6 @@ type Params = {
   tree: HomeTreePayload | null;
   pagePath: string | null;
   libraryLabel: string;
-  onClosePage: () => void;
 };
 
 /** Shared empty tree so an uninitialised workspace does not churn identities. */
@@ -21,7 +20,7 @@ const EMPTY_ROOTS: HomeTreeNode[] = [];
 
 export type NavApi = ReturnType<typeof useNav>;
 
-export function useNav({ workspace, tree, pagePath, libraryLabel, onClosePage }: Params) {
+export function useNav({ workspace, tree, pagePath, libraryLabel }: Params) {
   const [view, setViewState] = useState<NavView>({ kind: NavKind.Drafts });
   const [workPaneOpen, setWorkPaneOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(
@@ -163,7 +162,6 @@ export function useNav({ workspace, tree, pagePath, libraryLabel, onClosePage }:
     onReveal(full.path, TreeEntryKind.Folder);
     onNavigate({ kind: NavKind.Folder, path: full.path, title: full.title });
     setWorkPaneOpen(false);
-    onClosePage();
   }
 
   function onNewFileInFolder(node: HomeTreeNode) {
