@@ -78,9 +78,16 @@ DesktopApi (espejo patrón `onTheme`/`theme`): `chatListAgents()`, `chatSend(req
 - [x] Smoke E2E con `opencode` real (v1.18.31, workspace temporal aislado): el agente se detecta, se selecciona, y su stream escribe en el canvas. Forma real de NDJSON (`type:"text"` con `part.text`) cubierta por regresión en `adapters.spec.ts`.
 - [ ] Revisión visual del PNG (el modelo actual no puede leer imágenes).
 
+### Fase 7 — Servidor MCP del wiki (AC#4)
+- [x] `packages/agents/src/server/`: `WikiSource` (tipos + `normalizeWikiPath` con guard de traversal), tools `list_pages` / `read_page` / `search_pages` / `get_git_context` / `get_review_lote` (schemas zod, errores como `isError`), `createWikiMcpServer` y `startWikiHttpServer` (Streamable HTTP en 127.0.0.1, sesiones por `Mcp-Session-Id`, cap 32, puerto 0 para tests). Exports `./server` en package.json.
+- [x] Specs: tools con fake `WikiSource` + server vía `InMemoryTransport` (`Client.listTools`/`callTool`) + E2E HTTP real (fetch `initialize` → `tools/list` → `tools/call` → `DELETE`) — `packages/agents` (5 archivos / 64 tests).
+- [x] `electron/mcpServer.ts`: `wikiSourceForRoot` real (listLocalMarkdown/titleFor/mtime, splitFrontmatter, buildSearchIndex, git status/diff, listPendingReviewMarkdown) + lifecycle `startMcpServerForRoot`/`stopMcpServer`/`mcpServerUrl`; wiring en `ipc.ts` (`openFolder`/`closeFolder`), `main.ts` (`applyCliFolder`/`before-quit`, log `[mcp]`); `WorkspaceInfo.mcpUrl`.
+- [x] Verificación: typecheck limpio, lint 0 errores / 6 warnings, `npm test -w @slash-md/desktop` (107 archivos / 601 tests). Build de producción bundlea el SDK sin errores (solo warnings de comentarios rollup).
+- [x] E2E contra la app real: workspace `mode:local` + `mcp.server.enabled:true` → curl `initialize` (`serverInfo: slash-md-wiki`, sesión), `tools/list` (5 tools + JSON Schema), `read_page`, `list_pages`, `search_pages`, `get_git_context`, traversal `../` → `isError`, `DELETE` sesión.
+
 ## Mapeo a AC del issue
 
-AC#1 → F1–3 · AC#2 → F4 + F5 · AC#3 → F1–2 · AC#5 → F2 · AC#6 → transversal. **AC#4 (MCP server) → fase 2 del producto** (`packages/agents/server` con `@modelcontextprotocol/sdk`).
+AC#1 → F1–3 · AC#2 → F4 + F5 · AC#3 → F1–2 · AC#4 → **F7** · AC#5 → F2 · AC#6 → transversal.
 
 ## Riesgos / mitigaciones
 
