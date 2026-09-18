@@ -41,6 +41,21 @@ describe("parseAgentLine — opencode", () => {
     expect(parseAgentLine("opencode", '{"type":"step_finish"}')).toEqual([{ kind: "done" }]);
   });
 
+  it("reads the real 1.18 line shape (text nested under part)", () => {
+    expect(
+      parseAgentLine("opencode", '{"type":"step_start","part":{"type":"step-start"}}'),
+    ).toEqual([]);
+    const text = JSON.stringify({
+      type: "text",
+      timestamp: 1789700039063,
+      part: { type: "text", text: "hola" },
+    });
+    expect(parseAgentLine("opencode", text)).toEqual([{ kind: "fullText", text: "hola" }]);
+    expect(
+      parseAgentLine("opencode", '{"type":"step_finish","part":{"reason":"stop"}}'),
+    ).toEqual([{ kind: "done" }]);
+  });
+
   it("ignores non-JSON banner lines", () => {
     expect(parseAgentLine("opencode", "info: booting")).toEqual([]);
   });

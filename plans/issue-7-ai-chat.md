@@ -75,7 +75,8 @@ DesktopApi (espejo patrón `onTheme`/`theme`): `chatListAgents()`, `chatSend(req
 ### Fase 6 — Hardening + verificación
 - [x] `npm run desktop:lint` (0 errores), `tsc --noEmit` (limpio), `npm test -w @slash-md/desktop` (105 / 572 verdes), `packages/agents` (3 / 34).
 - [x] Smoke E2E con agente fake (`node` + `.slashmd.json` en workspace temporal aislado): crear página → chat de página → "Editar página" → stream `editStream` escribe en vivo en el canvas → "Aplicar" persiste el markdown en disco. Aserciones DOM OK.
-- [ ] Revisión visual del PNG (el modelo actual no puede leer imágenes) y prueba opcional con opencode real.
+- [x] Smoke E2E con `opencode` real (v1.18.31, workspace temporal aislado): el agente se detecta, se selecciona, y su stream escribe en el canvas. Forma real de NDJSON (`type:"text"` con `part.text`) cubierta por regresión en `adapters.spec.ts`.
+- [ ] Revisión visual del PNG (el modelo actual no puede leer imágenes).
 
 ## Mapeo a AC del issue
 
