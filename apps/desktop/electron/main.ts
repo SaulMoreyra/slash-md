@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { APP_COPYRIGHT, APP_ID, APP_NAME } from "../shared/brand";
 import { parseFolderArg } from "../shared/cliArg";
 import { notifyFolderOpened } from "./folders";
+import { abortAllChats } from "./agents";
 import { resolveAppIcon } from "./icon";
 import { registerIpc } from "./ipc";
 import { registerAppMenu } from "./menu";
@@ -137,6 +138,10 @@ if (!smoke && !app.requestSingleInstanceLock()) {
   }
 
   registerIpc(() => mainWindow);
+
+  app.on("before-quit", () => {
+    abortAllChats();
+  });
 
   app.whenReady().then(() => {
     applyNativeIdentity();

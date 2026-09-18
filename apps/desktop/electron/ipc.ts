@@ -28,6 +28,7 @@ import { currentBranchName, isGitWorkspace } from "./git";
 import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
 import { applyWindowChrome, getTheme, setTheme as persistTheme } from "./themeStore";
 import { pickFolder } from "./folders";
+import { abortAllChats, abortChat, listChatAgents, startChat } from "./agents";
 
 function theme(): AppTheme {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light";
@@ -81,12 +82,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle("pickFolder", () => pickFolder(getWindow()));
 
   handle("openFolder", async (folderPath: string) => {
+    abortAllChats();
     setWorkspaceRoot(folderPath);
     invalidateSearchIndex();
     return workspaceInfo();
   });
 
   handle("closeFolder", async () => {
+    abortAllChats();
     setWorkspaceRoot(null);
     return workspaceInfo();
   });
@@ -259,5 +262,20 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     if (win) {
       applyWindowChrome(win, next);
     }
+  });
+
+  handle("chatListAgents", () => listChatAgents());
+
+  handle("chatSend", (request) =>
+    startChat(request, (message) => {
+      const win = getWindow();
+      if (win) {
+        win.webContents.send("chat-event", message);
+      }
+    }),
+  );
+
+  handle("chatAbort", async (sessionId: string) => {
+    abortChat(sessionId);
   });
 }
