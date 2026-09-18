@@ -5,6 +5,7 @@ import { APP_COPYRIGHT, APP_ID, APP_NAME } from "../shared/brand";
 import { parseFolderArg } from "../shared/cliArg";
 import { notifyFolderOpened } from "./folders";
 import { abortAllChats } from "./agents";
+import { startMcpServerForRoot, stopMcpServer } from "./mcpServer";
 import { resolveAppIcon } from "./icon";
 import { registerIpc } from "./ipc";
 import { registerAppMenu } from "./menu";
@@ -45,6 +46,11 @@ function applyCliFolder(argv: string[], cwd = process.cwd()): void {
   try {
     const folder = resolveExistingFolder(raw, cwd);
     setWorkspaceRoot(folder);
+    void startMcpServerForRoot(folder).then((url) => {
+      if (url) {
+        console.log(`[mcp] wiki tools server en ${url}`);
+      }
+    });
     notifyFolderOpened(mainWindow, folder);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -141,6 +147,7 @@ if (!smoke && !app.requestSingleInstanceLock()) {
 
   app.on("before-quit", () => {
     abortAllChats();
+    void stopMcpServer();
   });
 
   app.whenReady().then(() => {

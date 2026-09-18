@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*.ts"
+    "./*": "./src/*.ts",
+    "./server": "./src/server/index.ts",
+    "./server/*": "./src/server/*.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
   }
 }

@@ -13,6 +13,7 @@ function mockWorkspace(): WorkspaceInfo {
     config: null,
     slashmd: {},
     needsInit: false,
+    mcpUrl: null,
     auth: null,
     theme: "dark",
   };

@@ -19,6 +19,7 @@ function mockWorkspace(mode: RepoMode): WorkspaceInfo {
     },
     slashmd: { mode },
     needsInit: false,
+    mcpUrl: null,
     auth: null,
     theme: "dark",
   };

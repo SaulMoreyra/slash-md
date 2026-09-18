@@ -29,6 +29,7 @@ import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
 import { applyWindowChrome, getTheme, setTheme as persistTheme } from "./themeStore";
 import { pickFolder } from "./folders";
 import { abortAllChats, abortChat, listChatAgents, startChat } from "./agents";
+import { mcpServerUrl, startMcpServerForRoot, stopMcpServer } from "./mcpServer";
 
 function theme(): AppTheme {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light";
@@ -45,6 +46,7 @@ async function workspaceInfo(): Promise<WorkspaceInfo> {
     needsInit: !config,
     auth: await currentAuth(),
     theme: theme(),
+    mcpUrl: mcpServerUrl(),
   };
 }
 
@@ -85,12 +87,14 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     abortAllChats();
     setWorkspaceRoot(folderPath);
     invalidateSearchIndex();
+    await startMcpServerForRoot(folderPath);
     return workspaceInfo();
   });
 
   handle("closeFolder", async () => {
     abortAllChats();
     setWorkspaceRoot(null);
+    await stopMcpServer();
     return workspaceInfo();
   });
 

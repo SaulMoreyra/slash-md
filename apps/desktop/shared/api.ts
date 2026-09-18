@@ -34,6 +34,8 @@ export type WorkspaceInfo = {
   needsInit: boolean;
   auth: AuthInfo;
   theme: AppTheme;
+  /** Base URL of the local wiki MCP server, when enabled. */
+  mcpUrl: string | null;
 };
 
 /** Cheap HEAD snapshot — not the mounted publication. */
