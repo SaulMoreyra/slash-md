@@ -30,6 +30,7 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   Calendar,
+  Dices,
 } from "lucide-react";
 
 export type IconProps = {
@@ -149,6 +150,10 @@ export function IconImage(props: IconProps) {
 
 export function IconTrash(props: IconProps) {
   return <Trash2 {...lucideProps({ size: 16, ...props })} />;
+}
+
+export function IconDice(props: IconProps) {
+  return <Dices {...lucideProps({ size: 16, ...props })} />;
 }
 
 export function IconPanel(props: IconProps) {

@@ -6,20 +6,25 @@ import {
   type ChatHostEvent,
   type ChatRequest,
 } from "@slash-md/agents/types";
+import { extractMentions, stripMentions } from "@slash-md/agents/context";
 import { ChatRole, TurnStatus } from "../enums";
-import type { ChatTurn } from "../types";
+import { loadChatSession, saveChatSession } from "../chatStorage";
+import type { ChatEditApi, ChatTurn } from "../types";
 import { applyHostEvent, isSettled, newAgentTurn, newTurn, replaceTurn } from "../utils";
 
 const api = () => window.slashmd;
+
+const PERSIST_DEBOUNCE_MS = 250;
 
 export type ChatControllerParams = {
   scope: ChatScope;
   mode: ChatMode;
   path?: string;
   getBuffer?: () => string;
-  onEditStart?: () => void;
-  onEditStream?: (markdown: string) => void;
-  onEditStop?: () => void;
+  /** Resolves the page editor handle *at session start* (the bubble follows the active page). */
+  getEditApi?: () => ChatEditApi | null;
+  /** localStorage context key: the thread + draft survive close/restarts and swap per context. */
+  storageKey?: string;
 };
 
 export function useChatController({
@@ -27,9 +32,8 @@ export function useChatController({
   mode,
   path,
   getBuffer,
-  onEditStart,
-  onEditStream,
-  onEditStop,
+  getEditApi,
+  storageKey,
 }: ChatControllerParams) {
   const [agents, setAgents] = useState<AgentInfo[]>([]);
   const [agentName, setAgentName] = useState<string | null>(null);
@@ -40,7 +44,16 @@ export function useChatController({
   const sessionRef = useRef<string | null>(null);
   const pendingRef = useRef(false);
   const agentTurnRef = useRef<string | null>(null);
-  const editModeRef = useRef(false);
+  const editApiRef = useRef<ChatEditApi | null>(null);
+
+  const paramsRef = useRef({ scope, mode, path, getBuffer, getEditApi, storageKey });
+  paramsRef.current = { scope, mode, path, getBuffer, getEditApi, storageKey };
+
+  // Live mirrors for persistence flushed on context switch / unmount.
+  const latestRef = useRef({ draft, turns, agent: null as string | null, storageKey });
+  const streamingRef = useRef(streaming);
+  latestRef.current = { draft, turns, agent: agentName, storageKey };
+  streamingRef.current = streaming;
 
   useEffect(() => {
     let alive = true;
@@ -61,28 +74,23 @@ export function useChatController({
     };
   }, []);
 
-  const handleEvent = useCallback(
-    (event: ChatHostEvent) => {
-      const turnId = agentTurnRef.current;
-      if (!turnId) {
-        return;
-      }
-      if (event.type === "editStream") {
-        onEditStream?.(event.markdown);
-      }
-      setTurns((prev) => replaceTurn(prev, turnId, (turn) => applyHostEvent(turn, event)));
-      if (isSettled(event)) {
-        setStreaming(false);
-        pendingRef.current = false;
-        sessionRef.current = null;
-        if (editModeRef.current) {
-          editModeRef.current = false;
-          onEditStop?.();
-        }
-      }
-    },
-    [onEditStream, onEditStop],
-  );
+  const handleEvent = useCallback((event: ChatHostEvent) => {
+    const turnId = agentTurnRef.current;
+    if (!turnId) {
+      return;
+    }
+    if (event.type === "editStream") {
+      editApiRef.current?.onEditStream(event.markdown);
+    }
+    setTurns((prev) => replaceTurn(prev, turnId, (turn) => applyHostEvent(turn, event)));
+    if (isSettled(event)) {
+      setStreaming(false);
+      pendingRef.current = false;
+      sessionRef.current = null;
+      editApiRef.current?.onEditStop();
+      editApiRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     const subscribe = api()?.onChatEvent;
@@ -103,10 +111,82 @@ export function useChatController({
     });
   }, [handleEvent]);
 
+  /** Set while a restored thread is landing so the debounce skips the stale render's values. */
+  const justSwappedRef = useRef(false);
+
+  /** Swap the persisted thread when the active context changes; abort mid-flight sessions. */
+  const activeStorageKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    const previous = activeStorageKeyRef.current;
+    activeStorageKeyRef.current = storageKey ?? null;
+    justSwappedRef.current = previous !== storageKey;
+    if (previous === storageKey) {
+      return;
+    }
+    if (previous) {
+      const snapshot = latestRef.current;
+      saveChatSession(previous, {
+        draft: snapshot.draft,
+        turns: snapshot.turns,
+        agent: snapshot.agent,
+      });
+    }
+    if (streamingRef.current) {
+      const sessionId = sessionRef.current;
+      if (sessionId) {
+        void api().chatAbort(sessionId);
+      }
+      setStreaming(false);
+      pendingRef.current = false;
+      sessionRef.current = null;
+      agentTurnRef.current = null;
+      editApiRef.current?.onEditStop();
+      editApiRef.current = null;
+    }
+    if (!storageKey) {
+      setDraft("");
+      setTurns([]);
+      return;
+    }
+    const stored = loadChatSession(storageKey);
+    setDraft(stored.draft);
+    setTurns(stored.turns);
+    setAgentName((current) => stored.agent ?? current);
+  }, [storageKey]);
+
+  /** Debounced live persistence so a crash/restart keeps the latest draft + thread. */
+  useEffect(() => {
+    if (!storageKey) {
+      return undefined;
+    }
+    if (justSwappedRef.current) {
+      justSwappedRef.current = false;
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      saveChatSession(storageKey, { draft, turns, agent: agentName });
+    }, PERSIST_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [draft, turns, agentName, storageKey]);
+
+  /** Flush right before the panel unmounts (the bubble closes). */
+  useEffect(() => {
+    return () => {
+      const snapshot = latestRef.current;
+      if (snapshot.storageKey) {
+        saveChatSession(snapshot.storageKey, {
+          draft: snapshot.draft,
+          turns: snapshot.turns,
+          agent: snapshot.agent,
+        });
+      }
+    };
+  }, []);
+
   const startSession = useCallback(
-    async (request: ChatRequest, turn: ChatTurn) => {
+    async (request: ChatRequest, userText: string, turn: ChatTurn) => {
       agentTurnRef.current = turn.id;
-      setTurns((prev) => [...prev, newTurn(ChatRole.User, request.prompt), turn]);
+      setTurns((prev) => [...prev, newTurn(ChatRole.User, userText), turn]);
       setDraft("");
       setStreaming(true);
       pendingRef.current = true;
@@ -124,52 +204,56 @@ export function useChatController({
             error: message,
           })),
         );
-        if (editModeRef.current) {
-          editModeRef.current = false;
-          onEditStop?.();
-        }
+        editApiRef.current?.onEditStop();
+        editApiRef.current = null;
       }
     },
-    [onEditStop],
+    [],
   );
 
   const onSend = useCallback(async () => {
-    const prompt = draft.trim();
+    const current = paramsRef.current;
+    const prompt = stripMentions(draft);
     if (!prompt || streaming) {
       return;
     }
     await startSession(
       {
-        scope,
-        mode,
+        scope: current.scope,
+        mode: current.mode,
         prompt,
-        path,
-        bufferMarkdown: scope === ChatScope.Page ? getBuffer?.() : undefined,
+        path: current.path,
+        bufferMarkdown: current.scope === ChatScope.Page ? current.getBuffer?.() : undefined,
         agent: agentName ?? undefined,
+        references: extractMentions(draft),
       },
+      draft.trim(),
       newAgentTurn(),
     );
-  }, [draft, streaming, scope, mode, path, getBuffer, agentName, startSession]);
+  }, [draft, streaming, agentName, startSession]);
 
   const onRewrite = useCallback(async () => {
-    const prompt = draft.trim();
-    if (!prompt || streaming || scope !== ChatScope.Page || !path) {
+    const current = paramsRef.current;
+    const prompt = stripMentions(draft);
+    if (!prompt || streaming || current.scope !== ChatScope.Page || !current.path) {
       return;
     }
-    editModeRef.current = true;
-    onEditStart?.();
+    editApiRef.current = current.getEditApi?.() ?? null;
+    editApiRef.current?.onEditStart();
     await startSession(
       {
-        scope,
+        scope: current.scope,
         mode: ChatMode.EditPage,
         prompt,
-        path,
-        bufferMarkdown: getBuffer?.(),
+        path: current.path,
+        bufferMarkdown: current.getBuffer?.(),
         agent: agentName ?? undefined,
+        references: extractMentions(draft),
       },
+      draft.trim(),
       newAgentTurn(),
     );
-  }, [draft, streaming, scope, path, getBuffer, agentName, startSession, onEditStart]);
+  }, [draft, streaming, agentName, startSession]);
 
   const onAbort = useCallback(() => {
     const sessionId = sessionRef.current;
@@ -184,18 +268,20 @@ export function useChatController({
         ? replaceTurn(prev, agentTurnRef.current, (turn) => ({ ...turn, status: TurnStatus.Done }))
         : prev,
     );
-    if (editModeRef.current) {
-      editModeRef.current = false;
-      onEditStop?.();
-    }
-  }, [onEditStop]);
+    editApiRef.current?.onEditStop();
+    editApiRef.current = null;
+  }, []);
 
   const onClear = useCallback(() => {
     if (streaming) {
       return;
     }
     setTurns([]);
-  }, [streaming]);
+    const current = paramsRef.current;
+    if (current.storageKey) {
+      saveChatSession(current.storageKey, { draft, turns: [], agent: agentName });
+    }
+  }, [streaming, draft, agentName]);
 
   const onSelectAgent = useCallback(
     (name: string) => {

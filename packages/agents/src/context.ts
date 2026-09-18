@@ -29,6 +29,8 @@ export type ChatContextBundle = {
     /** Per-file line counts, e.g. `docs/a.md +12 -3`. */
     diffStat?: string[];
   };
+  /** Pages pulled in from `@path` mentions, bodies included (capped). */
+  references?: Array<{ path: string; title: string; markdown: string }>;
   lote?: {
     prNumber: number;
     title: string;
@@ -43,7 +45,33 @@ export const CONTEXT_LIMITS = {
   gitPaths: 100,
   lotePaths: 50,
   pageSiblings: 30,
+  referenceFiles: 5,
+  referenceChars: 20_000,
 } as const;
+
+/**
+ * A `@path` mention targeting a repo-relative markdown page, e.g. `@docs/a.md`.
+ * The preceding char (start / whitespace / `(`) is consumed so the message
+ * stays readable after the token is stripped.
+ */
+export const MENTION_PATTERN = /(?:^|[\s(])@([A-Za-z0-9_./-]+\.md)/g;
+
+/** Unique `@`-mentioned paths in the order they appear. */
+export function extractMentions(text: string): string[] {
+  const paths: string[] = [];
+  for (const match of text.matchAll(MENTION_PATTERN)) {
+    const path = match[1];
+    if (!paths.includes(path)) {
+      paths.push(path);
+    }
+  }
+  return paths;
+}
+
+/** Remove `@path` tokens so the agent sees one copy of the referenced content. */
+export function stripMentions(text: string): string {
+  return text.replace(MENTION_PATTERN, "").trim();
+}
 
 export function truncate(value: string, max: number): string {
   if (value.length <= max) {
@@ -119,6 +147,18 @@ export function serializeContext(bundle: ChatContextBundle): string {
       for (const entry of git.diffStat.slice(0, CONTEXT_LIMITS.gitPaths)) {
         lines.push(`- ${entry}`);
       }
+    }
+  }
+
+  if (bundle.references?.length) {
+    lines.push("", "### Archivos referidos");
+    for (const ref of bundle.references.slice(0, CONTEXT_LIMITS.referenceFiles)) {
+      lines.push(`- ${ref.path} — ${ref.title}`);
+      lines.push(
+        "~~~markdown",
+        truncate(ref.markdown.trim(), CONTEXT_LIMITS.referenceChars).trim(),
+        "~~~",
+      );
     }
   }
 

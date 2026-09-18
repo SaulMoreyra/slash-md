@@ -59,7 +59,18 @@
       "noAgent": "No agent",
       "unavailable": "not found",
       "resize": "Drag to adjust the chat width",
-      "resizeReset": "Double-click restores the default width"
+      "resizeReset": "Double-click restores the default width",
+      "bubble": {
+        "open": "Open AI chat",
+        "close": "Close AI chat"
+      },
+      "mention": {
+        "remove": "Remove mention {path}",
+        "empty": "No matches"
+      },
+      "currentFile": {
+        "live": "The chat reads this page's unsaved content as context."
+      }
     },
     "rail": {
       "aria": "Navigation",

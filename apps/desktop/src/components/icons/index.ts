@@ -21,6 +21,7 @@ export {
   IconClose,
   IconImage,
   IconTrash,
+  IconDice,
   IconPanel,
   IconWorkPane,
   IconDiscard,

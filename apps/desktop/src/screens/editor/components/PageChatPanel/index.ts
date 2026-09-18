@@ -1,1 +1,0 @@
-export { PageChatPanel } from "./PageChatPanel";

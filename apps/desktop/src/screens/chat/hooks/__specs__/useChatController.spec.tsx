@@ -32,6 +32,7 @@ describe("useChatController", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     emit = undefined;
+    window.localStorage.clear();
     stubApi();
   });
 
@@ -90,9 +91,7 @@ describe("useChatController", () => {
         mode: ChatMode.Chat,
         path: "docs/a.md",
         getBuffer,
-        onEditStart,
-        onEditStream,
-        onEditStop,
+        getEditApi: () => ({ onEditStart, onEditStream, onEditStop }),
       }),
     );
     await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
@@ -135,5 +134,151 @@ describe("useChatController", () => {
 
     await waitFor(() => expect(result.current.conversation.turns[1]?.error).toBe("no agent"));
     expect(result.current.conversation.streaming).toBe(false);
+  });
+
+  it("persists the draft while typing", async () => {
+    const { result } = renderHook(() =>
+      useChatController({ scope: ChatScope.Global, mode: ChatMode.Chat, storageKey: "global" }),
+    );
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("mid-write"));
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem("slashmd:chat:v1:global") ?? "{}") as {
+        draft: string;
+      };
+      expect(stored.draft).toBe("mid-write");
+    });
+  });
+
+  it("flushes the session when unmounted", async () => {
+    const { result, unmount } = renderHook(() =>
+      useChatController({ scope: ChatScope.Global, mode: ChatMode.Chat, storageKey: "global" }),
+    );
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("unmount-me"));
+    unmount();
+
+    const stored = JSON.parse(window.localStorage.getItem("slashmd:chat:v1:global") ?? "{}") as {
+      draft: string;
+    };
+    expect(stored.draft).toBe("unmount-me");
+  });
+
+  it("restores the stored thread for a context key", () => {
+    window.localStorage.setItem(
+      "slashmd:chat:v1:page:/docs/a.md",
+      JSON.stringify({
+        draft: "reply",
+        agent: "opencode",
+        turns: [
+          {
+            id: "t1",
+            role: "agent",
+            text: "ok",
+            thinking: "",
+            status: "done",
+            tools: [],
+          },
+        ],
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useChatController({
+        scope: ChatScope.Page,
+        mode: ChatMode.Chat,
+        path: "docs/a.md",
+        storageKey: "page:/docs/a.md",
+      }),
+    );
+
+    expect(result.current.composer.draft).toBe("reply");
+    expect(result.current.conversation.turns).toHaveLength(1);
+    expect(result.current.agents.selected).toBe("opencode");
+  });
+
+  it("flushes the active context and restores the next one on switch", () => {
+    window.localStorage.setItem(
+      "slashmd:chat:v1:page:/docs/b.md",
+      JSON.stringify({ draft: "b-thread", turns: [], agent: null }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ storageKey }: { storageKey: string }) =>
+        useChatController({
+          scope: ChatScope.Page,
+          mode: ChatMode.Chat,
+          path: storageKey,
+          storageKey,
+        }),
+      { initialProps: { storageKey: "page:/docs/a.md" } },
+    );
+
+    act(() => result.current.composer.onDraftChange("a-thread"));
+    rerender({ storageKey: "page:/docs/b.md" });
+
+    const storedA = JSON.parse(
+      window.localStorage.getItem("slashmd:chat:v1:page:/docs/a.md") ?? "{}",
+    ) as { draft: string };
+    expect(storedA.draft).toBe("a-thread");
+    expect(result.current.composer.draft).toBe("b-thread");
+  });
+
+  it("aborts a mid-flight session when the context switches", async () => {
+    const { result, rerender } = renderHook(
+      ({ storageKey }: { storageKey?: string }) =>
+        useChatController({ scope: ChatScope.Global, mode: ChatMode.Chat, storageKey }),
+      { initialProps: { storageKey: "global" } },
+    );
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("hi"));
+    await act(async () => {
+      await result.current.composer.onSend();
+    });
+    await waitFor(() => expect(result.current.conversation.streaming).toBe(true));
+
+    rerender({ storageKey: "page:/docs/c.md" });
+
+    expect(window.slashmd.chatAbort).toHaveBeenCalledWith("s1");
+    expect(result.current.conversation.streaming).toBe(false);
+    expect(result.current.conversation.turns).toHaveLength(0);
+  });
+
+  it("sends cleaned mentions as references", async () => {
+    const { result } = renderChat();
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() =>
+      result.current.composer.onDraftChange("Mirá @docs/a.md y @docs/b.md por favor"),
+    );
+    await act(async () => {
+      await result.current.composer.onSend();
+    });
+
+    expect(window.slashmd.chatSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Mirá y por favor",
+        references: ["docs/a.md", "docs/b.md"],
+      }),
+    );
+    expect(result.current.conversation.turns[0]?.text).toBe(
+      "Mirá @docs/a.md y @docs/b.md por favor",
+    );
+  });
+
+  it("does not send a prompt made only of mentions", async () => {
+    const { result } = renderChat();
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("@docs/a.md"));
+    await act(async () => {
+      await result.current.composer.onSend();
+    });
+
+    expect(window.slashmd.chatSend).not.toHaveBeenCalled();
+    expect(result.current.conversation.turns).toHaveLength(0);
   });
 });

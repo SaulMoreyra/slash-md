@@ -5,6 +5,7 @@ import { requestCloseFindInPage } from "../../editor/findInPageBridge";
 import { ModalKind, NavKind, RailMode } from "../enums";
 import type { HomeScreenProps } from "../types";
 import { newPageModalKind, settingsModalKind } from "../utils";
+import type { ChatApi } from "./useChatBubble";
 import type { ModalsApi } from "./useModals";
 import type { NavApi } from "./useNav";
 import type { SearchApi } from "./useSearch";
@@ -15,6 +16,7 @@ type Params = {
   canWrite: boolean;
   search: Pick<SearchApi, "open" | "onClose" | "onToggle" | "onOpen">;
   modals: Pick<ModalsApi, "kind" | "onOpen">;
+  chat: Pick<ChatApi, "onToggle">;
   nav: Pick<
     NavApi,
     | "isWorkspace"
@@ -42,6 +44,7 @@ export function useKeyboardShortcuts({
   canWrite,
   search,
   modals,
+  chat,
   nav,
   tabs,
   activeKey,
@@ -166,6 +169,11 @@ export function useKeyboardShortcuts({
           onClosePage();
           return;
         }
+        if (key === "l" && ev.shiftKey) {
+          ev.preventDefault();
+          chat.onToggle();
+          return;
+        }
       }
 
       if (ev.key === "/" && !inField && !mod && !ev.altKey && !search.open) {
@@ -183,6 +191,7 @@ export function useKeyboardShortcuts({
     search.onToggle,
     search.onOpen,
     pagePath,
+    chat.onToggle,
     nav.workPaneOpen,
     nav.railOpen,
     nav.railMode,

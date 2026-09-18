@@ -1,7 +1,7 @@
 import { useHomeController, type HomeControllerApi } from "../../hooks/useHomeController";
 import type { HomeScreenProps } from "../../types";
+import { ChatBubble } from "../../../chat";
 import { Overlays } from "./components/Overlays";
-import { ChatColumn } from "./components/ChatColumn";
 import { PublicationFabSlot } from "./components/PublicationFabSlot";
 import { RailSlot } from "./components/RailSlot";
 import { Shell } from "./components/Shell";
@@ -18,9 +18,9 @@ function Root(props: HomeScreenProps) {
         <RailSlot />
         <WorkColumn />
         <Stage />
-        <ChatColumn />
       </Shell>
       <PublicationFabSlot />
+      <ChatBubble />
       <Overlays />
     </HomeContext.Provider>
   );

@@ -25,6 +25,8 @@ export type ChatRequest = {
   bufferMarkdown?: string;
   /** Preferred agent name; falls back to `.slashmd.json` / PATH probe. */
   agent?: string;
+  /** Repo-relative markdown paths `@`-mentioned in the prompt; bodies are inlined as context. */
+  references?: string[];
 };
 
 /** Normalized agent stream events, pushed from the host to the renderer. */

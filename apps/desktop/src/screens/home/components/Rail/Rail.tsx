@@ -120,7 +120,7 @@ export function Rail({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full shrink-0 flex-col gap-3"
+      className="flex h-full min-h-0 w-full shrink-0 flex-col gap-3 pl-3 py-3"
       aria-label={t("home.rail.aria")}
     >
       <RailHeader
@@ -132,36 +132,38 @@ export function Rail({
         onCloseRail={onCloseRail}
       />
 
-      <Button
-        variant="ghost"
-        className="w-full justify-between border border-separator bg-default/40"
-        isDisabled={needsInit}
-        aria-keyshortcuts="Meta+K Control+K"
-        onPress={onOpenSearch}
-      >
-        <span className="flex items-center gap-2 text-muted">
-          <IconSearch />
-          {t("home.nav.search")}
-        </span>
-        <ShortcutKbd keys={searchKeys} />
-      </Button>
-
-      {onToggleChat ? (
+      <div className="flex flex-col gap-2 px-1">
         <Button
           variant="ghost"
           className="w-full justify-between border border-separator bg-default/40"
-          aria-label={t("home.chat.title")}
-          aria-pressed={chatOpen}
-          onPress={onToggleChat}
+          isDisabled={needsInit}
+          aria-keyshortcuts="Meta+K Control+K"
+          onPress={onOpenSearch}
         >
           <span className="flex items-center gap-2 text-muted">
-            <IconChat />
-            {t("home.chat.title")}
+            <IconSearch />
+            {t("home.nav.search")}
           </span>
+          <ShortcutKbd keys={searchKeys} />
         </Button>
-      ) : null}
+        {onToggleChat ? (
+          <Button
+            variant="ghost"
+            className="w-full justify-between border border-separator bg-default/40"
+            aria-label={t("home.chat.title")}
+            aria-pressed={chatOpen}
+            onPress={onToggleChat}
+          >
+            <span className="flex items-center gap-2 text-muted">
+              <IconChat />
+              {t("home.chat.title")}
+            </span>
+          </Button>
+        ) : null}
 
-      <ScrollShadow className="min-h-0 flex-1 [--scroll-shadow-scrollbar-size:0px]">
+      </div>
+
+      <ScrollShadow className="min-h-0 flex-1 [--scroll-shadow-size:0px] [--scroll-shadow-scrollbar-size:0px]">
         <RailNav
           nav={nav}
           payload={payload}
@@ -187,7 +189,7 @@ export function Rail({
         />
       </ScrollShadow>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 px-1">
         <Button
           variant="primary"
           fullWidth

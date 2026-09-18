@@ -59,7 +59,18 @@
       "noAgent": "Sin agente",
       "unavailable": "no encontrado",
       "resize": "Arrastra para ajustar el ancho del chat",
-      "resizeReset": "Doble clic restaura el ancho por defecto"
+      "resizeReset": "Doble clic restaura el ancho por defecto",
+      "bubble": {
+        "open": "Abrir chat de IA",
+        "close": "Cerrar chat de IA"
+      },
+      "mention": {
+        "remove": "Quitar mención {path}",
+        "empty": "Sin resultados"
+      },
+      "currentFile": {
+        "live": "El chat lee el contenido sin guardar de esta página como contexto."
+      }
     },
     "rail": {
       "aria": "Navegación",

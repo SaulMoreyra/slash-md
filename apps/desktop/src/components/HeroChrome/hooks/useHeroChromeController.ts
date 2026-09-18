@@ -19,6 +19,7 @@ export function useHeroChromeController({ fields, imageMap, canWrite, onPatch, o
   const position = parsePosition(fields.coverPosition);
   const [coverMenu, setCoverMenu] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const hasIcon = Boolean(icon);
   const hasCover = Boolean(cover);
@@ -31,6 +32,7 @@ export function useHeroChromeController({ fields, imageMap, canWrite, onPatch, o
     position,
     coverMenu,
     picker,
+    pickerAnchor,
     fileRef,
     hasIcon,
     hasCover,
@@ -40,7 +42,10 @@ export function useHeroChromeController({ fields, imageMap, canWrite, onPatch, o
     iconEditable: canWrite && hasIcon,
     onOpenCoverMenu: () => setCoverMenu((open) => !open),
     onCloseCoverMenu: () => setCoverMenu(false),
-    onOpenPicker: () => setPicker(true),
+    onOpenPicker: (anchor: HTMLElement | null) => {
+      setPickerAnchor(anchor);
+      setPicker(true);
+    },
     onClosePicker: () => setPicker(false),
     onRemoveCover: () => void onPatch({ cover: "", coverPosition: "" }),
     onSelectColor: (hex: string) => {

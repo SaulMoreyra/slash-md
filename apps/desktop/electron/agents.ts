@@ -257,6 +257,25 @@ async function composeContext(request: ChatRequest): Promise<ChatContextBundle> 
     pages: await buildSearchIndex(root, contentPath),
   };
   bundle.git = await gitContext(root, branch);
+
+  if (request.references?.length) {
+    const references = [];
+    for (const refPath of request.references.slice(0, CONTEXT_LIMITS.referenceFiles)) {
+      try {
+        const page = await loadPage(refPath);
+        const { body } = splitFrontmatter(page.markdown);
+        references.push({
+          path: refPath,
+          title: page.frontmatter.title?.trim() || path.basename(refPath),
+          markdown: body,
+        });
+      } catch {
+        // Missing reference: drop it rather than failing the whole turn.
+      }
+    }
+    bundle.references = references;
+  }
+
   const lote = await loteContext(root);
   if (lote) {
     bundle.lote = lote;

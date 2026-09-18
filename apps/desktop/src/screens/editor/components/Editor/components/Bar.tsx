@@ -1,10 +1,12 @@
+import { useHomeOptional } from "../../../../home/components/Home/context";
 import { EditorBar } from "../../EditorBar";
 import { EditorMoreActions } from "../../EditorMoreActions";
 import { LifecycleKind } from "../../../enums";
 import { useEditor } from "../context";
 
 export function Bar() {
-  const { page, busy, onClose, editor, threads, chrome, chat } = useEditor();
+  const { page, busy, onClose, editor, threads, chrome } = useEditor();
+  const home = useHomeOptional();
 
   return (
     <EditorBar
@@ -14,12 +16,12 @@ export function Bar() {
       status={editor.status}
       openPr={threads.openPr}
       threadsCount={threads.threads.length}
-      chatOpen={chat.open}
+      chatOpen={home?.chat.open ?? false}
       moreOpen={chrome.moreOpen}
       moreRef={chrome.moreRef}
       onClose={onClose}
       onToggleMore={chrome.onMoreToggle}
-      onToggleChat={chat.onToggle}
+      onToggleChat={home?.chat.onToggle}
       onOpenFirstThread={threads.onThreadOpenFirst}
     >
       <EditorMoreActions

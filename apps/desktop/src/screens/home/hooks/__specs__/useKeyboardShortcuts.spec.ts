@@ -34,6 +34,12 @@ describe("useKeyboardShortcuts", () => {
   const onClosePage = vi.fn();
   const onRefresh = vi.fn(async () => undefined);
   const onActivateTab = vi.fn();
+  const chat = {
+    open: false,
+    onOpen: vi.fn(),
+    onClose: vi.fn(),
+    onToggle: vi.fn(),
+  };
   const pagePayload = (path: string): PagePayload => ({
     path,
     markdown: "# Hello",
@@ -67,6 +73,7 @@ describe("useKeyboardShortcuts", () => {
         canWrite: true,
         search: { ...search, ...overrides.search },
         modals,
+        chat,
         nav: { ...nav, ...overrides.nav },
         tabs,
         activeKey: overrides.activeKey ?? "docs/a.md",
@@ -140,5 +147,25 @@ describe("useKeyboardShortcuts", () => {
     runHook({ activeKey: "docs/b.md" });
     press({ key: "]", metaKey: true, shiftKey: true });
     expect(onActivateTab).toHaveBeenCalledWith("docs/a.md");
+  });
+
+  it("toggles the chat bubble with mod+shift+L", () => {
+    runHook();
+    press({ key: "l", metaKey: true, shiftKey: true });
+    expect(chat.onToggle).toHaveBeenCalled();
+  });
+
+  it("does not toggle the chat bubble with plain mod+L", () => {
+    runHook();
+    press({ key: "l", metaKey: true });
+    expect(chat.onToggle).not.toHaveBeenCalled();
+  });
+
+  it("does not toggle the chat bubble while a modal is open", () => {
+    runHook();
+    modals.kind = ModalKind.Config;
+    press({ key: "l", metaKey: true, shiftKey: true });
+    expect(chat.onToggle).not.toHaveBeenCalled();
+    modals.kind = ModalKind.None;
   });
 });

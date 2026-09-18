@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
-export function useEditorChat() {
+/** Ownership of the single floating chat bubble (open/close/toggle only). */
+export function useChatBubble() {
   const [open, setOpen] = useState(false);
 
   const onOpen = useCallback(() => setOpen(true), []);
@@ -9,3 +10,5 @@ export function useEditorChat() {
 
   return { open, onOpen, onClose, onToggle };
 }
+
+export type ChatApi = ReturnType<typeof useChatBubble>;

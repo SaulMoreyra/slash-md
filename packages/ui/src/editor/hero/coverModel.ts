@@ -13,6 +13,16 @@ export const COVER_COLORS: { hex: string; label: string }[] = [
   { hex: "#F5E0E9", label: "Pink" },
   { hex: "#FFE2DD", label: "Red" },
   { hex: "#37352F", label: "Dark" },
+  { hex: "#F7F6F3", label: "White" },
+  { hex: "#D9D8D4", label: "Silver" },
+  { hex: "#EFE6CE", label: "Sand" },
+  { hex: "#E4E8D8", label: "Olive" },
+  { hex: "#CDE7E6", label: "Teal" },
+  { hex: "#D5ECEF", label: "Cyan" },
+  { hex: "#DEE0F2", label: "Indigo" },
+  { hex: "#E6E3EE", label: "Lavender" },
+  { hex: "#F2DDE3", label: "Magenta" },
+  { hex: "#D8DEE6", label: "Slate" },
 ];
 
 export function isCoverColor(value: string): boolean {

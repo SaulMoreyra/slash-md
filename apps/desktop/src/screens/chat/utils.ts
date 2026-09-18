@@ -1,3 +1,4 @@
+import { MENTION_PATTERN } from "@slash-md/agents/context";
 import type { ChatHostEvent } from "@slash-md/agents/types";
 import { ChatRole, TurnStatus } from "./enums";
 import type { ChatTurn } from "./types";
@@ -57,4 +58,17 @@ export function replaceTurn(
 
 export function isSettled(event: ChatHostEvent): boolean {
   return event.type === "done" || event.type === "error";
+}
+
+/** Drop exactly the `@path` tokens that match `path`, keeping the sentence intact. */
+export function removeMentionToken(draft: string, path: string): string {
+  let next = "";
+  let lastIndex = 0;
+  for (const match of draft.matchAll(MENTION_PATTERN)) {
+    if (match[1] === path) {
+      next += draft.slice(lastIndex, match.index);
+      lastIndex = match.index + match[0].length;
+    }
+  }
+  return next + draft.slice(lastIndex);
 }

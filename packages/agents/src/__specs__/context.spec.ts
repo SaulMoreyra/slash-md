@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CONTEXT_LIMITS, buildPrompt, serializeContext, truncate } from "../context";
+import {
+  CONTEXT_LIMITS,
+  buildPrompt,
+  extractMentions,
+  serializeContext,
+  stripMentions,
+  truncate,
+} from "../context";
 import { ChatMode } from "../types";
 
 describe("truncate", () => {
@@ -11,6 +18,28 @@ describe("truncate", () => {
     const result = truncate("a".repeat(20), 10);
     expect(result).toContain("a".repeat(10));
     expect(result).toContain("10 caracteres omitidos");
+  });
+});
+
+describe("mentions", () => {
+  it("extracts unique @path tokens in order", () => {
+    expect(
+      extractMentions("Mirá @docs/a.md y @docs/b.md, y de nuevo @docs/a.md"),
+    ).toEqual(["docs/a.md", "docs/b.md"]);
+  });
+
+  it("extracts mentions at the start and after an open paren", () => {
+    expect(extractMentions("@a.md (@b/c.md)")).toEqual(["a.md", "b/c.md"]);
+  });
+
+  it("ignores text that is not a markdown path", () => {
+    expect(extractMentions("hola@chao y @usuario y @docs/a.txt")).toEqual([]);
+  });
+
+  it("strips mentions but keeps the rest of the sentence", () => {
+    expect(stripMentions("Mirá @docs/a.md por favor")).toBe("Mirá por favor");
+    expect(stripMentions("@docs/a.md por favor")).toBe("por favor");
+    expect(stripMentions("a @docs/a.md y @docs/b.md")).toBe("a y");
   });
 });
 
@@ -57,6 +86,30 @@ describe("serializeContext", () => {
     }));
     const markdown = serializeContext({ tree: { sections: [], pages } });
     expect(markdown).toContain("5 páginas más");
+  });
+
+  it("renders referenced files with their bodies", () => {
+    const markdown = serializeContext({
+      workspace: { contentPath: "docs", mode: "local", branch: null },
+      references: [
+        { path: "docs/nota.md", title: "Nota", markdown: "# Nota\n\ncuerpo de la nota" },
+      ],
+    });
+
+    expect(markdown).toContain("### Archivos referidos");
+    expect(markdown).toContain("- docs/nota.md — Nota");
+    expect(markdown).toContain("# Nota\n\ncuerpo de la nota");
+  });
+
+  it("caps the number of referenced files", () => {
+    const many = Array.from({ length: CONTEXT_LIMITS.referenceFiles + 2 }, (_, index) => ({
+      path: `docs/${index}.md`,
+      title: `${index}`,
+      markdown: "# x",
+    }));
+    const markdown = serializeContext({ references: many });
+    expect(markdown).toContain("- docs/0.md — 0");
+    expect(markdown).not.toContain(`- docs/${CONTEXT_LIMITS.referenceFiles}.md`);
   });
 });
 
