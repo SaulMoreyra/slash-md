@@ -1,9 +1,17 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { CrepeBuilder } from "@milkdown/crepe/builder";
 import { createSlashCrepe } from "@slash-md/ui/editor/core/crepe";
+import { setCrepeEditable, setCrepeMarkdown } from "@slash-md/ui/editor/core/crepe";
 import type { SearchHandle } from "@slash-md/ui/editor/plugins/search";
 import { mountComments, type CommentsHandle } from "@slash-md/ui/editor/threads/commentsMount";
 import type { ReviewThread } from "../../../shared/api";
+
+export type CrepeCanvasHandle = {
+  /** Replace the editor content without a full remount. */
+  setMarkdown: (markdown: string) => void;
+  /** Toggle read-only mode without a full remount. */
+  setEditable: (editable: boolean) => void;
+};
 
 type Props = {
   docPath: string;
@@ -27,21 +35,24 @@ type Props = {
   reloadKey?: number;
 };
 
-export function CrepeCanvas({
-  docPath,
-  markdown,
-  commentsEnabled,
-  threads,
-  imageMap,
-  onMarkdown,
-  onUpload,
-  onOpenThread,
-  onOrphans,
-  onCommentSelection,
-  editable = true,
-  onSearchReady,
-  reloadKey,
-}: Props) {
+export const CrepeCanvas = forwardRef<CrepeCanvasHandle, Props>(function CrepeCanvas(
+  {
+    docPath,
+    markdown,
+    commentsEnabled,
+    threads,
+    imageMap,
+    onMarkdown,
+    onUpload,
+    onOpenThread,
+    onOrphans,
+    onCommentSelection,
+    editable = true,
+    onSearchReady,
+    reloadKey,
+  },
+  ref,
+) {
   const rootRef = useRef<HTMLDivElement>(null);
   const builderRef = useRef<CrepeBuilder | null>(null);
   const commentsRef = useRef<CommentsHandle | null>(null);
@@ -61,6 +72,23 @@ export function CrepeCanvas({
   commentRef.current = onCommentSelection;
   searchReadyRef.current = onSearchReady;
   mapRef.current = imageMap;
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setMarkdown: (value: string) => {
+        if (builderRef.current) {
+          setCrepeMarkdown(builderRef.current, value);
+        }
+      },
+      setEditable: (value: boolean) => {
+        if (builderRef.current) {
+          setCrepeEditable(builderRef.current, value);
+        }
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     initialRef.current = markdown;
@@ -117,7 +145,7 @@ export function CrepeCanvas({
   }, [threads]);
 
   return <div ref={rootRef} className="canvas" id="canvas" />;
-}
+});
 
 async function destroy(builder: CrepeBuilder): Promise<void> {
   const anyBuilder = builder as unknown as { destroy?: () => Promise<void> | void };

@@ -1,6 +1,6 @@
 import { Button, ScrollShadow } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconPlus, IconSearch } from "../../../../components/icons";
+import { IconChat, IconPlus, IconSearch } from "../../../../components/icons";
 import { ShortcutKbd, shortcutLabel } from "../../../../components/ShortcutKbd";
 import type {
   HomeTreeNode,
@@ -50,6 +50,8 @@ type Props = {
   onNewFolderInFolder?: (node: HomeTreeNode) => void;
   onRefresh: () => void;
   onNewPublication?: () => void;
+  chatOpen?: boolean;
+  onToggleChat?: () => void;
 };
 
 export function Rail({
@@ -88,6 +90,8 @@ export function Rail({
   onNewFolderInFolder,
   onRefresh,
   onNewPublication,
+  chatOpen = false,
+  onToggleChat,
 }: Props) {
   const { t } = useTranslation();
   const needsInit = Boolean(payload?.needsInit);
@@ -141,6 +145,21 @@ export function Rail({
         </span>
         <ShortcutKbd keys={searchKeys} />
       </Button>
+
+      {onToggleChat ? (
+        <Button
+          variant="ghost"
+          className="w-full justify-between border border-separator bg-default/40"
+          aria-label={t("home.chat.title")}
+          aria-pressed={chatOpen}
+          onPress={onToggleChat}
+        >
+          <span className="flex items-center gap-2 text-muted">
+            <IconChat />
+            {t("home.chat.title")}
+          </span>
+        </Button>
+      ) : null}
 
       <ScrollShadow className="min-h-0 flex-1 [--scroll-shadow-scrollbar-size:0px]">
         <RailNav

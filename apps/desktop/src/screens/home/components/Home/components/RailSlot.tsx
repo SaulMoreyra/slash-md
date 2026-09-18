@@ -95,5 +95,7 @@ function railChrome(home: HomeControllerApi) {
     onFolderModal: actions.onRequestFolder,
     onRefresh: () => void onRefresh(),
     onNewPublication: actions.onRequestPublication,
+    chatOpen: home.chat.open,
+    onToggleChat: home.chat.onToggle,
   };
 }

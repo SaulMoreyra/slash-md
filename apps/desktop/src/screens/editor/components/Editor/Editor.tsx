@@ -4,6 +4,7 @@ import {
   type EditorControllerApi,
   type EditorScreenProps,
 } from "../../hooks/useEditorController";
+import { PageChatPanel } from "../PageChatPanel";
 import { WikiPeek } from "../WikiPeek";
 import { Bar } from "./components/Bar";
 import { Banners } from "./components/Banners";
@@ -28,6 +29,7 @@ function Root(props: EditorScreenProps) {
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <Canvas />
           <WikiPeek />
+          <PageChatPanel />
         </div>
         <Orphans />
       </Shell>

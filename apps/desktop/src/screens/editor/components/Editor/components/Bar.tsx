@@ -4,7 +4,7 @@ import { LifecycleKind } from "../../../enums";
 import { useEditor } from "../context";
 
 export function Bar() {
-  const { page, busy, onClose, editor, threads, chrome } = useEditor();
+  const { page, busy, onClose, editor, threads, chrome, chat } = useEditor();
 
   return (
     <EditorBar
@@ -14,10 +14,12 @@ export function Bar() {
       status={editor.status}
       openPr={threads.openPr}
       threadsCount={threads.threads.length}
+      chatOpen={chat.open}
       moreOpen={chrome.moreOpen}
       moreRef={chrome.moreRef}
       onClose={onClose}
       onToggleMore={chrome.onMoreToggle}
+      onToggleChat={chat.onToggle}
       onOpenFirstThread={threads.onThreadOpenFirst}
     >
       <EditorMoreActions

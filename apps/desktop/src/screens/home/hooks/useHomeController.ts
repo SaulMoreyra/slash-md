@@ -7,6 +7,7 @@ import { ModalKind, NavKind } from "../enums";
 import { requestOpenFindInPage } from "../../editor/findInPageBridge";
 import { newPageModalKind, settingsModalKind } from "../utils";
 import { useConflicts } from "./useConflicts";
+import { useChatDock } from "./useChatDock";
 import { useHomeActions } from "./useHomeActions";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { useModals } from "./useModals";
@@ -38,6 +39,7 @@ export function useHomeController({
 }: HomeScreenProps) {
   const { t } = useTranslation();
   const modals = useModals();
+  const chat = useChatDock();
   const nav = useNav({
     workspace,
     tree,
@@ -157,6 +159,7 @@ export function useHomeController({
     search,
     modals,
     nav,
+    chat,
     actions,
     treeActions,
     conflicts,

@@ -20,6 +20,7 @@ import {
   Plus,
   RotateCcw,
   Scale,
+  Sparkles,
   PanelLeft,
   PanelRight,
   Search,
@@ -119,6 +120,10 @@ export function IconHistory(props: IconProps) {
 
 export function IconChat(props: IconProps) {
   return <MessageSquare {...lucideProps({ size: 20, ...props })} />;
+}
+
+export function IconSparkles(props: IconProps) {
+  return <Sparkles {...lucideProps({ size: 18, ...props })} />;
 }
 
 export function IconMerge(props: IconProps) {

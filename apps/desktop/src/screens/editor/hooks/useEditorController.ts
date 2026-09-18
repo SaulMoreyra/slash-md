@@ -6,6 +6,8 @@ import { useComments } from "./useComments";
 import { useEditorChrome } from "./useEditorChrome";
 import { useFindInPage } from "./useFindInPage";
 import { useFormatter } from "./useFormatter";
+import { useEditorChat } from "./useEditorChat";
+import { useAiWriter } from "./useAiWriter";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { usePageWidth } from "./usePageWidth";
 import { useThreads } from "./useThreads";
@@ -69,6 +71,13 @@ export function useEditorController({
     onCloseLibrarySearch: home?.search.onClose,
   });
   const resize = usePageWidth();
+  const chat = useEditorChat();
+  const ai = useAiWriter({
+    getMarkdown: editor.getMarkdown,
+    setBodyMarkdown: editor.setMarkdown,
+    onBodyChange: editor.onBodyMarkdownChange,
+    setEditable: editor.setEditable,
+  });
 
   const handleClose = useCallback(() => {
     void editor.onFlushSave();
@@ -89,6 +98,8 @@ export function useEditorController({
     chrome,
     find,
     resize,
+    chat,
+    ai,
   };
 }
 

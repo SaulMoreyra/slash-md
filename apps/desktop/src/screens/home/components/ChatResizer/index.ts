@@ -1,0 +1,1 @@
+export { ChatResizer } from "./ChatResizer";

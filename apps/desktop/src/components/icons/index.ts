@@ -14,6 +14,7 @@ export {
   IconCollapseAll,
   IconHistory,
   IconChat,
+  IconSparkles,
   IconMerge,
   IconBringChanges,
   IconArrowUp,

@@ -130,6 +130,13 @@ export async function createSlashCrepe(opts: {
   return builder;
 }
 
+export function setCrepeEditable(builder: CrepeBuilder, editable: boolean): void {
+  builder.editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    view.setProps({ editable: () => editable });
+  });
+}
+
 export function setCrepeMarkdown(builder: CrepeBuilder, markdown: string): void {
   builder.editor.action((ctx) => {
     const view = ctx.get(editorViewCtx);

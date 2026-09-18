@@ -41,6 +41,26 @@
       "open": "Mostrar lista de trabajo"
     },
     "library": "Workspace",
+    "chat": {
+      "title": "Chat",
+      "you": "Tú",
+      "agent": "Agente",
+      "placeholder": "Pregunta sobre tus docs…",
+      "send": "Enviar",
+      "stop": "Detener",
+      "editPage": "Editar página",
+      "clear": "Limpiar conversación",
+      "close": "Cerrar chat",
+      "agents": "Agente",
+      "empty": "Pregúntale a un agente local sobre este workspace.",
+      "emptyHint": "Codex, Claude Code u opencode corren en tu máquina con tus docs como contexto.",
+      "thinking": "Razonamiento",
+      "tools": "Herramientas",
+      "noAgent": "Sin agente",
+      "unavailable": "no encontrado",
+      "resize": "Arrastra para ajustar el ancho del chat",
+      "resizeReset": "Doble clic restaura el ancho por defecto"
+    },
     "rail": {
       "aria": "Navegación",
       "open": "Mostrar navegación",
@@ -423,6 +443,13 @@
     },
     "pathAria": "Ruta",
     "close": "Cerrar página",
+    "aiChat": "Chat de IA para esta página",
+    "aiEditBanner": {
+      "streaming": "El agente está editando la página…",
+      "ready": "El agente propuso cambios en la página.",
+      "apply": "Aplicar",
+      "discard": "Descartar"
+    },
     "historyOpen": "Ver revisión en GitHub",
     "historyNone": "Aún no hay revisión",
     "comments": "Comentarios",
