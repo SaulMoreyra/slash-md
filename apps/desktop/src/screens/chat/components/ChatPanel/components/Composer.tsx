@@ -17,8 +17,9 @@ export function Composer({ composer, streaming, onAbort, onRewrite }: Props) {
   const { t } = useTranslation();
 
   return (
-    <div className="border-t border-separator p-3">
+    <div className="border-t border-separator">
       <TextArea
+        className="resize-none rounded-none border-0! bg-transparent! shadow-none! outline-none ring-0! focus:border-0! focus:bg-transparent! focus:ring-0! focus-visible:ring-0! data-focused:ring-0! data-focus-visible:ring-0!"
         value={composer.draft}
         onChange={(event) => composer.onDraftChange(event.target.value)}
         rows={2}
@@ -32,7 +33,7 @@ export function Composer({ composer, streaming, onAbort, onRewrite }: Props) {
           }
         }}
       />
-      <div className="mt-2 flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 px-3 pb-3">
         {streaming ? (
           <Button variant="ghost" size="sm" onPress={onAbort}>
             {t("home.chat.stop")}

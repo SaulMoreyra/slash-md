@@ -1,3 +1,4 @@
+import { Card } from "@heroui/react";
 import { ChatMode, ChatScope } from "@slash-md/agents/types";
 import { ChatPanel } from "../../../../chat";
 import { CHAT_WIDTH_MIN } from "../../../hooks/useChatDock";
@@ -12,7 +13,7 @@ export function ChatColumn() {
   }
 
   return (
-    <div className="flex h-full min-h-0 shrink-0 items-stretch gap-1" style={{ width: chat.width }}>
+    <div className="flex h-full min-h-0 shrink-0 items-stretch" style={{ width: chat.width }}>
       <ChatResizer
         width={chat.width}
         min={CHAT_WIDTH_MIN}
@@ -21,9 +22,9 @@ export function ChatColumn() {
         onCommit={chat.onCommit}
         onReset={chat.onReset}
       />
-      <div className="min-w-0 flex-1">
+      <Card className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden rounded-3xl border-0 bg-surface p-0 shadow-none">
         <ChatPanel scope={ChatScope.Global} mode={ChatMode.Chat} onClose={chat.onClose} />
-      </div>
+      </Card>
     </div>
   );
 }

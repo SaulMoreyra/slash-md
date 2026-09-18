@@ -1,4 +1,3 @@
-import { Card } from "@heroui/react";
 import { ChatMode, ChatScope } from "@slash-md/agents/types";
 import { useTranslation } from "react-i18next";
 import { useChatController } from "../../hooks/useChatController";
@@ -41,7 +40,7 @@ export function ChatPanel({
   });
 
   return (
-    <Card className="flex h-full min-h-0 flex-col gap-0 overflow-hidden rounded-3xl border-0 bg-surface p-0 shadow-none">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <ChatHeader
         title={title ?? t("home.chat.title")}
         agents={chat.agents}
@@ -57,6 +56,6 @@ export function ChatPanel({
         onAbort={chat.conversation.onAbort}
         onRewrite={scope === ChatScope.Page ? chat.rewrite.onRewrite : undefined}
       />
-    </Card>
+    </div>
   );
 }

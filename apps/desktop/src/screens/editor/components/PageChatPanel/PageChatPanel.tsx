@@ -12,7 +12,7 @@ export function PageChatPanel() {
   }
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col border-l border-separator bg-surface">
+    <aside className="flex min-h-0 w-80 shrink-0 flex-col border-l border-separator">
       <ChatPanel
         scope={ChatScope.Page}
         mode={ChatMode.Chat}
