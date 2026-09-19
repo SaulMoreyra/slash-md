@@ -1,6 +1,6 @@
 import { Button } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconPanel, IconPlus, IconSearch } from "../../../../../components/icons";
+import { IconChat, IconPanel, IconPlus, IconSearch } from "../../../../../components/icons";
 import { shortcutLabel } from "../../../../../components/ShortcutKbd";
 import type { HomeTreePayload, WorkspaceInfo } from "../../../../../../shared/api";
 import { ChromeTrigger, CreateIntent } from "../../../enums";
@@ -33,6 +33,8 @@ type Props = {
   onSignOut: () => void;
   onFolderModal: () => void;
   onRefresh: () => void;
+  chatOpen?: boolean;
+  onToggleChat?: () => void;
 };
 
 export function RailCollapsed({
@@ -58,6 +60,8 @@ export function RailCollapsed({
   onSignOut,
   onFolderModal,
   onRefresh,
+  chatOpen = false,
+  onToggleChat,
 }: Props) {
   const { t } = useTranslation();
   const needsInit = Boolean(payload?.needsInit);
@@ -117,6 +121,18 @@ export function RailCollapsed({
       >
         <IconSearch />
       </Button>
+      {onToggleChat ? (
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          aria-label={t("home.chat.title")}
+          aria-pressed={chatOpen}
+          onPress={onToggleChat}
+        >
+          <IconChat />
+        </Button>
+      ) : null}
       <RailCollapsedNav
         nav={nav}
         isWorkspace={isWorkspace}

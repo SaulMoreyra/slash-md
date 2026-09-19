@@ -1,4 +1,5 @@
 import type { ContentConfig, SlashmdFile } from "@slash-md/core/configTypes";
+import type { AgentInfo, ChatEnvelope, ChatRequest } from "@slash-md/agents/types";
 import type {
   HomeTreePayload,
   HomeTreeNode,
@@ -33,6 +34,8 @@ export type WorkspaceInfo = {
   needsInit: boolean;
   auth: AuthInfo;
   theme: AppTheme;
+  /** Base URL of the local wiki MCP server, when enabled. */
+  mcpUrl: string | null;
 };
 
 /** Cheap HEAD snapshot — not the mounted publication. */
@@ -148,9 +151,15 @@ export type DesktopApi = {
   threadCreate(pagePath: string, selectedText: string, body: string): Promise<void>;
   openUrl(url: string): Promise<void>;
   setTheme(theme: AppTheme): Promise<void>;
+  /** Local CLI agents available for the chat harness (PATH probe). */
+  chatListAgents(): Promise<AgentInfo[]>;
+  /** Spawn an agent turn; stream comes back through `onChatEvent`. */
+  chatSend(request: ChatRequest): Promise<{ sessionId: string }>;
+  chatAbort(sessionId: string): Promise<void>;
   onTheme(listener: (theme: AppTheme) => void): () => void;
   onFolderOpened(listener: (folder: string) => void): () => void;
   onMenuAction(listener: (action: MenuAction) => void): () => void;
+  onChatEvent(listener: (message: ChatEnvelope) => void): () => void;
 };
 
 export type {
@@ -167,3 +176,5 @@ export type {
   WikiSyncState,
   ConflictFile,
 };
+
+export type { AgentInfo, ChatEnvelope, ChatHostEvent, ChatMode, ChatRequest, ChatScope } from "@slash-md/agents/types";

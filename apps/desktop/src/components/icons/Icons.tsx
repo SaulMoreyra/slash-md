@@ -20,6 +20,7 @@ import {
   Plus,
   RotateCcw,
   Scale,
+  Sparkles,
   PanelLeft,
   PanelRight,
   Search,
@@ -29,6 +30,7 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   Calendar,
+  Dices,
 } from "lucide-react";
 
 export type IconProps = {
@@ -121,6 +123,10 @@ export function IconChat(props: IconProps) {
   return <MessageSquare {...lucideProps({ size: 20, ...props })} />;
 }
 
+export function IconSparkles(props: IconProps) {
+  return <Sparkles {...lucideProps({ size: 18, ...props })} />;
+}
+
 export function IconMerge(props: IconProps) {
   return <GitMerge {...lucideProps({ size: 20, ...props })} />;
 }
@@ -144,6 +150,10 @@ export function IconImage(props: IconProps) {
 
 export function IconTrash(props: IconProps) {
   return <Trash2 {...lucideProps({ size: 16, ...props })} />;
+}
+
+export function IconDice(props: IconProps) {
+  return <Dices {...lucideProps({ size: 16, ...props })} />;
 }
 
 export function IconPanel(props: IconProps) {

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { AppTheme, DesktopApi } from "../shared/api";
+import type { ChatEnvelope } from "@slash-md/agents/types";
 import type { MenuAction } from "../shared/menu";
 
 function invoke<K extends keyof DesktopApi>(channel: K) {
@@ -62,6 +63,9 @@ const api: DesktopApi = {
   threadCreate: invoke("threadCreate"),
   openUrl: invoke("openUrl"),
   setTheme: invoke("setTheme"),
+  chatListAgents: invoke("chatListAgents"),
+  chatSend: invoke("chatSend"),
+  chatAbort: invoke("chatAbort"),
   onTheme: (listener) => {
     const wrapped = (_event: unknown, theme: "light" | "dark") => listener(theme);
     ipcRenderer.on("theme", wrapped);
@@ -81,6 +85,13 @@ const api: DesktopApi = {
     ipcRenderer.on("menu-action", wrapped);
     return () => {
       ipcRenderer.removeListener("menu-action", wrapped);
+    };
+  },
+  onChatEvent: (listener) => {
+    const wrapped = (_event: unknown, message: ChatEnvelope) => listener(message);
+    ipcRenderer.on("chat-event", wrapped);
+    return () => {
+      ipcRenderer.removeListener("chat-event", wrapped);
     };
   },
 };

@@ -19,6 +19,24 @@ export type SlashmdFile = {
   sections?: string[];
   /** Repo-relative folder for team `.md` templates (default: `<contentPath>/_templates`). */
   templatesPath?: string;
+  /** Local AI chat harness configuration (see `McpConfig`). */
+  mcp?: McpConfig;
+};
+
+/** One local CLI agent the chat can drive. */
+export type McpAgentConfig = {
+  /** Preset name (`opencode`, `claude`, `codex`) or a binary on PATH / absolute path. */
+  name: string;
+  /** Extra args appended after the preset args (or used as-is for a raw command). */
+  args?: string[];
+  /** Extra environment variables. Credentials should come from the agent's own login. */
+  env?: Record<string, string>;
+};
+
+/** `.slashmd.json` `mcp` block. `server` is reserved for the phase-2 tools server. */
+export type McpConfig = {
+  agent?: McpAgentConfig;
+  server?: { enabled: boolean; port: number };
 };
 
 /** Resolved repo config used by hosts (VS Code / Electron). */

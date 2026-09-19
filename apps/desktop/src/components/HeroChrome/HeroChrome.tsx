@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Button } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import type { FrontmatterFields } from "../../../shared/api";
@@ -31,6 +32,7 @@ export function HeroChrome({
     position,
     coverMenu,
     picker,
+    pickerAnchor,
     fileRef,
     hasIcon,
     hasCover,
@@ -48,6 +50,8 @@ export function HeroChrome({
     onSelectIcon,
     onCoverFileChange,
   } = useHeroChromeController({ fields, imageMap, canWrite, onPatch, onUploadCover });
+  const addIconRef = useRef<HTMLButtonElement>(null);
+  const heroIconRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
@@ -61,7 +65,7 @@ export function HeroChrome({
       <div className="page-inner">
         <div className="page-chrome">
           {showAddIcon ? (
-            <Button size="sm" variant="ghost" className="cover-add" onPress={onOpenPicker}>
+            <Button size="sm" variant="ghost" className="cover-add" ref={addIconRef} onPress={() => onOpenPicker(addIconRef.current)}>
               {t("hero.addIcon")}
             </Button>
           ) : null}
@@ -79,7 +83,7 @@ export function HeroChrome({
         {hasIcon ? (
           <div className="hero-icon-wrap">
             {iconEditable ? (
-              <Button variant="ghost" className="hero-icon" aria-label={t("hero.pageIcon")} onPress={onOpenPicker}>
+              <Button variant="ghost" className="hero-icon" ref={heroIconRef} aria-label={t("hero.pageIcon")} onPress={() => onOpenPicker(heroIconRef.current)}>
                 {icon}
               </Button>
             ) : (
@@ -87,7 +91,7 @@ export function HeroChrome({
             )}
           </div>
         ) : null}
-        {picker ? <IconPicker current={icon} onSelect={onSelectIcon} onClose={onClosePicker} /> : null}
+        {picker ? <IconPicker current={icon} anchor={pickerAnchor} onSelect={onSelectIcon} onClose={onClosePicker} /> : null}
         {children}
       </div>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={(ev) => void onCoverFileChange(ev)} />

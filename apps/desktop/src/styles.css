@@ -481,7 +481,7 @@ body {
   width: var(--page-measure, auto);
   max-width: min(var(--page-measure, var(--home-measure)), 100%);
   margin: 0 auto;
-  padding: 2.5rem 3rem 8rem;
+  padding: 0;
 }
 
 #page .page-resize-well {
@@ -603,14 +603,6 @@ body {
   padding: 0.4rem 0.65rem;
 }
 
-.card {
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
-  background: var(--color-paper-2);
-}
-
 .staging-list,
 .preview-list,
 .inbox-list {
@@ -646,6 +638,53 @@ body {
 
 .page.has-cover .cover-menu-floating {
   top: 1rem;
+}
+
+/* Cover palette: fixed-size swatches centered as a group inside the menu. */
+.cover-swatches {
+  grid-template-columns: repeat(auto-fit, 30px);
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hero chrome inputs: replace the hard 2px accent outline with a soft ring. */
+.icon-search:focus,
+.icon-search:focus-visible,
+.icon-search.is-focus {
+  outline: none;
+  border-color: var(--slash-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--slash-accent) 30%, transparent);
+}
+
+.cover-menu-upload:focus-visible {
+  outline: none;
+  border-color: var(--slash-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--slash-accent) 30%, transparent);
+}
+
+/* Emoji cells are plain buttons styled by `.icon-cell`; keep a soft focus ring. */
+.icon-cells .icon-cell:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--slash-accent) 30%, transparent);
+}
+
+/* Icon picker search: no focus/hover appearance on the field group or input. */
+.icon-picker .search-field__group,
+.icon-picker .search-field__group:hover:not(:focus-within),
+.icon-picker .search-field__group[data-hovered="true"]:not([data-focus-within="true"]),
+.icon-picker .search-field__group:focus-within,
+.icon-picker .search-field__group[data-focus-within="true"] {
+  border-color: var(--slash-border);
+  background-color: var(--slash-bg);
+  box-shadow: none;
+  outline: none;
+}
+
+.icon-picker .icon-search:focus,
+.icon-picker .icon-search:focus-visible,
+.icon-picker .icon-search.is-focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .thread-rail {

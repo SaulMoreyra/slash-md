@@ -6,6 +6,7 @@ export enum MenuAction {
   Settings = "settings",
   ToggleWorkPane = "toggleWorkPane",
   ToggleRail = "toggleRail",
+  ToggleChat = "toggleChat",
   ClosePage = "closePage",
   Refresh = "refresh",
 }
@@ -33,6 +34,7 @@ export type MenuCopy = {
   settings: string;
   toggleWorkPane: string;
   toggleRail: string;
+  toggleChat: string;
   refresh: string;
   documentation: string;
   reportIssue: string;
@@ -55,6 +57,7 @@ const EN: MenuCopy = {
   settings: "Settings…",
   toggleWorkPane: "Toggle Work List",
   toggleRail: "Toggle Navigation",
+  toggleChat: "Toggle AI Chat",
   refresh: "Refresh Workspace",
   documentation: "Documentation",
   reportIssue: "Report Issue",
@@ -77,6 +80,7 @@ const ES: MenuCopy = {
   settings: "Configuración…",
   toggleWorkPane: "Mostrar lista de trabajo",
   toggleRail: "Mostrar navegación",
+  toggleChat: "Mostrar chat IA",
   refresh: "Actualizar workspace",
   documentation: "Documentación",
   reportIssue: "Reportar un problema",

@@ -2,17 +2,21 @@ import { useEffect, useState } from "react";
 import { Button, SearchField } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import { filterEmoji } from "@slash-md/ui/editor/hero/emojiCatalog";
+import { IconDice, IconTrash } from "../../icons";
+import { useIconPickerPlacement } from "../hooks/useIconPickerPlacement";
 
 type Props = {
   current: string;
+  anchor: HTMLElement | null;
   onSelect: (icon: string) => void;
   onClose: () => void;
 };
 
-export function IconPicker({ current, onSelect, onClose }: Props) {
+export function IconPicker({ current, anchor, onSelect, onClose }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const items = filterEmoji(query);
+  const pickerRef = useIconPickerPlacement({ anchor, query });
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -24,8 +28,21 @@ export function IconPicker({ current, onSelect, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    const onDoc = (ev: MouseEvent) => {
+      if (!(ev.target instanceof Node)) {
+        return;
+      }
+      if (!pickerRef.current?.contains(ev.target)) {
+        onClose();
+      }
+    };
+    window.addEventListener("mousedown", onDoc);
+    return () => window.removeEventListener("mousedown", onDoc);
+  }, [onClose, pickerRef]);
+
   return (
-    <div className="icon-picker icon-picker-floating" role="dialog" aria-label={t("hero.chooseIcon")}>
+    <div ref={pickerRef} className="icon-picker icon-picker-floating" role="dialog" aria-label={t("hero.chooseIcon")}>
       <div className="icon-picker-head">
         <SearchField aria-label={t("hero.filterIcons")} value={query} onChange={setQuery} className="flex-1" fullWidth>
           <SearchField.Group>
@@ -35,9 +52,10 @@ export function IconPicker({ current, onSelect, onClose }: Props) {
           </SearchField.Group>
         </SearchField>
         <Button
+          isIconOnly
           size="sm"
-          variant="secondary"
-          className="icon-picker-btn"
+          variant="ghost"
+          aria-label={t("hero.random")}
           onPress={() => {
             const pool = filterEmoji("");
             const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -46,10 +64,17 @@ export function IconPicker({ current, onSelect, onClose }: Props) {
             }
           }}
         >
-          {t("hero.random")}
+          <IconDice />
         </Button>
-        <Button size="sm" variant="secondary" className="icon-picker-btn" isDisabled={!current} onPress={() => onSelect("")}>
-          {t("hero.remove")}
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          aria-label={t("hero.remove")}
+          isDisabled={!current}
+          onPress={() => onSelect("")}
+        >
+          <IconTrash />
         </Button>
       </div>
       <IconGrid items={items} current={current} onSelect={onSelect} />
@@ -66,20 +91,23 @@ function IconGrid({
   current: string;
   onSelect: (icon: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="icon-grid">
-      <div className="icon-cells">
+      <div className="icon-cells" role="listbox" aria-label={t("hero.chooseIcon")}>
         {items.map((item) => (
-          <Button
+          <button
             key={`${item.glyph}-${item.name}`}
-            size="sm"
-            variant={item.glyph === current ? "secondary" : "ghost"}
-            className={item.glyph === current ? "icon-cell is-current" : "icon-cell"}
+            type="button"
+            role="option"
+            aria-selected={item.glyph === current}
+            className={item.glyph === current ? "icon-cell is-selected" : "icon-cell"}
             aria-label={item.name}
-            onPress={() => onSelect(item.glyph)}
+            title={item.name}
+            onClick={() => onSelect(item.glyph)}
           >
             {item.glyph}
-          </Button>
+          </button>
         ))}
       </div>
     </div>

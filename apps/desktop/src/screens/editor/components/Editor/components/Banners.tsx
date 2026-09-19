@@ -1,4 +1,5 @@
 import { LifecycleKind, RepoMode } from "../../../enums";
+import { AiEditBanner } from "../../AiEditBanner";
 import { PublicationBanner } from "../../PublicationBanner";
 import { ResolveConflictBanner } from "../../ResolveConflictBanner";
 import { useEditor } from "../context";
@@ -14,6 +15,7 @@ export function Banners() {
   return (
     <>
       <ResolveConflictBanner />
+      <AiEditBanner />
       {showPublicationBanner ? (
         <PublicationBanner
           publication={page.publication ?? { title: "", branch: "", kind: "draft" }}

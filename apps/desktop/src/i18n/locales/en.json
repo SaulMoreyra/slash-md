@@ -41,6 +41,37 @@
       "open": "Show work list"
     },
     "library": "Workspace",
+    "chat": {
+      "title": "Chat",
+      "you": "You",
+      "agent": "Agent",
+      "placeholder": "Ask about your docs…",
+      "send": "Send",
+      "stop": "Stop",
+      "editPage": "Edit page",
+      "clear": "Clear conversation",
+      "close": "Close chat",
+      "agents": "Agent",
+      "empty": "Ask a local agent about this workspace.",
+      "emptyHint": "Codex, Claude Code or opencode run on your machine with your docs as context.",
+      "thinking": "Reasoning",
+      "tools": "Tool calls",
+      "noAgent": "No agent",
+      "unavailable": "not found",
+      "resize": "Drag to adjust the chat width",
+      "resizeReset": "Double-click restores the default width",
+      "bubble": {
+        "open": "Open AI chat",
+        "close": "Close AI chat"
+      },
+      "mention": {
+        "remove": "Remove mention {path}",
+        "empty": "No matches"
+      },
+      "currentFile": {
+        "live": "The chat reads this page's unsaved content as context."
+      }
+    },
     "rail": {
       "aria": "Navigation",
       "open": "Show navigation",
@@ -423,6 +454,13 @@
     },
     "pathAria": "Path",
     "close": "Close page",
+    "aiChat": "AI chat for this page",
+    "aiEditBanner": {
+      "streaming": "The agent is editing the page…",
+      "ready": "The agent proposed changes to the page.",
+      "apply": "Apply",
+      "discard": "Discard"
+    },
     "historyOpen": "View review on GitHub",
     "historyNone": "No review yet",
     "comments": "Comments",

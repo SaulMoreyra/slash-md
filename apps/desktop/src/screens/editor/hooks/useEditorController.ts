@@ -1,11 +1,13 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useHomeOptional } from "../../home/components/Home/context";
 import type { AuthInfo, PagePayload } from "../../../../shared/api";
+import type { PageChatHost } from "../../chat";
 import type { RunOp } from "../../home/types";
 import { useComments } from "./useComments";
 import { useEditorChrome } from "./useEditorChrome";
 import { useFindInPage } from "./useFindInPage";
 import { useFormatter } from "./useFormatter";
+import { useAiWriter } from "./useAiWriter";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { usePageWidth } from "./usePageWidth";
 import { useThreads } from "./useThreads";
@@ -69,6 +71,34 @@ export function useEditorController({
     onCloseLibrarySearch: home?.search.onClose,
   });
   const resize = usePageWidth();
+  const ai = useAiWriter({
+    getMarkdown: editor.getMarkdown,
+    setBodyMarkdown: editor.setMarkdown,
+    onBodyChange: editor.onBodyMarkdownChange,
+    setEditable: editor.setEditable,
+  });
+
+  const hostRef = useRef<PageChatHost>({
+    getMarkdown: editor.getMarkdown,
+    edit: {
+      onEditStart: ai.start,
+      onEditStream: ai.onEditStream,
+      onEditStop: ai.stop,
+    },
+  });
+  hostRef.current.getMarkdown = editor.getMarkdown;
+  hostRef.current.edit.onEditStart = ai.start;
+  hostRef.current.edit.onEditStream = ai.onEditStream;
+  hostRef.current.edit.onEditStop = ai.stop;
+
+  const { register: registerHost, unregister: unregisterHost } = home?.pageHosts ?? {};
+  useEffect(() => {
+    if (!registerHost || !unregisterHost || !active) {
+      return undefined;
+    }
+    registerHost(page.path, hostRef.current);
+    return () => unregisterHost(page.path);
+  }, [registerHost, unregisterHost, active, page.path]);
 
   const handleClose = useCallback(() => {
     void editor.onFlushSave();
@@ -89,6 +119,7 @@ export function useEditorController({
     chrome,
     find,
     resize,
+    ai,
   };
 }
 

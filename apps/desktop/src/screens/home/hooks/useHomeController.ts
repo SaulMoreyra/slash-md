@@ -1,12 +1,15 @@
+import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMenuActions } from "../../../App/hooks/useMenuActions";
 import { AppOperation } from "../../../App/enums";
 import { MenuAction } from "../../../../shared/menu";
+import type { PageChatHost, PageChatHostRegistry } from "../../chat";
 import type { HomeScreenProps } from "../types";
 import { ModalKind, NavKind } from "../enums";
 import { requestOpenFindInPage } from "../../editor/findInPageBridge";
 import { newPageModalKind, settingsModalKind } from "../utils";
 import { useConflicts } from "./useConflicts";
+import { useChatBubble } from "./useChatBubble";
 import { useHomeActions } from "./useHomeActions";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { useModals } from "./useModals";
@@ -38,6 +41,23 @@ export function useHomeController({
 }: HomeScreenProps) {
   const { t } = useTranslation();
   const modals = useModals();
+  const chat = useChatBubble();
+  const pageHostsRef = useRef(new Map<string, PageChatHost>());
+  const registerPageHost = useCallback<PageChatHostRegistry["register"]>((path, host) => {
+    pageHostsRef.current.set(path, host);
+  }, []);
+  const unregisterPageHost = useCallback<PageChatHostRegistry["unregister"]>((path) => {
+    pageHostsRef.current.delete(path);
+  }, []);
+  const getPageHost = useCallback<PageChatHostRegistry["get"]>(
+    (path) => pageHostsRef.current.get(path) ?? null,
+    [],
+  );
+  const pageHosts: PageChatHostRegistry = {
+    register: registerPageHost,
+    unregister: unregisterPageHost,
+    get: getPageHost,
+  };
   const nav = useNav({
     workspace,
     tree,
@@ -89,6 +109,7 @@ export function useHomeController({
     canWrite,
     search,
     modals,
+    chat,
     nav,
     tabs,
     activeKey,
@@ -124,6 +145,9 @@ export function useHomeController({
     [MenuAction.ToggleRail]: () => {
       nav.onToggleRail();
     },
+    [MenuAction.ToggleChat]: () => {
+      chat.onToggle();
+    },
     [MenuAction.ClosePage]: () => {
       if (pagePath) {
         onClosePage();
@@ -157,6 +181,8 @@ export function useHomeController({
     search,
     modals,
     nav,
+    chat,
+    pageHosts,
     actions,
     treeActions,
     conflicts,
