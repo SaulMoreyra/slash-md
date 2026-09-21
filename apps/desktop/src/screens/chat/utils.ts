@@ -14,16 +14,24 @@ export function newTurn(role: ChatRole, text = ""): ChatTurn {
   };
 }
 
-export function newAgentTurn(): ChatTurn {
-  return { ...newTurn(ChatRole.Agent), status: TurnStatus.Streaming };
+export function newAgentTurn(edit = false): ChatTurn {
+  return { ...newTurn(ChatRole.Agent), status: TurnStatus.Streaming, edit };
 }
 
+type ApplyOptions = {
+  /** In edit mode, deltas are the page rewrite — keep them out of the bubble text. */
+  editMode?: boolean;
+};
+
 /** Fold one host event into a turn. `editStream` is owned by the page writer. */
-export function applyHostEvent(turn: ChatTurn, event: ChatHostEvent): ChatTurn {
+export function applyHostEvent(turn: ChatTurn, event: ChatHostEvent, options: ApplyOptions = {}): ChatTurn {
   switch (event.type) {
     case "started":
       return { ...turn, status: TurnStatus.Streaming };
     case "delta":
+      if (options.editMode) {
+        return { ...turn, status: TurnStatus.Streaming };
+      }
       return { ...turn, text: turn.text + event.text, status: TurnStatus.Streaming };
     case "thinking":
       return { ...turn, thinking: turn.thinking + event.text, status: TurnStatus.Streaming };

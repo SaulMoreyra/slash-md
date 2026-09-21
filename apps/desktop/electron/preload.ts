@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron";
+import type { AgentLoginEnvelope } from "@slash-md/agents/types";
 import type { AppTheme, DesktopApi } from "../shared/api";
 import type { ChatEnvelope } from "@slash-md/agents/types";
 import type { MenuAction } from "../shared/menu";
@@ -92,6 +93,17 @@ const api: DesktopApi = {
     ipcRenderer.on("chat-event", wrapped);
     return () => {
       ipcRenderer.removeListener("chat-event", wrapped);
+    };
+  },
+  agentProbeStatus: invoke("agentProbeStatus"),
+  agentLogin: invoke("agentLogin"),
+  agentLoginAbort: invoke("agentLoginAbort"),
+  agentSetApiKey: invoke("agentSetApiKey"),
+  onAgentLoginUpdate: (listener) => {
+    const wrapped = (_event: unknown, update: AgentLoginEnvelope) => listener(update);
+    ipcRenderer.on("agent-login-update", wrapped);
+    return () => {
+      ipcRenderer.removeListener("agent-login-update", wrapped);
     };
   },
 };

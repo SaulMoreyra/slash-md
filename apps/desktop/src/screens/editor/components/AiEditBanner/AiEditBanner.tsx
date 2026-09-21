@@ -10,6 +10,12 @@ export function AiEditBanner() {
     return null;
   }
 
+  const label = ai.streaming
+    ? t("editor.aiEditBanner.streaming")
+    : ai.partial
+      ? t("editor.aiEditBanner.partial")
+      : t("editor.aiEditBanner.ready");
+
   return (
     <Alert
       status="accent"
@@ -17,9 +23,7 @@ export function AiEditBanner() {
       role="status"
     >
       <Alert.Content>
-        <Alert.Description>
-          {ai.streaming ? t("editor.aiEditBanner.streaming") : t("editor.aiEditBanner.ready")}
-        </Alert.Description>
+        <Alert.Description>{label}</Alert.Description>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" onPress={ai.revert}>
             {t("editor.aiEditBanner.discard")}

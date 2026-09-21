@@ -16,7 +16,8 @@
     "personal": "personal",
     "workspace": "workspace",
     "local": "local",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "close": "Cerrar"
   },
   "app": {
     "brand": "SlashMD",
@@ -49,6 +50,8 @@
       "send": "Enviar",
       "stop": "Detener",
       "editPage": "Editar página",
+      "editingPage": "Editando la página…",
+      "edited": "Página editada",
       "clear": "Limpiar conversación",
       "close": "Cerrar chat",
       "agents": "Agente",
@@ -69,7 +72,23 @@
         "empty": "Sin resultados"
       },
       "currentFile": {
-        "live": "El chat lee el contenido sin guardar de esta página como contexto."
+        "live": "El chat lee el contenido sin guardar de esta página como contexto.",
+        "editing": "El agente está reescribiendo esta página en vivo…"
+      }
+    },
+    "agentChat": {
+      "chat": {
+        "aria": "Chat con agente"
+      },
+      "history": {
+        "title": "Historial",
+        "new": "Nueva conversación",
+        "newConversation": "Nueva conversación",
+        "delete": "Eliminar {{title}}",
+        "page": "página",
+        "global": "global",
+        "emptyTitle": "Sin conversaciones",
+        "emptyBody": "Crea una conversación y pregunta sobre tus docs."
       }
     },
     "rail": {
@@ -102,6 +121,7 @@
       "workspace": "Workspace",
       "initHint": "Inicia el workspace para ver páginas.",
       "search": "Buscar…",
+      "chat": "Chat",
       "newPage": "Nueva página",
       "newTemplate": "Nueva plantilla"
     },
@@ -129,10 +149,11 @@
       "changeFolder": "Cambiar carpeta",
       "openOther": "Abrir otra carpeta…",
       "closeWorkspace": "Cerrar workspace",
-      "signOut": "Cerrar sesión",
-      "signIn": "Iniciar sesión",
-      "langEs": "Español",
-      "langEn": "English"
+"signOut": "Cerrar sesión",
+    "signIn": "Iniciar sesión",
+    "agents": "Agentes",
+    "langEs": "Español",
+    "langEn": "English"
     },
     "workspaceSwitch": {
       "aria": "Workspace",
@@ -438,6 +459,36 @@
         "placeholder": "ghp_…",
         "tokenCreate": "Crear token en GitHub",
         "connect": "Conectar con token"
+      },
+      "agents": {
+        "title": "Agentes",
+        "lede": "Inicia sesión en el agente CLI que quieras usar en el chat (opencode, Claude Code, Codex, Cursor).",
+        "checking": "Comprobando…",
+        "none": "No se encontró ningún agente.",
+        "recheck": "Volver a comprobar",
+        "recheckAgent": "Comprobar",
+        "login": "Iniciar sesión",
+        "loggedIn": "Con sesión",
+        "loggedOut": "Sin sesión",
+        "unknown": "Sin verificar",
+        "unknownStatus": "No se pudo determinar el estado de sesión.",
+        "notFound": "No está instalado en PATH.",
+        "pasteKeyTitle": "Pegar API key",
+        "pasteKeyHint": "opencode no permite iniciar sesión sin terminal; pega una API key del proveedor que quieras usar.",
+        "pasteKeyProvider": "Proveedor",
+        "pasteKeyKey": "API key",
+        "pasteKeyPlaceholder": "sk-…",
+        "pasteKeySubmit": "Guardar",
+        "pasteKeySaving": "Guardando…",
+        "pasteKeySaved": "API key guardada para {{provider}}.",
+        "loginProgress": "Progreso del login",
+        "loggingIn": "Iniciando sesión con {{agent}}…",
+        "loginOk": "Sesión iniciada correctamente.",
+        "loginFailed": "No se pudo iniciar sesión.",
+        "openUrlHint": "Abre esta URL para autenticarte:",
+        "openBrowser": "Abrir en el navegador",
+        "copyCommand": "Copiar comando",
+        "copied": "Copiado"
       }
     }
   },
@@ -457,6 +508,7 @@
     "aiChat": "Chat de IA para esta página",
     "aiEditBanner": {
       "streaming": "El agente está editando la página…",
+      "partial": "La edición quedó incompleta. Revísala antes de aplicar.",
       "ready": "El agente propuso cambios en la página.",
       "apply": "Aplicar",
       "discard": "Descartar"

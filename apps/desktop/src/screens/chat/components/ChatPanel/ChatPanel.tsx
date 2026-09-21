@@ -42,8 +42,12 @@ export function ChatPanel({
         onClear={chat.conversation.onClear}
         onClose={onClose}
       />
-      <CurrentFileChip path={path ?? null} />
-      <MessageList turns={chat.conversation.turns} onOpenLink={chat.onOpenLink} />
+      <CurrentFileChip path={path ?? null} active={chat.conversation.editing} />
+      <MessageList
+        turns={chat.conversation.turns}
+        onOpenLink={chat.onOpenLink}
+        streaming={chat.conversation.streaming}
+      />
       <Composer
         composer={chat.composer}
         streaming={chat.conversation.streaming}

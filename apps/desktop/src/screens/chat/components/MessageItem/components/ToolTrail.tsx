@@ -16,7 +16,13 @@ export function ToolTrail({ tools }: { tools: ChatToolNote[] }) {
       aria-label={t("home.chat.tools")}
     >
       {tools.map((tool, index) => (
-        <Chip key={`${tool.name}-${index}`} size="sm" variant="soft" color="accent">
+        <Chip
+          key={`${tool.name}-${index}`}
+          size="sm"
+          variant="soft"
+          color="accent"
+          className="animate-pop-in motion-reduce:animate-none"
+        >
           <Chip.Label>{tool.brief ? `${tool.name}: ${tool.brief}` : tool.name}</Chip.Label>
         </Chip>
       ))}

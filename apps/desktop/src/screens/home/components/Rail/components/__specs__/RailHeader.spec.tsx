@@ -9,6 +9,7 @@ describe("RailHeader", () => {
   const onCloseWorkspace = vi.fn();
   const onConfig = vi.fn();
   const onCloseRail = vi.fn();
+  const onAgents = vi.fn();
 
   const defaultProps = {
     title: "acme/docs",
@@ -17,6 +18,7 @@ describe("RailHeader", () => {
     onCloseWorkspace,
     onConfig,
     onCloseRail,
+    onAgents,
   };
 
   beforeEach(() => {

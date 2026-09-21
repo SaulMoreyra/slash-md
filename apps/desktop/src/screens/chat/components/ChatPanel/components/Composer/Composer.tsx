@@ -93,7 +93,12 @@ export function Composer({ composer, streaming, onAbort, onRewrite }: Props) {
       />
       <div className="flex items-center justify-end gap-2 px-3 pb-3">
         {streaming ? (
-          <Button variant="ghost" size="sm" onPress={onAbort}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="animate-fade-in motion-reduce:animate-none"
+            onPress={onAbort}
+          >
             {t("home.chat.stop")}
           </Button>
         ) : null}
@@ -101,6 +106,7 @@ export function Composer({ composer, streaming, onAbort, onRewrite }: Props) {
           <Button
             variant="ghost"
             size="sm"
+            className="animate-fade-in motion-reduce:animate-none"
             isDisabled={!composer.canSend || streaming}
             onPress={onRewrite}
           >

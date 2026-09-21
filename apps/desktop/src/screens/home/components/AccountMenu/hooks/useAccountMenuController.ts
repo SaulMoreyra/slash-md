@@ -7,6 +7,7 @@ type Params = {
 };
 
 type MenuHandlers = {
+  onAgents: () => void;
   onFolder: () => void;
   onConfig: () => void;
   onRefresh: () => void;
@@ -28,6 +29,9 @@ export function useAccountMenuController({ workspace }: Params) {
 
   function onMenuAction(key: string, handlers: MenuHandlers) {
     switch (key) {
+      case AccountMenuAction.Agents:
+        handlers.onAgents();
+        break;
       case AccountMenuAction.Folder:
         handlers.onFolder();
         break;

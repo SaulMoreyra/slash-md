@@ -84,12 +84,14 @@ export function useEditorController({
       onEditStart: ai.start,
       onEditStream: ai.onEditStream,
       onEditStop: ai.stop,
+      onEditDone: ai.complete,
     },
   });
   hostRef.current.getMarkdown = editor.getMarkdown;
   hostRef.current.edit.onEditStart = ai.start;
   hostRef.current.edit.onEditStream = ai.onEditStream;
   hostRef.current.edit.onEditStop = ai.stop;
+  hostRef.current.edit.onEditDone = ai.complete;
 
   const { register: registerHost, unregister: unregisterHost } = home?.pageHosts ?? {};
   useEffect(() => {

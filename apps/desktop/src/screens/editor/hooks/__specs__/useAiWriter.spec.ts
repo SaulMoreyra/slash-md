@@ -19,6 +19,7 @@ describe("useAiWriter", () => {
     act(() => result.current.start());
     expect(setEditable).toHaveBeenCalledWith(false);
     expect(result.current.streaming).toBe(true);
+    expect(result.current.partial).toBe(false);
     expect(result.current.active).toBe(true);
   });
 
@@ -30,11 +31,21 @@ describe("useAiWriter", () => {
     expect(result.current.draftMarkdown).toBe("hola");
   });
 
-  it("stops streaming but keeps the draft for review", () => {
+  it("stops streaming, flags the draft as partial, and keeps it for review", () => {
     const { result } = setup();
     act(() => result.current.start());
     act(() => result.current.stop());
     expect(result.current.streaming).toBe(false);
+    expect(result.current.partial).toBe(true);
+    expect(result.current.active).toBe(true);
+  });
+
+  it("marks a clean finish, not partial, on complete", () => {
+    const { result } = setup();
+    act(() => result.current.start());
+    act(() => result.current.complete());
+    expect(result.current.streaming).toBe(false);
+    expect(result.current.partial).toBe(false);
     expect(result.current.active).toBe(true);
   });
 
@@ -46,17 +57,20 @@ describe("useAiWriter", () => {
     expect(onBodyChange).toHaveBeenCalledWith("hola");
     expect(setEditable).toHaveBeenLastCalledWith(true);
     expect(result.current.active).toBe(false);
+    expect(result.current.partial).toBe(false);
     expect(result.current.draftMarkdown).toBeNull();
   });
 
   it("reverts the editor to the saved body", () => {
     const { result, setBodyMarkdown, setEditable } = setup("body original");
     act(() => result.current.start());
+    act(() => result.current.stop());
     act(() => result.current.onEditStream("hola"));
     act(() => result.current.revert());
     expect(setBodyMarkdown).toHaveBeenLastCalledWith("body original");
     expect(setEditable).toHaveBeenLastCalledWith(true);
     expect(result.current.active).toBe(false);
+    expect(result.current.partial).toBe(false);
     expect(result.current.draftMarkdown).toBeNull();
   });
 });

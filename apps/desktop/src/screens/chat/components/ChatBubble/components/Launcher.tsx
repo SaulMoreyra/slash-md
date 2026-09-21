@@ -14,7 +14,7 @@ export function Launcher({ open, onToggle }: Props) {
       isIconOnly
       size="lg"
       variant="primary"
-      className="app-no-drag size-12 rounded-full"
+      className="app-no-drag size-12 rounded-full transition-transform active:scale-95 motion-reduce:transition-none"
       aria-label={open ? t("home.chat.bubble.close") : t("home.chat.bubble.open")}
       aria-pressed={open}
       onPress={onToggle}

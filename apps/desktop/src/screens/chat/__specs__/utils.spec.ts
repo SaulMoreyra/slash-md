@@ -10,6 +10,12 @@ describe("chat utils", () => {
     expect(turn.text).toBe("");
   });
 
+  it("marks agent turns as page edits on request", () => {
+    const turn = newAgentTurn(true);
+    expect(turn.edit).toBe(true);
+    expect(turn.role).toBe(ChatRole.Agent);
+  });
+
   it("accumulates deltas and thinking", () => {
     let turn = newAgentTurn();
     turn = applyHostEvent(turn, { type: "delta", text: "ho" });
@@ -18,6 +24,15 @@ describe("chat utils", () => {
     expect(turn.text).toBe("hola");
     expect(turn.thinking).toBe("…");
     expect(turn.status).toBe(TurnStatus.Streaming);
+  });
+
+  it("keeps edit-mode deltas out of the bubble text", () => {
+    let turn = newAgentTurn(true);
+    turn = applyHostEvent(turn, { type: "delta", text: "# hola" }, { editMode: true });
+    turn = applyHostEvent(turn, { type: "tool", name: "read", brief: "docs/a.md" }, { editMode: true });
+    expect(turn.text).toBe("");
+    expect(turn.status).toBe(TurnStatus.Streaming);
+    expect(turn.tools).toEqual([{ name: "read", brief: "docs/a.md" }]);
   });
 
   it("appends tool notes and settles on done or error", () => {

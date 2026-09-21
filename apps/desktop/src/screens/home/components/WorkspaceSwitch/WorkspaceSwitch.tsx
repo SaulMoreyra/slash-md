@@ -9,6 +9,7 @@ type Props = {
   title: string;
   subtitle?: string;
   trigger?: ChromeTrigger;
+  onAgents: () => void;
   onChangeFolder: () => void;
   onCloseWorkspace: () => void;
   onConfig: () => void;
@@ -18,6 +19,7 @@ export function WorkspaceSwitch({
   title,
   subtitle,
   trigger = ChromeTrigger.Row,
+  onAgents,
   onChangeFolder,
   onCloseWorkspace,
   onConfig,
@@ -60,6 +62,9 @@ export function WorkspaceSwitch({
           aria-label={t("home.workspaceSwitch.aria")}
           onAction={(key) => {
             switch (String(key)) {
+              case AccountMenuAction.Agents:
+                onAgents();
+                break;
               case AccountMenuAction.Config:
                 onConfig();
                 break;
@@ -77,6 +82,9 @@ export function WorkspaceSwitch({
           <Dropdown.Item id={AccountMenuAction.Config} textValue={t("home.account.settings")} className="gap-3">
             <span className="flex-1">{t("home.account.settings")}</span>
             <ShortcutKbd keys={shortcutLabel.settings()} />
+          </Dropdown.Item>
+          <Dropdown.Item id={AccountMenuAction.Agents} textValue={t("home.account.agents")}>
+            {t("home.account.agents")}
           </Dropdown.Item>
           <Dropdown.Item id={AccountMenuAction.ChangeFolder} textValue={t("home.account.openOther")}>
             {t("home.account.openOther")}

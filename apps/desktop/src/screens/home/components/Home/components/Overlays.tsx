@@ -1,6 +1,7 @@
 import { ReviewModal } from "../../../../../components/ReviewModal";
 import { SearchPalette } from "../../../../../components/SearchPalette";
 import { InitModalVariant, ConflictConfirmKind, ModalKind, TreeEntryKind } from "../../../enums";
+import { AgentsModal } from "../../AgentsModal";
 import { FolderModal } from "../../FolderModal";
 import { InitModal } from "../../InitModal";
 import { NewPageModal } from "../../NewPageModal";
@@ -82,6 +83,7 @@ export function Overlays() {
           onSave={(token) => void actions.onSignIn(token)}
         />
       ) : null}
+      {modals.kind === ModalKind.Agents ? <AgentsModal onClose={modals.onClose} /> : null}
       {modals.kind === ModalKind.Review ? (
         <ReviewModal
           onClose={modals.onClose}

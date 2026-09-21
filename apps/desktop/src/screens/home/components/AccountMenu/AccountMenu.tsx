@@ -13,6 +13,7 @@ type Props = {
   busy: boolean;
   needsInit: boolean;
   trigger?: ChromeTrigger;
+  onAgents: () => void;
   onSignIn: () => void;
   onSignOut: () => void;
   onConfig: () => void;
@@ -28,6 +29,7 @@ export function AccountMenu({
   busy,
   needsInit,
   trigger = ChromeTrigger.Row,
+  onAgents,
   onSignIn,
   onSignOut,
   onConfig,
@@ -73,6 +75,7 @@ export function AccountMenu({
           disabledKeys={busy ? busyDisabled : []}
           onAction={(key) =>
             onMenuAction(String(key), {
+              onAgents,
               onFolder,
               onConfig,
               onRefresh,
@@ -93,6 +96,9 @@ export function AccountMenu({
           <Dropdown.Item id={AccountMenuAction.Config} textValue={configLabel} className="gap-3">
             <span className="flex-1">{configLabel}</span>
             <ShortcutKbd keys={shortcutLabel.settings()} />
+          </Dropdown.Item>
+          <Dropdown.Item id={AccountMenuAction.Agents} textValue={t("home.account.agents")} className="gap-3">
+            <span className="flex-1">{t("home.account.agents")}</span>
           </Dropdown.Item>
           <Dropdown.Item id={AccountMenuAction.Refresh} textValue={t("home.account.refresh")} className="gap-3">
             <span className="flex-1">{t("home.account.refresh")}</span>

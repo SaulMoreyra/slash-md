@@ -40,11 +40,14 @@ export function useChatController({
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const sessionRef = useRef<string | null>(null);
   const pendingRef = useRef(false);
   const agentTurnRef = useRef<string | null>(null);
   const editApiRef = useRef<ChatEditApi | null>(null);
+  /** True while the in-flight session is an "edit page" rewrite. */
+  const editModeRef = useRef(false);
 
   const paramsRef = useRef({ scope, mode, path, getBuffer, getEditApi, storageKey });
   paramsRef.current = { scope, mode, path, getBuffer, getEditApi, storageKey };
@@ -79,15 +82,22 @@ export function useChatController({
     if (!turnId) {
       return;
     }
+    const editMode = editModeRef.current;
     if (event.type === "editStream") {
       editApiRef.current?.onEditStream(event.markdown);
     }
-    setTurns((prev) => replaceTurn(prev, turnId, (turn) => applyHostEvent(turn, event)));
+    setTurns((prev) => replaceTurn(prev, turnId, (turn) => applyHostEvent(turn, event, { editMode })));
     if (isSettled(event)) {
       setStreaming(false);
+      setEditing(false);
+      editModeRef.current = false;
       pendingRef.current = false;
       sessionRef.current = null;
-      editApiRef.current?.onEditStop();
+      if (event.type === "done") {
+        editApiRef.current?.onEditDone?.();
+      } else {
+        editApiRef.current?.onEditStop();
+      }
       editApiRef.current = null;
     }
   }, []);
@@ -137,6 +147,8 @@ export function useChatController({
         void api().chatAbort(sessionId);
       }
       setStreaming(false);
+      setEditing(false);
+      editModeRef.current = false;
       pendingRef.current = false;
       sessionRef.current = null;
       agentTurnRef.current = null;
@@ -196,6 +208,8 @@ export function useChatController({
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         setStreaming(false);
+        setEditing(false);
+        editModeRef.current = false;
         pendingRef.current = false;
         setTurns((prev) =>
           replaceTurn(prev, turn.id, (current) => ({
@@ -217,6 +231,7 @@ export function useChatController({
     if (!prompt || streaming) {
       return;
     }
+    editModeRef.current = false;
     await startSession(
       {
         scope: current.scope,
@@ -238,6 +253,8 @@ export function useChatController({
     if (!prompt || streaming || current.scope !== ChatScope.Page || !current.path) {
       return;
     }
+    editModeRef.current = true;
+    setEditing(true);
     editApiRef.current = current.getEditApi?.() ?? null;
     editApiRef.current?.onEditStart();
     await startSession(
@@ -251,7 +268,7 @@ export function useChatController({
         references: extractMentions(draft),
       },
       draft.trim(),
-      newAgentTurn(),
+      newAgentTurn(true),
     );
   }, [draft, streaming, agentName, startSession]);
 
@@ -261,6 +278,8 @@ export function useChatController({
       void api().chatAbort(sessionId);
     }
     setStreaming(false);
+    setEditing(false);
+    editModeRef.current = false;
     pendingRef.current = false;
     sessionRef.current = null;
     setTurns((prev) =>
@@ -298,7 +317,13 @@ export function useChatController({
 
   return {
     agents: { items: agents, selected: agentName, onSelect: onSelectAgent },
-    conversation: { turns, streaming, onAbort, onClear },
+    conversation: {
+      turns,
+      streaming,
+      editing,
+      onAbort,
+      onClear,
+    },
     composer: {
       draft,
       canSend: draft.trim().length > 0 && !streaming,

@@ -66,21 +66,7 @@ describe("useChatController", () => {
     expect(result.current.conversation.streaming).toBe(false);
   });
 
-  it("ignores events from another session", async () => {
-    const { result } = renderChat();
-    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
-
-    act(() => result.current.composer.onDraftChange("hi"));
-    await act(async () => {
-      await result.current.composer.onSend();
-    });
-    await waitFor(() => expect(result.current.conversation.turns).toHaveLength(2));
-
-    act(() => emit?.({ sessionId: "other", event: { type: "delta", text: "nope" } }));
-    expect(result.current.conversation.turns[1].text).toBe("");
-  });
-
-  it("rewrites the page with the live buffer and forwards edit events", async () => {
+  it("stops the edit session and clears the mirror on abort", async () => {
     const onEditStart = vi.fn();
     const onEditStream = vi.fn();
     const onEditStop = vi.fn();
@@ -100,6 +86,50 @@ describe("useChatController", () => {
     await act(async () => {
       await result.current.rewrite.onRewrite();
     });
+    await waitFor(() => expect(result.current.conversation.editing).toBe(true));
+
+    act(() => result.current.conversation.onAbort());
+
+    expect(onEditStop).toHaveBeenCalledTimes(1);
+    expect(result.current.conversation.editing).toBe(false);
+    expect(result.current.conversation.streaming).toBe(false);
+  });
+
+  it("ignores events from another session", async () => {
+    const { result } = renderChat();
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("hi"));
+    await act(async () => {
+      await result.current.composer.onSend();
+    });
+    await waitFor(() => expect(result.current.conversation.turns).toHaveLength(2));
+
+    act(() => emit?.({ sessionId: "other", event: { type: "delta", text: "nope" } }));
+    expect(result.current.conversation.turns[1].text).toBe("");
+  });
+
+  it("rewrites the page with the live buffer and forwards edit events", async () => {
+    const onEditStart = vi.fn();
+    const onEditStream = vi.fn();
+    const onEditStop = vi.fn();
+    const onEditDone = vi.fn();
+    const getBuffer = vi.fn(() => "# draft");
+    const { result } = renderHook(() =>
+      useChatController({
+        scope: ChatScope.Page,
+        mode: ChatMode.Chat,
+        path: "docs/a.md",
+        getBuffer,
+        getEditApi: () => ({ onEditStart, onEditStream, onEditStop, onEditDone }),
+      }),
+    );
+    await waitFor(() => expect(result.current.agents.items).toHaveLength(2));
+
+    act(() => result.current.composer.onDraftChange("hazlo corto"));
+    await act(async () => {
+      await result.current.rewrite.onRewrite();
+    });
 
     expect(onEditStart).toHaveBeenCalledTimes(1);
     expect(window.slashmd.chatSend).toHaveBeenCalledWith(
@@ -109,17 +139,23 @@ describe("useChatController", () => {
         bufferMarkdown: "# draft",
       }),
     );
+    expect(result.current.conversation.turns[1].edit).toBe(true);
 
     act(() => {
       emit?.({
         sessionId: "s1",
         event: { type: "editStream", markdown: "# corto" },
       });
+      emit?.({ sessionId: "s1", event: { type: "delta", text: "# corto" } });
     });
     expect(onEditStream).toHaveBeenCalledWith("# corto");
+    expect(result.current.conversation.turns[1].text).toBe("");
+    expect(result.current.conversation.editing).toBe(true);
 
     act(() => emit?.({ sessionId: "s1", event: { type: "done", code: 0 } }));
-    expect(onEditStop).toHaveBeenCalledTimes(1);
+    expect(onEditDone).toHaveBeenCalledTimes(1);
+    expect(onEditStop).not.toHaveBeenCalled();
+    expect(result.current.conversation.editing).toBe(false);
   });
 
   it("surfaces a send failure on the agent turn", async () => {

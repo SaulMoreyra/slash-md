@@ -1,7 +1,14 @@
 import { Button, Chip, Header, Label, ListBox } from "@heroui/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { IconCollapseAll, IconDrafts, IconExpandAll, IconHistory, IconInbox } from "../../../../../components/icons";
+import {
+  IconChat,
+  IconCollapseAll,
+  IconDrafts,
+  IconExpandAll,
+  IconHistory,
+  IconInbox,
+} from "../../../../../components/icons";
 import { ShortcutKbd, shortcutLabel } from "../../../../../components/ShortcutKbd";
 import type { HomeTreePayload } from "../../../../../../shared/api";
 import { NavKind, RailHint, TreeExpandMode } from "../../../enums";
@@ -17,7 +24,7 @@ type Props = {
   onToggleAllFolders?: () => void;
 };
 
-type WorkKind = NavKind.Inbox | NavKind.Drafts | NavKind.Publications;
+type WorkKind = NavKind.Inbox | NavKind.Drafts | NavKind.Publications | NavKind.AgentChat;
 
 function navKey(nav: NavView): string {
   if (nav.kind === NavKind.Folder) {
@@ -41,6 +48,8 @@ function workNavFromKey(id: string): NavView | undefined {
       return { kind: NavKind.Drafts };
     case NavKind.Publications:
       return { kind: NavKind.Publications };
+    case NavKind.AgentChat:
+      return { kind: NavKind.AgentChat };
     default:
       return undefined;
   }
@@ -93,6 +102,10 @@ export function RailNav({
           <IconDrafts />
           <Label>{t("home.nav.drafts")}</Label>
           <ShortcutKbd keys={shortcutLabel.drafts()} className="ml-auto" />
+        </WorkNavItem>
+        <WorkNavItem id={NavKind.AgentChat} label={t("home.nav.chat")} onNav={onNav}>
+          <IconChat />
+          <Label>{t("home.nav.chat")}</Label>
         </WorkNavItem>
         {isWorkspace ? (
           <WorkNavItem id={NavKind.Publications} label={t("home.publication.listTitle")} onNav={onNav}>

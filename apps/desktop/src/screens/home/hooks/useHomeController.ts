@@ -8,6 +8,7 @@ import type { HomeScreenProps } from "../types";
 import { ModalKind, NavKind } from "../enums";
 import { requestOpenFindInPage } from "../../editor/findInPageBridge";
 import { newPageModalKind, settingsModalKind } from "../utils";
+import { useAgentChatController } from "../../agent-chat/hooks/useAgentChatController";
 import { useConflicts } from "./useConflicts";
 import { useChatBubble } from "./useChatBubble";
 import { useHomeActions } from "./useHomeActions";
@@ -42,6 +43,7 @@ export function useHomeController({
   const { t } = useTranslation();
   const modals = useModals();
   const chat = useChatBubble();
+  const agentChat = useAgentChatController();
   const pageHostsRef = useRef(new Map<string, PageChatHost>());
   const registerPageHost = useCallback<PageChatHostRegistry["register"]>((path, host) => {
     pageHostsRef.current.set(path, host);
@@ -182,6 +184,7 @@ export function useHomeController({
     modals,
     nav,
     chat,
+    agentChat,
     pageHosts,
     actions,
     treeActions,

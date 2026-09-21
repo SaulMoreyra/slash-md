@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { CreateIntent } from "../../../../../../enums";
+import { NavKind, type CreateIntent } from "../../../../../../enums";
 import { EditorBlank } from "../../../../../EditorBlank";
 import { Empty } from "../../../../../Empty";
 import { useHome } from "../../../../context";
 import { EditorStage } from "./components/EditorStage";
 import { Loading } from "../Loading";
+import { ChatPane } from "../../../../../../../agent-chat/components/ChatPane";
 
 type Props = {
   needsInit: boolean;
@@ -43,7 +44,15 @@ function BodyInner({
   children,
 }: Props) {
   const { t } = useTranslation();
-  const { conflicts } = useHome();
+  const { conflicts, nav } = useHome();
+
+  if (nav.view.kind === NavKind.AgentChat) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col px-1 pb-1">
+        <ChatPane />
+      </div>
+    );
+  }
 
   if (needsInit) {
     return (

@@ -1,10 +1,21 @@
 import { Client } from "@modelcontextprotocol/sdk/client";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
 import { describe, expect, it } from "vitest";
 import { createWikiMcpServer, WIKI_MCP_SERVER_NAME, startWikiHttpServer } from "../server";
 import { WIKI_TOOL_NAMES } from "../tools";
 import { fakeWiki } from "../__specs__/fakeWiki";
+
+/** The actual `Client["callTool"]` resolve value (SDK 1.30 returns a union with `content` or `toolResult`). */
+type CallToolOutput = Awaited<ReturnType<Client["callTool"]>>;
+
+/** Minimal JSON-RPC response shape the HTTP test inspects. */
+type RpcResponse = {
+  result?: {
+    serverInfo?: { name?: string };
+    tools?: Array<{ name: string }>;
+    content?: Array<{ type?: string; text?: string }>;
+  };
+};
 
 async function connect() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -15,8 +26,11 @@ async function connect() {
   return { client };
 }
 
-function textOf(result: CallToolResult): string {
-  const part = result.content.find((c): c is Extract<CallToolResult["content"][number], { type: "text" }> => c.type === "text");
+function textOf(result: CallToolOutput): string {
+  if (!("content" in result) || !Array.isArray(result.content)) {
+    return "";
+  }
+  const part = result.content.find((c): c is { type: "text"; text: string } => c.type === "text" && typeof c.text === "string");
   return part?.text ?? "";
 }
 
@@ -115,12 +129,12 @@ describe("startWikiHttpServer (Streamable HTTP real)", () => {
   });
 });
 
-async function sseJson(body: string): Promise<unknown> {
+async function sseJson(body: string): Promise<RpcResponse> {
   for (const line of body.split("\n")) {
     if (line.startsWith("data: ")) {
       const raw = line.slice(6).trim();
       if (raw) {
-        return JSON.parse(raw);
+        return JSON.parse(raw) as RpcResponse;
       }
     }
   }

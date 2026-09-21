@@ -68,6 +68,10 @@ export function useHomeActions({
     modals.onOpen(ModalKind.SignIn);
   }
 
+  function onRequestAgents() {
+    modals.onOpen(ModalKind.Agents);
+  }
+
   function onRequestReview() {
     modals.onOpen(ModalKind.Review);
   }
@@ -230,6 +234,7 @@ export function useHomeActions({
     onRequestInit,
     onRequestConfig,
     onRequestSignIn,
+    onRequestAgents,
     onRequestReview,
     onRequestDiscard,
     onRequestFolder,

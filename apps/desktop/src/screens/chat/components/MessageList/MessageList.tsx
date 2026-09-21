@@ -7,14 +7,16 @@ import { MessageItem } from "../MessageItem";
 type Props = {
   turns: ChatTurn[];
   onOpenLink: (href: string) => void;
+  /** While streaming, keep scroll anchored without the smooth glide. */
+  streaming?: boolean;
 };
 
-export function MessageList({ turns, onOpenLink }: Props) {
+export function MessageList({ turns, onOpenLink, streaming = false }: Props) {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [turns]);
+    endRef.current?.scrollIntoView({ block: "end", behavior: streaming ? "auto" : "smooth" });
+  }, [turns, streaming]);
 
   if (!turns.length) {
     return <Empty />;
@@ -35,7 +37,7 @@ export function MessageList({ turns, onOpenLink }: Props) {
 function Empty() {
   const { t } = useTranslation();
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-6 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-6 text-center animate-fade-in motion-reduce:animate-none">
       <p className="text-sm text-muted">{t("home.chat.empty")}</p>
       <p className="text-xs text-muted">{t("home.chat.emptyHint")}</p>
     </div>

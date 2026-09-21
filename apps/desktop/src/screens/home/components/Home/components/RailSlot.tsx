@@ -86,6 +86,7 @@ function railChrome(home: HomeControllerApi) {
     onChangeFolder,
     onCloseWorkspace,
     onConfig: () => (library.payload?.needsInit ? actions.onRequestInit() : actions.onRequestConfig()),
+    onAgents: actions.onRequestAgents,
     onOpenSearch: search.onOpenCleared,
     onNav: nav.onNavigate,
     onInit: actions.onRequestInit,
@@ -95,7 +96,5 @@ function railChrome(home: HomeControllerApi) {
     onFolderModal: actions.onRequestFolder,
     onRefresh: () => void onRefresh(),
     onNewPublication: actions.onRequestPublication,
-    chatOpen: home.chat.open,
-    onToggleChat: home.chat.onToggle,
   };
 }

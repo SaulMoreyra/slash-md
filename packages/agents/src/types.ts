@@ -49,6 +49,12 @@ export type AgentInfo = {
   label: string;
   command: string;
   available: boolean;
+  /** Manual sign-in command to show when in-app login is not possible. */
+  loginCommand?: string;
+  /** When true the renderer offers a paste-API-key form instead of the background login. */
+  loginPasteKey?: boolean;
+  /** Provider ids (+labels) offered in that paste form. */
+  loginProviders?: { id: string; label: string }[];
 };
 
 /** How to invoke one CLI agent in headless streaming mode. */
@@ -61,4 +67,67 @@ export type AgentRecipe = {
   /** When true the prompt is written to stdin instead of argv. */
   promptViaStdin?: boolean;
   docsUrl?: string;
+  /** Interactive sign-in command, launched by the host (no TTY available). */
+  login?: AgentLoginRecipe;
+  /**
+   * How the host can tell whether the agent is already authenticated.
+   * Agents without a probe report `loggedIn: null` (unknown).
+   */
+  probe?: AgentProbeRecipe;
 };
+
+/** How to run an interactive agent sign-in without a TTY. */
+export type AgentLoginRecipe = {
+  command: string;
+  args: string[];
+  /** Extra env for the login process (e.g. NO_OPEN_BROWSER=1). */
+  env?: Record<string, string>;
+  /** When true the host opens the first URL the login prints in the browser. */
+  openUrl?: boolean;
+  /**
+   * Headless-compatible alternative: the host accepts a pasted API key and
+   * writes it straight into the agent's credential file, instead of running an
+   * interactive flow (opencode's `providers login` needs a TTY).
+   */
+  pasteKey?: { providers: { id: string; label: string }[] };
+};
+
+/** Exit/stdio result the probe parser inspects. */
+export type AgentProbeResult = {
+  stdout: string;
+  stderr: string;
+  code: number | null;
+};
+
+/** `true` authenticated, `false` signed out, `null` could not tell. */
+export type AgentProbeParser = (result: AgentProbeResult) => boolean | null;
+
+export type AgentProbeRecipe =
+  | {
+      kind: "command";
+      command: string;
+      args: string[];
+      then: AgentProbeParser;
+    }
+  | {
+      /** Login state derived from a well-known file (exists + non-empty). */
+      kind: "file";
+      paths: string[];
+    };
+
+/** Aggregated login state for one agent, resolved by the host. */
+export type AgentLoginStatus = {
+  name: string;
+  available: boolean;
+  /** `null` when there is no reliable way to tell (probe-less agents). */
+  loggedIn: boolean | null;
+  /** Human hint, e.g. the command to run manually when headless login fails. */
+  detail?: string;
+};
+
+/** Push-channel frame from the host while an interactive login runs. */
+export type AgentLoginEnvelope =
+  | { agent: string; type: "line"; text: string }
+  | { agent: string; type: "url"; url: string }
+  | { agent: string; type: "done"; ok: boolean }
+  | { agent: string; type: "error"; message: string };

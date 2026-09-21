@@ -12,6 +12,8 @@ export type ChatTurn = {
   thinking: string;
   tools: ChatToolNote[];
   status: TurnStatus;
+  /** True for the agent turn of an "edit page" session (text stays bubbled off). */
+  edit?: boolean;
   error?: string;
 };
 
@@ -20,6 +22,8 @@ export type ChatEditApi = {
   onEditStart: () => void;
   onEditStream: (markdown: string) => void;
   onEditStop: () => void;
+  /** Fired only on a graceful agent finish (differs "complete" from "aborted"). */
+  onEditDone?: () => void;
 };
 
 /** Imperative handle the active editor exposes to the single chat bubble. */

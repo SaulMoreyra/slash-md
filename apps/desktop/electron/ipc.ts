@@ -28,7 +28,7 @@ import { currentBranchName, isGitWorkspace } from "./git";
 import { getWorkspaceRoot, setWorkspaceRoot, writeStaging } from "./session";
 import { applyWindowChrome, getTheme, setTheme as persistTheme } from "./themeStore";
 import { pickFolder } from "./folders";
-import { abortAllChats, abortChat, listChatAgents, startChat } from "./agents";
+import { abortAllChats, abortChat, abortAgentLogin, listChatAgents, probeAgentStatus, setAgentApiKey, startAgentLogin, startChat } from "./agents";
 import { mcpServerUrl, startMcpServerForRoot, stopMcpServer } from "./mcpServer";
 
 function theme(): AppTheme {
@@ -281,5 +281,24 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
 
   handle("chatAbort", async (sessionId: string) => {
     abortChat(sessionId);
+  });
+
+  handle("agentProbeStatus", (agent: string) => probeAgentStatus(agent));
+
+  handle("agentSetApiKey", (agent: string, provider: string, key: string) =>
+    setAgentApiKey(agent, provider, key),
+  );
+
+  handle("agentLogin", (agent: string) =>
+    startAgentLogin(agent, (message) => {
+      const win = getWindow();
+      if (win) {
+        win.webContents.send("agent-login-update", { ...message, agent });
+      }
+    }),
+  );
+
+  handle("agentLoginAbort", async (agent: string) => {
+    abortAgentLogin(agent);
   });
 }
