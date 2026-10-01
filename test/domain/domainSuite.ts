@@ -41,7 +41,7 @@ import {
   workspaceTemplatePicks,
 } from "@slash-md/core/templates";
 import { parsePrNumber, reviewThreadTarget } from "@slash-md/core/threadGate";
-import { codeFenceTags, codeLanguages } from "../../packages/ui/src/editor/plugins/languages";
+import { codeFenceTags, codeLanguages, slashHighlightStyle } from "../../packages/ui/src/editor/plugins/languages";
 import { slashItemsMatching } from "../../packages/ui/src/editor/plugins/slash";
 import type { SuiteCtx } from "../harness";
 
@@ -70,6 +70,11 @@ export async function runDomainSuite(ctx: SuiteCtx): Promise<void> {
   {
     const tags = codeFenceTags();
     assert(codeLanguages.length >= 140, "language-data catalog is loaded");
+    const highlightRules = slashHighlightStyle.module?.getRules() ?? "";
+    assert(
+      highlightRules.includes("var(--slash-syn-keyword)") && highlightRules.includes("var(--slash-syn-number)"),
+      "code highlight colors follow theme tokens",
+    );
     assert(tags.length === new Set(tags).size, "fence tags are unique");
     assert(
       tags.every((tag) => tag.length > 0 && !/[\s`]/.test(tag)),
