@@ -29,6 +29,7 @@ type Props = {
   onChangeFolder: () => void;
   onCloseWorkspace: () => void;
   onConfig: () => void;
+  onAgents: () => void;
   onOpenSearch: () => void;
   onCloseRail: () => void;
   onNav: (nav: NavView) => void;
@@ -67,6 +68,7 @@ export function Rail({
   onChangeFolder,
   onCloseWorkspace,
   onConfig,
+  onAgents,
   onOpenSearch,
   onCloseRail,
   onNav,
@@ -116,7 +118,7 @@ export function Rail({
 
   return (
     <aside
-      className="flex h-full min-h-0 w-full shrink-0 flex-col gap-3"
+      className="flex h-full min-h-0 w-full shrink-0 flex-col gap-3 pl-3 py-3"
       aria-label={t("home.rail.aria")}
     >
       <RailHeader
@@ -125,24 +127,27 @@ export function Rail({
         onChangeFolder={onChangeFolder}
         onCloseWorkspace={onCloseWorkspace}
         onConfig={onConfig}
+        onAgents={onAgents}
         onCloseRail={onCloseRail}
       />
 
-      <Button
-        variant="ghost"
-        className="w-full justify-between border border-separator bg-default/40"
-        isDisabled={needsInit}
-        aria-keyshortcuts="Meta+K Control+K"
-        onPress={onOpenSearch}
-      >
-        <span className="flex items-center gap-2 text-muted">
-          <IconSearch />
-          {t("home.nav.search")}
-        </span>
-        <ShortcutKbd keys={searchKeys} />
-      </Button>
+      <div className="flex flex-col gap-2 px-1">
+        <Button
+          variant="ghost"
+          className="w-full justify-between border border-separator bg-default/40"
+          isDisabled={needsInit}
+          aria-keyshortcuts="Meta+K Control+K"
+          onPress={onOpenSearch}
+        >
+          <span className="flex items-center gap-2 text-muted">
+            <IconSearch />
+            {t("home.nav.search")}
+          </span>
+          <ShortcutKbd keys={searchKeys} />
+        </Button>
+      </div>
 
-      <ScrollShadow className="min-h-0 flex-1 [--scroll-shadow-scrollbar-size:0px]">
+      <ScrollShadow className="min-h-0 flex-1 [--scroll-shadow-size:0px] [--scroll-shadow-scrollbar-size:0px]">
         <RailNav
           nav={nav}
           payload={payload}
@@ -168,7 +173,7 @@ export function Rail({
         />
       </ScrollShadow>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 px-1">
         <Button
           variant="primary"
           fullWidth
@@ -188,6 +193,7 @@ export function Rail({
           personal={personal}
           busy={busy}
           needsInit={needsInit}
+          onAgents={onAgents}
           onSignIn={onSignIn}
           onSignOut={onSignOut}
           onConfig={onConfig}

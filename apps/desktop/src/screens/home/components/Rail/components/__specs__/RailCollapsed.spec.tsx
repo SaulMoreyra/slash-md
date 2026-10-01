@@ -13,6 +13,7 @@ function mockWorkspace(): WorkspaceInfo {
     config: null,
     slashmd: {},
     needsInit: false,
+    mcpUrl: null,
     auth: null,
     theme: "dark",
   };
@@ -31,6 +32,7 @@ describe("RailCollapsed", () => {
   const onSignOut = vi.fn();
   const onFolderModal = vi.fn();
   const onRefresh = vi.fn();
+  const onAgents = vi.fn();
 
   const defaultProps = {
     title: "acme/docs",
@@ -54,6 +56,7 @@ describe("RailCollapsed", () => {
     onSignOut,
     onFolderModal,
     onRefresh,
+    onAgents,
   };
 
   beforeEach(() => {

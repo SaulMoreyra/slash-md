@@ -31,6 +31,7 @@ export const shortcutLabel = {
   closePage: () => `${mod()}W`,
   save: () => `${mod()}S`,
   escape: () => "Esc",
+  chat: () => (isApplePlatform() ? "⌘⇧L" : "Ctrl+Shift+L"),
 } as const;
 
 export function ShortcutKbd({

@@ -15,7 +15,7 @@ import { registerCallout } from "../plugins/callout";
 import { registerImageAlt } from "../plugins/imageAlt";
 import { registerComments } from "../plugins/commentsPlugin";
 import { createSearchHandle, registerSearch, type SearchHandle } from "../plugins/search";
-import { codeLanguages, vscodeCmTheme } from "../plugins/languages";
+import { codeLanguages, slashSyntaxHighlighting, vscodeCmTheme } from "../plugins/languages";
 import { mermaidLanguage, renderMermaidPreview } from "../plugins/mermaid";
 import { slashConfig } from "../plugins/slash";
 import { registerTableColgroup } from "../plugins/tableColgroup";
@@ -54,6 +54,7 @@ export async function createSlashCrepe(opts: {
     .addFeature(codeMirror, {
       languages: [...codeLanguages, mermaidLanguage],
       theme: vscodeCmTheme,
+      extensions: [slashSyntaxHighlighting],
       renderPreview: renderMermaidPreview,
     })
     .addFeature(table)
@@ -128,6 +129,13 @@ export async function createSlashCrepe(opts: {
   opts.onSearchReady?.(createSearchHandle(builder.editor));
 
   return builder;
+}
+
+export function setCrepeEditable(builder: CrepeBuilder, editable: boolean): void {
+  builder.editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    view.setProps({ editable: () => editable });
+  });
 }
 
 export function setCrepeMarkdown(builder: CrepeBuilder, markdown: string): void {

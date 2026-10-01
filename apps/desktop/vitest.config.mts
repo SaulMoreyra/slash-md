@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      "@slash-md/agents": path.join(repo, "packages/agents/src"),
       "@slash-md/core": path.join(repo, "packages/core/src"),
       "@slash-md/github": path.join(repo, "packages/github/src"),
       "@slash-md/ui": path.join(repo, "packages/ui/src"),
@@ -18,6 +19,11 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: [path.join(root, "src/test/setup.ts")],
-    include: ["src/**/*.spec.{ts,tsx}", "shared/**/*.spec.ts", "electron/**/*.spec.ts"],
+    include: [
+      "src/**/*.spec.{ts,tsx}",
+      "shared/**/*.spec.ts",
+      "electron/**/*.spec.ts",
+      "../../packages/**/*.spec.ts",
+    ],
   },
 });

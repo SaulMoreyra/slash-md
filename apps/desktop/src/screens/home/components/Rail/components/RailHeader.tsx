@@ -11,6 +11,7 @@ type Props = {
   onChangeFolder: () => void;
   onCloseWorkspace: () => void;
   onConfig: () => void;
+  onAgents: () => void;
   onCloseRail: () => void;
 };
 
@@ -20,6 +21,7 @@ export function RailHeader({
   onChangeFolder,
   onCloseWorkspace,
   onConfig,
+  onAgents,
   onCloseRail,
 }: Props) {
   const { t } = useTranslation();
@@ -35,6 +37,7 @@ export function RailHeader({
             onChangeFolder={onChangeFolder}
             onCloseWorkspace={onCloseWorkspace}
             onConfig={onConfig}
+            onAgents={onAgents}
           />
         </div>
         <PaneCloseButton

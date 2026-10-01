@@ -13,6 +13,7 @@
     "jsx": "react-jsx",
     "types": ["node"],
     "paths": {
+      "@slash-md/agents/*": ["./packages/agents/src/*"],
       "@slash-md/core/*": ["./packages/core/src/*"],
       "@slash-md/github/*": ["./packages/github/src/*"],
       "@slash-md/ui/*": ["./packages/ui/src/*"]

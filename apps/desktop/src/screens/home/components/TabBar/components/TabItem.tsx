@@ -14,8 +14,8 @@ type Props = {
 export function TabItem({ item, onActivateTab, onCloseTab, ref }: Props) {
   const { t } = useTranslation();
   const selectedClass = item.selected
-    ? "border-foreground bg-surface text-foreground"
-    : "border-transparent text-muted hover:text-foreground";
+    ? "bg-background/40 text-foreground"
+    : "bg-transparent text-muted hover:bg-surface/60 hover:text-foreground";
   const ariaLabel = item.dirty ? `${item.labelFull} (${t("home.tabs.dirty")})` : item.labelFull;
 
   const handleClick = () => {
@@ -51,7 +51,7 @@ export function TabItem({ item, onActivateTab, onCloseTab, ref }: Props) {
       aria-label={ariaLabel}
       tabIndex={item.selected ? 0 : -1}
       title={item.labelFull}
-      className={`flex max-w-40 min-w-0 cursor-pointer items-center gap-1.5 border-b-2 px-2 py-1 text-sm ${selectedClass}`}
+      className={`-mb-px flex max-w-40 min-w-0 cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${selectedClass}`}
       onClick={handleClick}
       onAuxClick={handleAuxClick}
       onKeyDown={handleKeyDown}
@@ -62,7 +62,7 @@ export function TabItem({ item, onActivateTab, onCloseTab, ref }: Props) {
         isIconOnly
         size="sm"
         variant="ghost"
-        className="size-6 min-w-6"
+        className="size-5 min-w-5"
         aria-label={t("home.tabs.close", { title: item.label })}
         onClick={handleCloseClick}
         onPress={() => onCloseTab(item.tabId)}

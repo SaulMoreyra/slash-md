@@ -1,7 +1,7 @@
 import type { ReactNode, RefObject } from "react";
 import { Button, Chip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { IconChat, IconClose, IconHistory } from "../../../../components/icons";
+import { IconChat, IconClose, IconHistory, IconSparkles } from "../../../../components/icons";
 import { shortcutLabel } from "../../../../components/ShortcutKbd";
 import { SaveStatus } from "../../enums";
 import { MoreActionsMenu } from "../MoreActionsMenu";
@@ -14,10 +14,12 @@ type Props = {
   status: SaveStatus;
   openPr: string | null | undefined;
   threadsCount: number;
+  chatOpen?: boolean;
   moreOpen: boolean;
   moreRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
   onToggleMore: () => void;
+  onToggleChat?: () => void;
   onOpenFirstThread: () => void;
   children: ReactNode;
 };
@@ -29,10 +31,12 @@ export function EditorBar({
   status,
   openPr,
   threadsCount,
+  chatOpen = false,
   moreOpen,
   moreRef,
   onClose,
   onToggleMore,
+  onToggleChat,
   onOpenFirstThread,
   children,
 }: Props) {
@@ -103,6 +107,18 @@ export function EditorBar({
         >
           <IconChat />
         </Button>
+        {onToggleChat ? (
+          <Button
+            isIconOnly
+            size="sm"
+            variant={chatOpen ? "primary" : "ghost"}
+            aria-label={t("editor.aiChat")}
+            aria-pressed={chatOpen}
+            onPress={onToggleChat}
+          >
+            <IconSparkles />
+          </Button>
+        ) : null}
         <MoreActionsMenu moreOpen={moreOpen} moreRef={moreRef} onToggle={onToggleMore}>
           {children}
         </MoreActionsMenu>

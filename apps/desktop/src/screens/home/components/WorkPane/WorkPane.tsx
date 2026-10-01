@@ -10,6 +10,7 @@ import { InboxPane } from "../InboxPane";
 import { PaneChrome, PaneHeader } from "../PaneHeader";
 import { PublicationsPane } from "../PublicationsPane";
 import { LeaveWikiFooter } from "./components/LeaveWikiFooter";
+import { AgentChatConnected } from "./components/AgentChatConnected";
 
 type Props = {
   nav: NavView;
@@ -117,6 +118,9 @@ function WorkPaneBody({
     );
   }
 
+  if (nav.kind === NavKind.AgentChat) {
+    return <AgentChatConnected />;
+  }
   if (nav.kind === NavKind.Inbox) {
     return <InboxPane payload={payload} onOpenPage={onOpenPage} />;
   }

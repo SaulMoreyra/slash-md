@@ -35,7 +35,12 @@ export async function captureSmoke(win: BrowserWindow): Promise<void> {
     }
     const evalJs = process.env.SLASHMD_SMOKE_EVAL?.trim();
     if (evalJs) {
-      await win.webContents.executeJavaScript(evalJs);
+      const result = await win.webContents.executeJavaScript(evalJs);
+      if (typeof result !== "undefined") {
+        console.log(
+          `[smoke-eval] ${typeof result === "string" ? result : JSON.stringify(result)}`,
+        );
+      }
       await new Promise((resolve) => setTimeout(resolve, 400));
     }
     const png = await win.webContents.capturePage();

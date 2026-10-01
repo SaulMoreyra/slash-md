@@ -56,6 +56,7 @@ function withTabs(
         config: null,
         slashmd: {},
         needsInit: false,
+        mcpUrl: null,
         auth: { login: "tester" },
         theme: "dark",
       },

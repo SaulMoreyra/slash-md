@@ -51,6 +51,7 @@ export enum ModalKind {
   Review = "review",
   Publication = "publication",
   DiscardPublication = "discardPublication",
+  Agents = "agents",
 }
 
 /** What Home creates in the current folder: a wiki page or a reusable template. */
@@ -66,6 +67,7 @@ export enum NavKind {
   Folder = "folder",
   Publications = "publications",
   Conflicts = "conflicts",
+  AgentChat = "agentChat",
 }
 
 /** Matches `@slash-md/core` `RepoMode` string values. */
@@ -172,6 +174,7 @@ export enum AccountMenuAction {
   CloseWorkspace = "close-workspace",
   SignOut = "sign-out",
   SignIn = "sign-in",
+  Agents = "agents",
 }
 
 /** Primary button on the mounted publication card. */

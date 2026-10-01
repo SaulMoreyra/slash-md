@@ -36,7 +36,8 @@ export type NavView =
   | { kind: NavKind.Inbox }
   | { kind: NavKind.Folder; path: string; title: string }
   | { kind: NavKind.Publications }
-  | { kind: NavKind.Conflicts };
+  | { kind: NavKind.Conflicts }
+  | { kind: NavKind.AgentChat };
 
 /** File or folder the rename / delete modal is acting on. */
 export type ModalTarget = {

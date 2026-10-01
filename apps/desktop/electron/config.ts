@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { RepoMode, type ContentConfig, type SlashmdFile, normalizeRepoMode, parseOwnerName } from "@slash-md/core/configTypes";
+import { RepoMode, type ContentConfig, type McpAgentConfig, type McpConfig, type SlashmdFile, normalizeRepoMode, parseOwnerName } from "@slash-md/core/configTypes";
 import { contentPathPrefix, normalizeContentPathInput } from "@slash-md/core/paths";
 import { getWorkspaceRoot } from "./session";
 
@@ -62,7 +62,53 @@ export function parseSlashmd(raw: unknown): SlashmdFile {
   if (typeof rec.templatesPath === "string" && rec.templatesPath.trim()) {
     out.templatesPath = rec.templatesPath.trim().replace(/^\/+|\/+$/g, "");
   }
+  const mcp = parseMcp(rec.mcp);
+  if (mcp) {
+    out.mcp = mcp;
+  }
   return out;
+}
+
+function parseMcp(raw: unknown): McpConfig | undefined {
+  const rec = asRecord(raw);
+  if (!rec) {
+    return undefined;
+  }
+  const out: McpConfig = {};
+  const agent = asRecord(rec.agent);
+  if (agent && typeof agent.name === "string" && agent.name.trim()) {
+    const entry: McpAgentConfig = { name: agent.name.trim() };
+    if (Array.isArray(agent.args)) {
+      entry.args = agent.args.filter((arg): arg is string => typeof arg === "string");
+    }
+    const env = asRecord(agent.env);
+    if (env) {
+      const clean: Record<string, string> = {};
+      for (const [key, value] of Object.entries(env)) {
+        if (typeof value === "string") {
+          clean[key] = value;
+        }
+      }
+      if (Object.keys(clean).length) {
+        entry.env = clean;
+      }
+    }
+    out.agent = entry;
+  }
+  const server = asRecord(rec.server);
+  if (server && typeof server.enabled === "boolean") {
+    out.server = {
+      enabled: server.enabled,
+      port: typeof server.port === "number" && Number.isInteger(server.port) ? server.port : 3969,
+    };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 export async function readSlashmd(root: string): Promise<SlashmdFile> {

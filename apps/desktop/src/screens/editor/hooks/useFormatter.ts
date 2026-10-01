@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { CrepeCanvasHandle } from "../../../components/CrepeCanvas/CrepeCanvas";
 import { joinFrontmatter, splitFrontmatter } from "@slash-md/core/frontmatter";
 import { normalizePageIcon } from "@slash-md/core/pageIcon";
 import { normalizeMarkdown } from "@slash-md/core/markdown";
@@ -44,6 +45,8 @@ export function useFormatter({
   const currentPathRef = useRef<string | null>(page.path);
   const saveTimer = useRef<number | undefined>(undefined);
   const statusRef = useRef(status);
+  const streamingRef = useRef(false);
+  const canvasRef = useRef<CrepeCanvasHandle | null>(null);
   statusRef.current = status;
   const bodyMarkdown = splitFrontmatter(page.markdown).body;
   const lifecycle = pageLifecycle(page);
@@ -130,7 +133,24 @@ export function useFormatter({
   function onBodyMarkdownChange(body: string) {
     if (!canWrite) return;
     const full = joinFrontmatter(frontmatterRawRef.current, body);
+    if (streamingRef.current) {
+      markdownRef.current = full;
+      return;
+    }
     scheduleSave(full);
+  }
+
+  function setMarkdown(markdown: string) {
+    streamingRef.current = true;
+    try {
+      canvasRef.current?.setMarkdown(markdown);
+    } finally {
+      streamingRef.current = false;
+    }
+  }
+
+  function setEditable(editable: boolean) {
+    canvasRef.current?.setEditable(editable);
   }
 
   function onTitleChange(value: string) {
@@ -182,6 +202,9 @@ export function useFormatter({
     onCoverUpload: uploadImage,
     onImageUpload: uploadImage,
     getMarkdown: () => markdownRef.current,
+    setMarkdown,
+    setEditable,
+    canvasRef,
   };
 }
 

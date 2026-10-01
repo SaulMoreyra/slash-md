@@ -8,6 +8,7 @@ const emptyWorkspace = (root: string | null): WorkspaceInfo => ({
   config: null,
   slashmd: {},
   needsInit: !root,
+  mcpUrl: null,
   auth: null,
   theme: "dark",
 });

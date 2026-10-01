@@ -86,6 +86,7 @@ function railChrome(home: HomeControllerApi) {
     onChangeFolder,
     onCloseWorkspace,
     onConfig: () => (library.payload?.needsInit ? actions.onRequestInit() : actions.onRequestConfig()),
+    onAgents: actions.onRequestAgents,
     onOpenSearch: search.onOpenCleared,
     onNav: nav.onNavigate,
     onInit: actions.onRequestInit,

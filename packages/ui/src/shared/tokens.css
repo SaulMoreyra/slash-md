@@ -40,6 +40,16 @@ body.vscode-high-contrast-light {
   --slash-callout-important: #9065b0;
   --slash-callout-warning: #cb912f;
   --slash-callout-caution: #d44c47;
+  --slash-syn-keyword: #8b3a9b;
+  --slash-syn-string: #b84332;
+  --slash-syn-number: #0b6e5f;
+  --slash-syn-comment: #6f6e6a;
+  --slash-syn-function: #8a5a12;
+  --slash-syn-property: #1f6f99;
+  --slash-syn-type: #1a6b62;
+  --slash-syn-variable: #37352f;
+  --slash-syn-operator: #5f5d59;
+  --slash-syn-constant: #0b6e5f;
 }
 
 body.vscode-dark,
@@ -67,6 +77,16 @@ body.vscode-high-contrast {
   --slash-callout-important: #9a6dd7;
   --slash-callout-warning: #ffb454;
   --slash-callout-caution: #ff7369;
+  --slash-syn-keyword: #d2a8ff;
+  --slash-syn-string: #ffb4a2;
+  --slash-syn-number: #7dcea0;
+  --slash-syn-comment: #a9a8a4;
+  --slash-syn-function: #ffd479;
+  --slash-syn-property: #9cdcfe;
+  --slash-syn-type: #4ec9b0;
+  --slash-syn-variable: #e8e6e3;
+  --slash-syn-operator: #c4c2bc;
+  --slash-syn-constant: #82d2c3;
   --slash-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35);
   --slash-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.45);
   --slash-overlay: rgba(0, 0, 0, 0.55);

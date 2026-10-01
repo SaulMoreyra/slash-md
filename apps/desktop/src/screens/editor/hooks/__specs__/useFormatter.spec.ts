@@ -123,6 +123,35 @@ describe("useFormatter", () => {
     expect(onDirtyChange).toHaveBeenLastCalledWith("docs/a.md", true);
   });
 
+  it("captures the editor echo during a streamed write without scheduling a save", () => {
+    const { result } = runHook(mockPage());
+    const handle = {
+      setMarkdown: vi.fn(() => result.current.onBodyMarkdownChange("# streamed")),
+      setEditable: vi.fn(),
+    };
+    (result.current.canvasRef as { current: unknown }).current = handle;
+
+    act(() => {
+      result.current.setMarkdown("ignored");
+    });
+
+    expect(handle.setMarkdown).toHaveBeenCalledWith("ignored");
+    expect(result.current.getMarkdown()).toBe("# streamed");
+    expect(result.current.status).not.toBe(SaveStatus.Saving);
+  });
+
+  it("toggles editor editability through the canvas handle", () => {
+    const { result } = runHook(mockPage());
+    const handle = { setMarkdown: vi.fn(), setEditable: vi.fn() };
+    (result.current.canvasRef as { current: unknown }).current = handle;
+
+    act(() => {
+      result.current.setEditable(false);
+    });
+
+    expect(handle.setEditable).toHaveBeenCalledWith(false);
+  });
+
   it("sets body classes only while active", () => {
     const inactive = runHook(mockPage(), true, { active: false });
     expect(document.body.classList.contains(BodyClass.WorkflowWorkspace)).toBe(false);

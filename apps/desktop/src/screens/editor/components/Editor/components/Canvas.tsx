@@ -86,6 +86,7 @@ export function Canvas() {
           </div>
         </div>
         <CrepeCanvas
+          ref={editor.canvasRef}
           docPath={page.path}
           markdown={editor.bodyMarkdown}
           commentsEnabled={editor.commentsOn}

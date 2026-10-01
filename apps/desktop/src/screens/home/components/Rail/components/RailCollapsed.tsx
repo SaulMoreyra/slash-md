@@ -24,6 +24,7 @@ type Props = {
   onChangeFolder: () => void;
   onCloseWorkspace: () => void;
   onConfig: () => void;
+  onAgents: () => void;
   onOpenSearch: () => void;
   onNav: (nav: NavView) => void;
   onInit: () => void;
@@ -49,6 +50,7 @@ export function RailCollapsed({
   onChangeFolder,
   onCloseWorkspace,
   onConfig,
+  onAgents,
   onOpenSearch,
   onNav,
   onInit,
@@ -97,6 +99,7 @@ export function RailCollapsed({
         onChangeFolder={onChangeFolder}
         onCloseWorkspace={onCloseWorkspace}
         onConfig={onConfig}
+        onAgents={onAgents}
       />
       <Button
         isIconOnly
@@ -140,6 +143,7 @@ export function RailCollapsed({
         busy={busy}
         needsInit={needsInit}
         trigger={ChromeTrigger.Icon}
+        onAgents={onAgents}
         onSignIn={onSignIn}
         onSignOut={onSignOut}
         onConfig={onConfig}

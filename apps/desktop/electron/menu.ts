@@ -151,6 +151,11 @@ export function registerAppMenu(getWindow: () => BrowserWindow | null): void {
         click: () => send(MenuAction.ToggleRail),
       },
       {
+        label: copy.toggleChat,
+        accelerator: "CmdOrCtrl+Shift+L",
+        click: () => send(MenuAction.ToggleChat),
+      },
+      {
         label: copy.refresh,
         accelerator: "CmdOrCtrl+Shift+R",
         click: () => send(MenuAction.Refresh),

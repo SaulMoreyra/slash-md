@@ -7,12 +7,14 @@ describe("WorkspaceSwitch", () => {
   const onChangeFolder = vi.fn();
   const onCloseWorkspace = vi.fn();
   const onConfig = vi.fn();
+  const onAgents = vi.fn();
 
   const defaultProps = {
     title: "acme/docs",
     onChangeFolder,
     onCloseWorkspace,
     onConfig,
+    onAgents,
   };
 
   beforeEach(() => {

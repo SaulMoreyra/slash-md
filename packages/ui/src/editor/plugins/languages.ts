@@ -1,6 +1,7 @@
 import { languages as languageCatalog } from "@codemirror/language-data";
-import { LanguageDescription } from "@codemirror/language";
+import { HighlightStyle, LanguageDescription, syntaxHighlighting } from "@codemirror/language";
 import { EditorView } from "@codemirror/view";
+import { tags } from "@lezer/highlight";
 
 /** CodeMirror theme bound to Slash Notion tokens (follows body light/dark). */
 export const vscodeCmTheme = EditorView.theme({
@@ -33,6 +34,48 @@ export const vscodeCmTheme = EditorView.theme({
     backgroundColor: "var(--slash-hover)",
   },
 });
+
+/**
+ * Token colors for fenced code. Uses Slash CSS variables so light and dark
+ * follow `body` theme classes. Replaces CodeMirror's default highlight style,
+ * which is a light palette and disappears on `--slash-inline-area` in dark mode.
+ */
+export const slashHighlightStyle = HighlightStyle.define([
+  { tag: [tags.variableName, tags.self], color: "var(--slash-syn-variable)" },
+  { tag: [tags.propertyName, tags.attributeName], color: "var(--slash-syn-property)" },
+  { tag: [tags.typeName, tags.className, tags.namespace, tags.tagName], color: "var(--slash-syn-type)" },
+  {
+    tag: [tags.function(tags.variableName), tags.function(tags.propertyName)],
+    color: "var(--slash-syn-function)",
+  },
+  {
+    tag: [tags.operator, tags.punctuation, tags.bracket, tags.paren, tags.brace, tags.squareBracket, tags.separator],
+    color: "var(--slash-syn-operator)",
+  },
+  { tag: [tags.bool, tags.null, tags.atom], color: "var(--slash-syn-constant)" },
+  { tag: [tags.number, tags.integer, tags.float], color: "var(--slash-syn-number)" },
+  { tag: [tags.string, tags.regexp, tags.character], color: "var(--slash-syn-string)" },
+  { tag: [tags.escape, tags.special(tags.string)], color: "var(--slash-syn-keyword)" },
+  {
+    tag: [
+      tags.keyword,
+      tags.modifier,
+      tags.operatorKeyword,
+      tags.controlKeyword,
+      tags.definitionKeyword,
+      tags.moduleKeyword,
+    ],
+    color: "var(--slash-syn-keyword)",
+  },
+  {
+    tag: [tags.comment, tags.lineComment, tags.blockComment, tags.docComment],
+    color: "var(--slash-syn-comment)",
+    fontStyle: "italic",
+  },
+  { tag: tags.invalid, color: "var(--slash-danger)" },
+]);
+
+export const slashSyntaxHighlighting = syntaxHighlighting(slashHighlightStyle);
 
 /** True when `value` can be a CommonMark fence info-string (first word = language). */
 export function isFenceToken(value: string): boolean {

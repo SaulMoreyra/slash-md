@@ -16,7 +16,8 @@
     "personal": "personal",
     "workspace": "workspace",
     "local": "local",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "close": "Close"
   },
   "app": {
     "brand": "SlashMD",
@@ -41,6 +42,55 @@
       "open": "Show work list"
     },
     "library": "Workspace",
+    "chat": {
+      "title": "Chat",
+      "you": "You",
+      "agent": "Agent",
+      "placeholder": "Ask about your docs…",
+      "send": "Send",
+      "stop": "Stop",
+      "editPage": "Edit page",
+      "editingPage": "Editing the page…",
+      "edited": "Page edited",
+      "clear": "Clear conversation",
+      "close": "Close chat",
+      "agents": "Agent",
+      "empty": "Ask a local agent about this workspace.",
+      "emptyHint": "Codex, Claude Code or opencode run on your machine with your docs as context.",
+      "thinking": "Reasoning",
+      "tools": "Tool calls",
+      "noAgent": "No agent",
+      "unavailable": "not found",
+      "resize": "Drag to adjust the chat width",
+      "resizeReset": "Double-click restores the default width",
+      "bubble": {
+        "open": "Open AI chat",
+        "close": "Close AI chat"
+      },
+      "mention": {
+        "remove": "Remove mention {path}",
+        "empty": "No matches"
+      },
+      "currentFile": {
+        "live": "The chat reads this page's unsaved content as context.",
+        "editing": "The agent is rewriting this page live…"
+      }
+    },
+    "agentChat": {
+      "chat": {
+        "aria": "Agent chat"
+      },
+      "history": {
+        "title": "History",
+        "new": "New conversation",
+        "newConversation": "New conversation",
+        "delete": "Delete {{title}}",
+        "page": "page",
+        "global": "global",
+        "emptyTitle": "No conversations yet",
+        "emptyBody": "Start a conversation and ask about your docs."
+      }
+    },
     "rail": {
       "aria": "Navigation",
       "open": "Show navigation",
@@ -71,6 +121,7 @@
       "workspace": "Workspace",
       "initHint": "Init the workspace to see pages.",
       "search": "Search…",
+      "chat": "Chat",
       "newPage": "New page",
       "newTemplate": "New template"
     },
@@ -98,10 +149,11 @@
       "changeFolder": "Change folder",
       "openOther": "Open another folder…",
       "closeWorkspace": "Close workspace",
-      "signOut": "Sign out",
-      "signIn": "Sign in",
-      "langEs": "Español",
-      "langEn": "English"
+"signOut": "Sign out",
+    "signIn": "Sign in",
+    "agents": "Agents",
+    "langEs": "Español",
+    "langEn": "English"
     },
     "workspaceSwitch": {
       "aria": "Workspace",
@@ -407,6 +459,36 @@
         "placeholder": "ghp_…",
         "tokenCreate": "Create a token on GitHub",
         "connect": "Connect with token"
+      },
+      "agents": {
+        "title": "Agents",
+        "lede": "Sign in to the CLI agent you want to use in the chat (opencode, Claude Code, Codex, Cursor).",
+        "checking": "Checking…",
+        "none": "No agents found.",
+        "recheck": "Re-check",
+        "recheckAgent": "Check",
+        "login": "Sign in",
+        "loggedIn": "Signed in",
+        "loggedOut": "Signed out",
+        "unknown": "Not verified",
+        "unknownStatus": "Could not determine the sign-in state.",
+        "notFound": "Not installed on PATH.",
+        "pasteKeyTitle": "Paste an API key",
+        "pasteKeyHint": "opencode cannot sign in without a terminal; paste an API key for the provider you want to use.",
+        "pasteKeyProvider": "Provider",
+        "pasteKeyKey": "API key",
+        "pasteKeyPlaceholder": "sk-…",
+        "pasteKeySubmit": "Save",
+        "pasteKeySaving": "Saving…",
+        "pasteKeySaved": "API key saved for {{provider}}.",
+        "loginProgress": "Sign-in progress",
+        "loggingIn": "Signing in with {{agent}}…",
+        "loginOk": "Signed in successfully.",
+        "loginFailed": "Could not sign in.",
+        "openUrlHint": "Open this URL to authenticate:",
+        "openBrowser": "Open in browser",
+        "copyCommand": "Copy command",
+        "copied": "Copied"
       }
     }
   },
@@ -423,6 +505,14 @@
     },
     "pathAria": "Path",
     "close": "Close page",
+    "aiChat": "AI chat for this page",
+    "aiEditBanner": {
+      "streaming": "The agent is editing the page…",
+      "partial": "The edit was interrupted. Review before applying.",
+      "ready": "The agent proposed changes to the page.",
+      "apply": "Apply",
+      "discard": "Discard"
+    },
     "historyOpen": "View review on GitHub",
     "historyNone": "No review yet",
     "comments": "Comments",

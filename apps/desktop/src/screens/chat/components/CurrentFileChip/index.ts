@@ -1,0 +1,1 @@
+export { CurrentFileChip } from "./CurrentFileChip";

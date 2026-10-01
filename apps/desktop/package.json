@@ -29,6 +29,7 @@
   "dependencies": {
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
+    "@slash-md/agents": "0.1.0",
     "@slash-md/core": "0.1.0",
     "@slash-md/github": "0.1.0",
     "@slash-md/ui": "0.1.0",

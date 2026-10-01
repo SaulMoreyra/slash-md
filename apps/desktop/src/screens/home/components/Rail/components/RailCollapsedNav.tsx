@@ -2,7 +2,12 @@ import { Button } from "@heroui/react";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { IconDrafts, IconHistory, IconInbox } from "../../../../../components/icons";
+import {
+  IconChat,
+  IconDrafts,
+  IconHistory,
+  IconInbox,
+} from "../../../../../components/icons";
 import { shortcutLabel } from "../../../../../components/ShortcutKbd";
 import { NavKind } from "../../../enums";
 import type { NavView } from "../../../types";
@@ -58,17 +63,26 @@ function collapsedNavItems(t: TFunction, isWorkspace: boolean, inboxCount: numbe
       icon: <IconHistory />,
     });
   }
+  items.push({
+    kind: NavKind.AgentChat,
+    label: t("home.nav.chat"),
+    keys: shortcutLabel.chat(),
+    icon: <IconChat />,
+  });
   return items;
 }
 
 function viewFromKind(kind: NavKind): NavView {
-  if (kind === NavKind.Inbox) {
-    return { kind: NavKind.Inbox };
+  switch (kind) {
+    case NavKind.Inbox:
+      return { kind: NavKind.Inbox };
+    case NavKind.Publications:
+      return { kind: NavKind.Publications };
+    case NavKind.AgentChat:
+      return { kind: NavKind.AgentChat };
+    default:
+      return { kind: NavKind.Drafts };
   }
-  if (kind === NavKind.Publications) {
-    return { kind: NavKind.Publications };
-  }
-  return { kind: NavKind.Drafts };
 }
 
 function CollapsedNavList({

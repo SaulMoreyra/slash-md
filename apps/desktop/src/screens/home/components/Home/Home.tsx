@@ -1,5 +1,7 @@
 import { useHomeController, type HomeControllerApi } from "../../hooks/useHomeController";
 import type { HomeScreenProps } from "../../types";
+import { NavKind } from "../../enums";
+import { ChatBubble } from "../../../chat";
 import { Overlays } from "./components/Overlays";
 import { PublicationFabSlot } from "./components/PublicationFabSlot";
 import { RailSlot } from "./components/RailSlot";
@@ -19,6 +21,7 @@ function Root(props: HomeScreenProps) {
         <Stage />
       </Shell>
       <PublicationFabSlot />
+      {value.nav.view.kind !== NavKind.AgentChat ? <ChatBubble /> : null}
       <Overlays />
     </HomeContext.Provider>
   );

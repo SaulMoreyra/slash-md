@@ -10,6 +10,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(root, "../..");
 
 const aliases = {
+  "@slash-md/agents": path.join(repo, "packages/agents/src"),
   "@slash-md/core": path.join(repo, "packages/core/src"),
   "@slash-md/github": path.join(repo, "packages/github/src"),
   "@slash-md/ui": path.join(repo, "packages/ui/src"),

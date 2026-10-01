@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { t } from "i18next";
 import { emptyFrontmatter } from "@slash-md/core/frontmatter";
 import { cleanup, renderWithProviders, screen, waitFor } from "../../../../../../../../../test/render";
-import { CreateIntent } from "../../../../../../../enums";
+import { CreateIntent, NavKind } from "../../../../../../../enums";
 import type { HomeControllerApi } from "../../../../../../../hooks/useHomeController";
 import { HomeContext } from "../../../../../context";
 import { Body } from "../Body";
@@ -47,6 +47,7 @@ describe("Body", () => {
         value={
           {
             conflicts: { merging: false },
+            nav: { view: { kind: NavKind.Drafts } },
             tabs: {
               items: [],
               activeKey: null,
